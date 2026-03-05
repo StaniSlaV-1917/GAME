@@ -1,103 +1,116 @@
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 
 const goHome = () => {
-  router.push('/'); // Переход на главную страницу
+  router.push('/');
 };
+
+// --- Инициализация particles.js ---
+const initParticles = () => {
+  if (window.particlesJS) {
+    window.particlesJS('particles-js', {
+      "particles": {
+        "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+        "color": { "value": "#ffffff" },
+        "shape": { "type": "circle" },
+        "opacity": { "value": 0.5, "random": true, "anim": { "enable": true, "speed": 0.4, "opacity_min": 0.1, "sync": false } },
+        "size": { "value": 2.5, "random": true },
+        "move": { "enable": true, "speed": 0.5, "direction": "none", "random": true, "straight": false, "out_mode": "out" }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": { "onhover": { "enable": true, "mode": "bubble" }, "resize": true },
+        "modes": {
+          "bubble": { "distance": 250, "size": 6, "duration": 2, "opacity": 0.8 }
+        }
+      },
+      "retina_detect": true
+    });
+  }
+}
+
+onMounted(() => {
+  // Даем DOM время на отрисовку перед инициализацией
+  setTimeout(initParticles, 100);
+});
+
+onUnmounted(() => {
+  if (window.pJSDom && window.pJSDom[0]) {
+      window.pJSDom[0].pJS.fn.vendors.destroypJS();
+      window.pJSDom = [];
+  }
+});
 </script>
 
 <template>
-  <div class="black-hole-container">
-    <div class="black-hole-visuals">
-      <div class="black-hole"></div>
-      <div class="pulsing-glow"></div>
-    </div>
+  <div class="not-found-container">
+    <div id="particles-js"></div>
     
-    <div class="floating-content">
+    <div class="content-wrapper">
       <h1 class="text-404">404</h1>
-
+      <p class="message">Кажется, вы попали в неизведанный сектор космоса.</p>
       <button @click="goHome" class="home-button">
-        <span class="button-text">Вернуться на главную</span>
+        <span>Вернуться на базу</span>
       </button>
     </div>
   </div>
 </template>
 
 <style scoped>
-.black-hole-container {
-  /* Этот компонент займет весь экран */
+#particles-js {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.not-found-container {
   position: fixed;
   inset: 0;
-  background: #000;
-  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000; /* Убедимся, что он поверх всего */
+  text-align: center;
+  /* Используем похожий фон, как на странице логина */
+  background: #030712 radial-gradient(ellipse at center, rgba(76, 29, 149, 0.4) 0%, transparent 70%);
+  overflow: hidden;
+  z-index: 2000;
 }
 
-.black-hole-visuals {
-  position: absolute;
-  inset: 0;
-}
-
-.black-hole {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 150vmax;
-  height: 150vmax;
-  background: radial-gradient(circle at center, #4c1d95 0%, #2e1065 15%, #000 30%);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation:
-    spin 40s linear infinite,
-    suck 12s ease-in-out infinite alternate;
-}
-
-.pulsing-glow {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 160vmax;
-  height: 160vmax;
-  background: radial-gradient(circle at center, transparent 30%, #5b21b6 31%, transparent 33%);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  animation:
-    spin 50s linear infinite reverse,
-    pulse 3s ease-in-out infinite;
-}
-
-.floating-content {
+.content-wrapper {
   position: relative;
-  z-index: 10;
-  width: 100%;
-  height: 100%;
+  z-index: 2;
+  animation: fade-in 1.5s ease-out;
 }
 
 .text-404 {
-  position: absolute;
-  margin: 0;
-  font-size: clamp(10rem, 20vw, 25rem); /* Адаптивный размер шрифта */
+  font-size: clamp(10rem, 25vw, 18rem); /* Адаптивный размер */
   color: #fff;
-  font-weight: 900;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1;
   text-shadow:
-    0 0 15px rgba(255, 255, 255, 0.8),
-    0 0 30px rgba(167, 139, 250, 0.7),
-    0 0 50px rgba(139, 92, 246, 0.6);
-  animation: move-and-spin 20s linear infinite;
-  will-change: top, left, transform;
+    0 0 10px rgba(255, 255, 255, 0.6),
+    0 0 25px rgba(167, 139, 250, 0.5),
+    0 0 50px rgba(139, 92, 246, 0.4);
+  animation: gentle-float 6s ease-in-out infinite;
+}
+
+.message {
+  font-size: 1.2rem;
+  color: #9ca3af;
+  margin: -1rem 0 2.5rem;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
 .home-button {
-  position: absolute;
-  bottom: 10vh;
-  left: 50%;
   background: transparent;
-  border: 2px solid rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.7);
   color: #fff;
   padding: 1rem 2rem;
   font-size: 1rem;
@@ -105,69 +118,26 @@ const goHome = () => {
   cursor: pointer;
   border-radius: 50px;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  z-index: 20;
+  letter-spacing: 1.5px;
   transition: all 0.3s ease;
-  animation: button-rotate 25s linear infinite;
 }
 
 .home-button:hover {
-  transform: translateX(-50%) scale(1.1);
+  transform: scale(1.05);
   border-color: #a78bfa;
   color: #a78bfa;
-  box-shadow: 0 0 30px #a78bfa;
-  animation-play-state: paused;
+  box-shadow: 0 0 25px rgba(167, 139, 250, 0.5);
 }
 
 /* Анимации */
-
-@keyframes spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes suck {
-  from { opacity: 0.8; }
-  to { opacity: 1; }
+@keyframes gentle-float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0px); }
 }
-
-@keyframes pulse {
-  0% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
-  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); }
-  100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
-}
-
-@keyframes move-and-spin {
-  0% {
-    top: 5%;
-    left: 5%;
-    transform: rotate(0deg);
-  }
-  25% {
-    top: 5%;
-    left: calc(100% - 25vw - 5%); /* 25vw - примерная ширина текста */
-    transform: rotate(90deg);
-  }
-  50% {
-    top: calc(100% - clamp(10rem, 20vw, 25rem) - 5%);
-    left: calc(100% - 25vw - 5%);
-    transform: rotate(180deg);
-  }
-  75% {
-    top: calc(100% - clamp(10rem, 20vw, 25rem) - 5%);
-    left: 5%;
-    transform: rotate(270deg);
-  }
-  100% {
-    top: 5%;
-    left: 5%;
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes button-rotate {
-  from { transform: translateX(-50%) rotate(0deg); }
-  to { transform: translateX(-50%) rotate(360deg); }
-}
-
 </style>

@@ -22,40 +22,40 @@
 
     <!-- Секция "Почему мы?" -->
     <section class="home-section features-section">
-        <h2 class="section-title">Почему GameStore?</h2>
-        <div class="features-grid">
-            <div class="feature-item">
-                <div class="feature-icon">⚡️</div>
-                <h3 class="feature-title">Мгновенная доставка</h3>
-                <p class="feature-description">Ключ от игры приходит на вашу почту сразу после оплаты — без ожидания и задержек.</p>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">🛡️</div>
-                <h3 class="feature-title">Гарантия качества</h3>
-                <p class="feature-description">Мы работаем только с официальными издателями и гарантируем валидность каждого ключа.</p>
-            </div>
-            <div class="feature-item">
-                <div class="feature-icon">💬</div>
-                <h3 class="feature-title">Поддержка 24/7</h3>
-                <p class="feature-description">Наша служба поддержки всегда готова помочь вам с любыми вопросами в кратчайшие сроки.</p>
-            </div>
+      <h2 class="section-title">Почему GameStore?</h2>
+      <div class="features-grid">
+        <div class="feature-item">
+          <div class="feature-icon">⚡️</div>
+          <h3 class="feature-title">Мгновенная доставка</h3>
+          <p class="feature-description">Ключ от игры приходит на вашу почту сразу после оплаты — без ожидания и задержек.</p>
         </div>
+        <div class="feature-item">
+          <div class="feature-icon">🛡️</div>
+          <h3 class="feature-title">Гарантия качества</h3>
+          <p class="feature-description">Мы работаем только с официальными издателями и гарантируем валидность каждого ключа.</p>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon">💬</div>
+          <h3 class="feature-title">Поддержка 24/7</h3>
+          <p class="feature-description">Наша служба поддержки всегда готова помочь вам с любыми вопросами в кратчайшие сроки.</p>
+        </div>
+      </div>
     </section>
 
-
-    <!-- Секция Последние новости -->
-    <section class="home-section">
-      <h2 class="section-title">Последние новости</h2>
-      <div v-if="newsLoading" class="loading-placeholder">Загрузка новостей...</div>
-      <div v-if="newsError" class="error-message">{{ newsError }}</div>
-      <div v-if="!newsLoading && latestNews.length" class="news-grid">
-        <div v-for="item in latestNews" :key="item.id" class="news-card">
-          <img :src="`http://localhost:8000${item.image_url}`" alt="" class="news-image"/>
-          <div class="news-content">
-            <h3 class="news-title">{{ item.title }}</h3>
-            <p class="news-excerpt">{{ item.excerpt }}</p>
-            <a :href="`/news/${item.id}`" class="news-link">Читать далее →</a>
+    <!-- Секция Часто задаваемые вопросы (FAQ) -->
+    <section class="home-section faq-section">
+      <h2 class="section-title">Помощь и поддержка</h2>
+      <div class="faq-container">
+        <div v-for="item in faqItems" :key="item.id" class="faq-item">
+          <div class="faq-question" @click="toggleFaq(item.id)" :aria-expanded="openFaqItem === item.id">
+            <span>{{ item.question }}</span>
+            <span class="faq-icon">{{ openFaqItem === item.id ? '−' : '+' }}</span>
           </div>
+          <Transition name="faq-slide">
+            <div v-if="openFaqItem === item.id" class="faq-answer">
+              <p>{{ item.answer }}</p>
+            </div>
+          </Transition>
         </div>
       </div>
     </section>
@@ -80,43 +80,28 @@ const specialOffers = computed(() => {
     .slice(0, 4);
 });
 
-// --- Логика загрузки новостей ---
-const latestNews = ref([]);
-const newsLoading = ref(true);
-const newsError = ref('');
-
-const fetchNews = async () => {
-    try {
-        const { data } = await api.get('/news');
-        // Берем только 2 последние новости
-        latestNews.value = (Array.isArray(data) ? data : data.data).slice(0, 2);
-    } catch (e) {
-        console.error(e);
-        newsError.value = 'Не удалось загрузить новости.';
-    } finally {
-        newsLoading.value = false;
-    }
-};
+// --- Логика FAQ ---
+const faqItems = ref([
+  { id: 1, question: 'Как я получу купленную игру?', answer: 'Сразу после оплаты ключ от игры будет отправлен на вашу электронную почту. Также он будет доступен в вашем личном кабинете на сайте в разделе "Мои покупки".' },
+  { id: 2, question: 'Принимаете ли вы карты всех банков?', answer: 'Мы принимаем к оплате карты Visa, MasterCard и МИР большинства банков. Если у вас возникли проблемы с оплатой, свяжитесь с нашей поддержкой.' },
+  { id: 3, question: 'Что делать, если ключ не работает?', answer: 'В редких случаях могут возникать проблемы. Немедленно свяжитесь с нашей службой поддержки, предоставьте номер заказа и скриншот ошибки. Мы оперативно заменим ключ или вернем деньги.' },
+  { id: 4, question: 'Могу ли я вернуть игру, если она мне не понравилась?', answer: 'Цифровые ключи, согласно законодательству, не подлежат возврату или обмену, если они являются рабочими. Пожалуйста, внимательно ознакомьтесь с системными требованиями и описанием игры до покупки.' },
+  { id: 5, question: 'На какой платформе я смогу активировать ключ?', answer: 'Платформа для активации (например, Steam, Epic Games Store, GOG) всегда указана на странице товара. Пожалуйста, убедитесь, что у вас есть аккаунт в соответствующем сервисе.' }
+]);
+const openFaqItem = ref(null);
+const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null : id; };
 
 // --- Загрузка всех данных при монтировании ---
 onMounted(async () => {
   loading.value = true;
   error.value = '';
-  
-  // Запускаем обе загрузки параллельно
-  await Promise.all([
-    (async () => {
-        try {
-            const { data } = await api.get('/games');
-            allGames.value = Array.isArray(data) ? data : data.data;
-        } catch (e) {
-            console.error(e);
-            error.value = 'Не удалось загрузить спецпредложения.';
-        }
-    })(),
-    fetchNews()
-  ]);
-  
+  try {
+    const { data } = await api.get('/games');
+    allGames.value = Array.isArray(data) ? data : data.data;
+  } catch (e) {
+    console.error(e);
+    error.value = 'Не удалось загрузить спецпредложения.';
+  }
   loading.value = false;
 });
 </script>
@@ -146,16 +131,20 @@ onMounted(async () => {
 .feature-title { font-size: 1.3rem; font-weight: 600; color: #fff; margin-bottom: 8px; }
 .feature-description { font-size: 0.95rem; color: #9ca3af; line-height: 1.6; }
 
-/* News Section */
-.news-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; }
-.news-card { background: rgba(31, 41, 55, 0.5); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.2s ease; }
-.news-card:hover { transform: translateY(-5px); border-color: #3b82f6; }
-.news-image { width: 100%; height: 200px; object-fit: cover; }
-.news-content { padding: 20px; }
-.news-title { font-size: 1.25rem; font-weight: 600; color: #fff; margin: 0 0 10px; }
-.news-excerpt { font-size: 0.95rem; color: #9ca3af; line-height: 1.6; margin: 0 0 15px; }
-.news-link { color: #3b82f6; text-decoration: none; font-weight: 500; transition: color 0.2s; }
-.news-link:hover { color: #60a5fa; }
+/* FAQ Section */
+.faq-container { max-width: 900px; margin: 0 auto; border-radius: 12px; overflow: hidden; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.faq-item { border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.faq-item:last-child { border-bottom: none; }
+.faq-question { padding: 20px 25px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-weight: 500; font-size: 1.1rem; color: #f3f4f6; transition: background-color 0.2s; }
+.faq-question:hover { background-color: rgba(255, 255, 255, 0.05); }
+.faq-icon { font-size: 1.6rem; color: #60a5fa; transition: transform 0.3s ease-in-out; }
+.faq-question[aria-expanded="true"] .faq-icon { transform: rotate(135deg); }
+.faq-answer { background-color: rgba(3, 7, 18, 0.5); color: #bdc1c6; line-height: 1.7; overflow: hidden; }
+.faq-answer p { margin: 0; padding: 0 25px 20px; }
+
+/* --- Анимация для FAQ --- */
+.faq-slide-enter-active, .faq-slide-leave-active { transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out; max-height: 200px; }
+.faq-slide-enter-from, .faq-slide-leave-to { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
 
 .loading-placeholder, .error-message { text-align: center; color: #9ca3af; padding: 40px; }
 </style>
