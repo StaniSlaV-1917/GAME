@@ -77,7 +77,7 @@ const loadNews = async () => {
   error.value = '';
   try {
     // Загружаем новости с сервера, сортируем по дате публикации
-    const { data } = await api.get('/news?_sort=published_at&_order=desc');
+    const { data } = await api.get('api/admin/news?_sort=published_at&_order=desc');
     news.value = data;
   } catch (e) {
     error.value = 'Ошибка при загрузке новостей.';
@@ -91,7 +91,7 @@ const handleSave = async (articleData) => {
   try {
     if (isEditing.value) {
       // Режим редактирования - PUT
-      const { data: updatedArticle } = await api.put(`/news/${articleData.id}`, articleData);
+      const { data: updatedArticle } = await api.put(`api/admin/news/${articleData.id}`, articleData);
       const index = news.value.findIndex(a => a.id === updatedArticle.id);
       if (index !== -1) {
         news.value[index] = updatedArticle;
@@ -103,7 +103,7 @@ const handleSave = async (articleData) => {
         ...articleData,
         published_at: new Date().toISOString(),
       };
-      const { data: newArticle } = await api.post('/news', payload);
+      const { data: newArticle } = await api.post('api/admin/news', payload);
       news.value.unshift(newArticle);
       showToast(`Новость "${newArticle.title}" создана`);
     }
@@ -120,7 +120,7 @@ const handleDelete = async (articleId, articleTitle) => {
     return;
   }
   try {
-    await api.delete(`/news/${articleId}`);
+    await api.delete(`api/admin/news/${articleId}`);
     const index = news.value.findIndex(a => a.id === articleId);
     if (index !== -1) {
       news.value.splice(index, 1);

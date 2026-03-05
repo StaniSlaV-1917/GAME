@@ -11,7 +11,13 @@
     <!-- Редактор новостей -->
     <div class="admin-section">
       <h2 class="admin-section-title">Блок новостей</h2>
-      <div class="admin-table-wrapper">
+
+      <div v-if="error" class="admin-error">{{ error }}</div>
+      <div v-if="loading" class="admin-loading">Загрузка данных...</div>
+
+      <div v-else-if="!newsPosts.length" class="admin-empty">Новости не найдены.</div>
+
+      <div v-else class="admin-table-wrapper">
         <table class="admin-table">
           <thead>
             <tr>
@@ -47,42 +53,44 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import api from '../api/axios'; // импортируем наш настроенный axios
 
-// Эти данные должны приходить с бэкенда, пока используем заглушку
-const newsPosts = ref([
-  {
-    id: 1,
-    title: 'Elden Ring: Shadow of the Erdtree — первый взгляд',
-    excerpt: 'Долгожданное дополнение наконец-то вышло. Разбираемся, что нового в землях Теней и стоит ли оно своих денег.',
-    author: 'Game Informer',
-    date: '24.06.2024',
-    link: '#'
-  },
-  {
-    id: 2,
-    title: 'Анонсирована новая часть серии The Witcher',
-    excerpt: 'CD Projekt RED неожиданно показали тизер следующей большой игры во вселенной Ведьмака. Кодовое имя — Polaris.',
-    author: 'IGN',
-    date: '22.06.2024',
-    link: '#'
-  },
-]);
+const newsPosts = ref([]);
+const loading = ref(false);
+const error = ref('');
 
+// Загрузка данных с бэкенда
+const loadNews = async () => {
+  loading.value = true;
+  error.value = '';
+  try {
+    // Делаем запрос к новому эндпоинту
+    const response = await api.get('/admin/home/editor');
+    // Сохраняем полученные новости в state
+    newsPosts.value = response.data.news;
+  } catch (err) {
+    console.error('Ошибка загрузки данных для редактора:', err);
+    error.value = 'Не удалось загрузить данные для редактора.';
+  }
+  loading.value = false;
+};
+
+// Вызываем загрузку данных при монтировании компонента
+onMounted(loadNews);
+
+// --- Функции-заглушки для кнопок --- 
 const addPost = () => {
     alert('Функционал добавления новости в разработке.');
-    // Здесь будет логика для открытия модального окна или страницы для создания нового поста
 }
 
 const editPost = (post) => {
     alert(`Редактирование поста: ${post.title} (в разработке)`);
-     // Логика для редактирования
 }
 
 const deletePost = (post) => {
     if(confirm(`Вы уверены что хотите удалить новость "${post.title}"?`)){
         alert(`Новость "${post.title}" удалена (в разработке)`);
-         // Логика для удаления
     }
 }
 

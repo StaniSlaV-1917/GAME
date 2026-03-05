@@ -4,13 +4,16 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\GameImageController;
+use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Admin\AdminGameController;
+use App\Http\Controllers\Admin\AdminNewsController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminImageController;
 use App\Http\Controllers\Admin\AdminReportController;
+use App\Http\Controllers\Admin\HomePageController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ImageLibraryController;
 use App\Http\Controllers\ReviewController;
@@ -27,6 +30,9 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 
 Route::get('/games', [GameController::class, 'index']);
 Route::get('/games/{id}', [GameController::class, 'show']);
+
+Route::get('/news', [NewsController::class, 'index']);
+Route::get('/news/{id}', [NewsController::class, 'show']);
 
 /*
 |--------------------------------------------------------------------------
@@ -86,6 +92,8 @@ Route::middleware(['auth:sanctum', 'manager'])
 Route::middleware(['auth:sanctum', 'admin'])
     ->prefix('admin')
     ->group(function () {
+        // Редактор главной страницы
+        Route::get('/home/editor', [HomePageController::class, 'getEditorData']);
         // Отчёты / экспорт
         Route::get('/reports/orders', [AdminReportController::class, 'exportOrders']);
         Route::get('/reports/users', [AdminReportController::class, 'exportUsers']);
@@ -98,6 +106,9 @@ Route::middleware(['auth:sanctum', 'admin'])
         // Для обновления используется POST для корректной отправки файлов (multipart/form-data)
         Route::post('/games/{id}', [AdminGameController::class, 'update']);
         Route::delete('/games/{id}', [AdminGameController::class, 'destroy']);
+
+        // Новости: полный CRUD
+        Route::apiResource('/news', AdminNewsController::class);
 
         // Удаление одного изображения из галереи
         Route::delete('/games/images/{imageId}', [AdminGameController::class, 'destroyImage']);
