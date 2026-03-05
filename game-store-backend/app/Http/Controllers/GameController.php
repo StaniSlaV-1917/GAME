@@ -4,35 +4,54 @@ namespace App\Http\Controllers;
 
 use App\Models\Game;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
 
 class GameController extends Controller
 {
     // GET /api/games
     public function index(Request $request)
     {
-        // список игр с картинками (отзывы здесь не нужны)
-        $games = Game::with('images')
-            ->orderByDesc('id')
-            ->get();
+        $query = Game::query();
+
+        // Фильтрация по жанру
+        if ($request->has('genre') && $request->genre !== 'all') {
+            $query->where('genre', $request->genre);
+        }
+
+        // Сортировка
+        if ($request->has('sortBy')) {
+            $sortBy = $request->sortBy;
+            if ($sortBy === 'price_asc') {
+                $query->orderBy('price', 'asc');
+            } elseif ($sortBy === 'price_desc') {
+                $query->orderBy('price', 'desc');
+            } elseif ($sortBy === 'title_asc') {
+                $query->orderBy('title', 'asc');
+            }
+        } else {
+            // Сортировка по умолчанию
+            $query->orderByDesc('id');
+        }
+
+        $games = $query->with('images')->get();
 
         return response()->json($games);
+    }
+
+    // GET /api/genres - Новый метод для получения списка жанров
+    public function getGenres()
+    {
+        $genres = Game::select('genre')->distinct()->whereNotNull('genre')->orderBy('genre')->pluck('genre');
+        return response()->json($genres);
     }
 
     // GET /api/games/{id}
     public function show($id)
     {
-        // подгружаем:
-        //  - images (галерея)
-        //  - reviews, но только:
-        //      * не soft‑deleted
-        //      * со статусом approved (выводим только одобренные адмном)
-        //  - user у отзыва
         $game = Game::with([
             'images',
             'reviews' => function ($query) {
-                $query
-                    ->where('status', 'approved')   // показываем только одобренные
-                    ->orderByDesc('created_at');    // последние сверху
+                $query->where('status', 'approved')->orderByDesc('created_at');
             },
             'reviews.user',
         ])->findOrFail($id);
