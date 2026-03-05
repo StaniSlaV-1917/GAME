@@ -7,6 +7,7 @@ use App\Http\Controllers\GameImageController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\Admin\AdminGameController;
+use App\Http\Controllers\Admin\AdminGamesController; // Импортируем новый контроллер
 use App\Http\Controllers\Admin\AdminNewsController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -99,13 +100,8 @@ Route::middleware(['auth:sanctum', 'admin'])
         Route::get('/reports/users', [AdminReportController::class, 'exportUsers']);
         Route::get('/reports/games', [AdminReportController::class, 'exportGames']);
 
-        // Игры: полный CRUD
-        Route::get('/games', [AdminGameController::class, 'index']);
-        Route::get('/games/{id}', [AdminGameController::class, 'show']); // ПОЛУЧЕНИЕ ОДНОЙ ИГРЫ
-        Route::post('/games', [AdminGameController::class, 'store']);
-        // Для обновления используется POST для корректной отправки файлов (multipart/form-data)
-        Route::post('/games/{id}', [AdminGameController::class, 'update']);
-        Route::delete('/games/{id}', [AdminGameController::class, 'destroy']);
+        // Игры: полный CRUD (используем новый контроллер)
+        Route::apiResource('/games', AdminGamesController::class);
 
         // Новости: полный CRUD
         Route::apiResource('/news', AdminNewsController::class);
