@@ -76,9 +76,8 @@ const loadNews = async () => {
   loading.value = true;
   error.value = '';
   try {
-    // ИСПРАВЛЕНО: Убран лишний префикс 'api/'
-    const { data } = await api.get('/admin/news?_sort=published_at&_order=desc');
-    news.value = data;
+    const { data } = await api.get('/admin/news');
+    news.value = data.sort((a, b) => new Date(b.published_at) - new Date(a.published_at));
   } catch (e) {
     error.value = 'Ошибка при загрузке новостей.';
     console.error(e);
@@ -88,30 +87,51 @@ const loadNews = async () => {
 };
 
 const handleSave = async (articleData) => {
+  const formData = new FormData();
+  formData.append('title', articleData.title);
+  formData.append('content', articleData.content);
+  formData.append('published_at', articleData.published_at);
+  
+  // Только если был выбран новый файл
+  if (articleData.image && typeof articleData.image !== 'string') {
+    formData.append('image', articleData.image);
+  }
+
   try {
     if (isEditing.value) {
-      // ИСПРАВЛЕНО: Убран лишний префикс 'api/'
-      const { data: updatedArticle } = await api.put(`/admin/news/${articleData.id}`, articleData);
+      formData.append('_method', 'PUT'); // Трюк для Laravel
+      const { data: updatedArticle } = await api.post(`/admin/news/${articleData.id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       const index = news.value.findIndex(a => a.id === updatedArticle.id);
       if (index !== -1) {
         news.value[index] = updatedArticle;
       }
       showToast(`Новость "${updatedArticle.title}" обновлена`);
     } else {
-      // ИСПРАВЛЕНО: Убран лишний префикс 'api/'
-      const payload = {
-        ...articleData,
-        published_at: new Date().toISOString(),
-      };
-      const { data: newArticle } = await api.post('/admin/news', payload);
+      const { data: newArticle } = await api.post('/admin/news', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       news.value.unshift(newArticle);
       showToast(`Новость "${newArticle.title}" создана`);
     }
   } catch (e) {
     console.error(e);
-    showToast('Ошибка при сохранении новости');
+    // Отображение ошибок валидации от Laravel
+    if (e.response && e.response.status === 422) {
+        const errors = e.response.data.errors;
+        const errorMessages = Object.values(errors).flat().join('\n');
+        showToast(`Ошибка валидации:\n${errorMessages}`);
+    } else {
+        showToast('Ошибка при сохранении новости');
+    }
   } finally {
     closeModal();
+    loadNews(); // Перезагружаем список, чтобы все было в актуальном состоянии
   }
 };
 
@@ -120,7 +140,6 @@ const handleDelete = async (articleId, articleTitle) => {
     return;
   }
   try {
-    // ИСПРАВЛЕНО: Убран лишний префикс 'api/'
     await api.delete(`/admin/news/${articleId}`);
     const index = news.value.findIndex(a => a.id === articleId);
     if (index !== -1) {
@@ -141,7 +160,7 @@ const openAddModal = () => {
 
 const openEditModal = (article) => {
   isEditing.value = true;
-  selectedArticle.value = JSON.parse(JSON.stringify(article));
+  selectedArticle.value = article;
   isModalOpen.value = true;
 };
 
@@ -152,8 +171,9 @@ const closeModal = () => {
 
 const formatDate = (dateString) => {
   if (!dateString) return '-';
-  return new Date(dateString).toLocaleDateString('ru-RU', {
-    year: 'numeric', month: 'long', day: 'numeric'
+  return new Date(dateString).toLocaleString('ru-RU', {
+    year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
   });
 };
 </script>
@@ -197,6 +217,7 @@ td.actions-cell { display: flex; gap: 10px; }
   z-index: 1300;
   font-size: 0.95rem;
   animation: toast-fade-in 0.3s ease-out;
+  white-space: pre-wrap; /* Для переноса строк в сообщениях об ошибках */
 }
 
 @keyframes toast-fade-in {
