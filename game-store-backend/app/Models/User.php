@@ -1,0 +1,64 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory;
+
+    protected $table = 'users';
+
+    protected $casts = [
+    'fullname' => 'encrypted',
+    'email'    => 'encrypted',
+    'phone'    => 'encrypted',
+    ];
+
+    protected $fillable = [
+        'fullname',
+        'email',
+        'phone',
+        'password',
+        'role',
+        'reg_date',
+        'email_hash',
+        'phone_hash',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+        'email_hash',
+        'phone_hash',
+    ];
+
+    public $timestamps = false; 
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function employee()
+    {
+        return $this->hasOne(Employee::class);
+    }
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isManager(): bool
+    {
+        return $this->role === 'manager';
+    }
+    public function reviews()
+    {
+        return $this->hasMany(\App\Models\Review::class);
+    }
+
+}
