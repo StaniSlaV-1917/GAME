@@ -1,7 +1,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import api from '../api/axios';
 import { useCartStore } from '../stores/cart';
@@ -21,21 +21,14 @@ const addToCart = () => {
   }
 };
 
-
 const loadGame = async (id) => {
   loading.value = true;
   error.value = '';
   game.value = null;
   try {
+    // Теперь мы получаем ВСЕ данные напрямую с сервера
     const { data } = await api.get(`/games/${id}`);
-    // Эмулируем получение доп. данных, пока бэкенд не обновлен
-    // В будущем эти поля будут приходить с сервера
-    const demoData = {
-      '1': { developer: 'FromSoftware', publisher: 'Bandai Namco', trailerUrl: 'https://www.youtube.com/embed/K_03kFqWfqs', screenshots: ['img/er_ss1.jpg', 'img/er_ss2.jpg', 'img/er_ss3.jpg', 'img/er_ss4.jpg'], systemRequirements: null, },
-      '2': { developer: 'CD PROJEKT RED', publisher: 'CD PROJEKT RED', trailerUrl: 'https://www.youtube.com/embed/BO8lX3hDU3g', screenshots: ['img/cp2077_ss1.jpg', 'img/cp2077_ss2.jpg', 'img/cp2077_ss3.jpg', 'img/cp2077_ss4.jpg'], systemRequirements: { min: { os: 'Windows 10 (64-bit)', processor: 'Core i7-6700 or Ryzen 5 1600', memory: '12 GB RAM', graphics: 'GTX 1060 6GB or RX 580 8GB', storage: '70 GB SSD', }, rec: { os: 'Windows 10 (64-bit)', processor: 'Core i7-12700 or Ryzen 7 7800X3D', memory: '16 GB RAM', graphics: 'RTX 2060 Super or RX 5700 XT', storage: '70 GB SSD', }, }, },
-    };
-    game.value = { ...data, ...demoData[data.id] };
-
+    game.value = data;
     loadSimilarGames(data.genre, data.id);
   } catch (e) {
     error.value = 'Игра не найдена или произошла ошибка.';
@@ -57,7 +50,25 @@ const loadSimilarGames = async (genre, currentGameId) => {
 
 const coverImageSrc = computed(() => {
   if (!game.value?.image) return '/img/noimage.png';
-  return game.value.image.startsWith('img/') ? `/${game.value.image}` : `/img/${game.value.image}`;
+  return `http://localhost:8000${game.value.image}`;
+});
+
+// Утилита для конвертации YouTube URL в embed URL
+const youtubeEmbedUrl = computed(() => {
+    if (!game.value?.trailer_url) return null;
+    try {
+        const url = new URL(game.value.trailer_url);
+        let videoId;
+        if (url.hostname === 'youtu.be') {
+            videoId = url.pathname.slice(1);
+        } else {
+            videoId = url.searchParams.get('v');
+        }
+        return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    } catch (e) {
+        console.error('Invalid trailer URL', e);
+        return null;
+    }
 });
 
 useHead(computed(() => {
@@ -70,8 +81,8 @@ useHead(computed(() => {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: game.value.title,
-    description: game.value.description, 
-    image: `${window.location.origin}${coverImageSrc.value}`,
+    description: game.value.description,
+    image: coverImageSrc.value,
     sku: game.value.id,
     offers: {
       '@type': 'Offer',
@@ -82,13 +93,6 @@ useHead(computed(() => {
       seller: { '@type': 'Organization', name: 'GameStore' }
     },
     gamePlatform: game.value.platform,
-    ...(game.value.average_review_rating && {
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: Number(game.value.average_review_rating).toFixed(1),
-        reviewCount: game.value.reviews_count || 0
-      }
-    })
   };
 
   return {
@@ -117,7 +121,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
         <div class="header-info-container">
           <h1 class="game-title">{{ game.title }}</h1>
           <div class="price-block">
-              <span v-if="game.discount > 0" class="discount-badge">-{{ game.discount }}%</span>
+              <span v-if="game.discount_percent" class="discount-badge">-{{ game.discount_percent }}%</span>
               <span v-if="game.old_price" class="old-price">{{ Number(game.old_price).toFixed(0) }} ₽</span>
               <span class="current-price">{{ Number(game.price).toFixed(0) }} ₽</span>
           </div>
@@ -135,53 +139,31 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
       <div class="content-grid">
         <!-- Left Column -->
         <div class="main-content-col">
-          <section v-if="game.trailerUrl" class="content-section">
+          <!-- Трейлер теперь берется из youtubeEmbedUrl -->
+          <section v-if="youtubeEmbedUrl" class="content-section">
             <h2 class="section-title">Трейлер</h2>
             <div class="video-container">
-              <iframe :src="game.trailerUrl" :title="`Официальный трейлер ${game.title}`" frameborder="0" allowfullscreen></iframe>
+              <iframe :src="youtubeEmbedUrl" :title="`Официальный трейлер ${game.title}`" frameborder="0" allowfullscreen></iframe>
             </div>
           </section>
 
-          <section v-if="game.screenshots && game.screenshots.length" class="content-section">
+          <!-- Скриншоты теперь берутся из game.images -->
+          <section v-if="game.images && game.images.length" class="content-section">
             <h2 class="section-title">Скриншоты</h2>
             <div class="screenshots-grid">
-              <a v-for="(src, index) in game.screenshots" :key="index" :href="`/${src}`" target="_blank">
-                <img :src="`/${src}`" :alt="`Скриншот ${game.title} ${index + 1}`" class="screenshot-img" />
+              <!-- Пути к изображениям теперь полные -->
+              <a v-for="image in game.images" :key="image.id" :href="`http://localhost:8000${image.path}`" target="_blank">
+                <img :src="`http://localhost:8000${image.path}`" :alt="`Скриншот ${game.title}`" class="screenshot-img" />
               </a>
             </div>
           </section>
 
           <section class="content-section">
             <h2 class="section-title">Об игре {{ game.title }}</h2>
-             <p>В онлайн-магазине <strong>GameStore</strong> вы можете <strong>купить ключ {{ game.title }}</strong> для платформы {{ game.platform }} по самой выгодной цене. Это знаменитая игра в жанре <em>{{ game.genre }}</em>, выпущенная в {{ game.release_year }} году, которая уже успела завоевать сердца тысяч геймеров.</p>
-            <p>Мы гарантируем моментальную доставку лицензионного ключа активации на ваш e-mail сразу после оплаты. Начните свое приключение в мире {{ game.title }} уже сегодня!</p>
+            <div v-if="game.description" v-html="game.description"></div>
+            <p v-else>В онлайн-магазине <strong>GameStore</strong> вы можете <strong>купить ключ {{ game.title }}</strong> для платформы {{ game.platform }} по самой выгодной цене. Это знаменитая игра в жанре <em>{{ game.genre }}</em>, выпущенная в {{ game.release_year }} году, которая уже успела завоевать сердца тысяч геймеров.</p>
           </section>
 
-          <section v-if="game.systemRequirements" class="content-section">
-             <h2 class="section-title">Системные требования</h2>
-             <div class="requirements-grid">
-                <div class="req-block">
-                  <h3>Минимальные</h3>
-                  <ul>
-                    <li><strong>ОС:</strong> {{ game.systemRequirements.min.os }}</li>
-                    <li><strong>Процессор:</strong> {{ game.systemRequirements.min.processor }}</li>
-                    <li><strong>Память:</strong> {{ game.systemRequirements.min.memory }}</li>
-                    <li><strong>Видеокарта:</strong> {{ game.systemRequirements.min.graphics }}</li>
-                    <li><strong>На диске:</strong> {{ game.systemRequirements.min.storage }}</li>
-                  </ul>
-                </div>
-                <div class="req-block">
-                  <h3>Рекомендуемые</h3>
-                  <ul>
-                    <li><strong>ОС:</strong> {{ game.systemRequirements.rec.os }}</li>
-                    <li><strong>Процессор:</strong> {{ game.systemRequirements.rec.processor }}</li>
-                    <li><strong>Память:</strong> {{ game.systemRequirements.rec.memory }}</li>
-                    <li><strong>Видеокарта:</strong> {{ game.systemRequirements.rec.graphics }}</li>
-                    <li><strong>На диске:</strong> {{ game.systemRequirements.rec.storage }}</li>
-                  </ul>
-                </div>
-             </div>
-          </section>
         </div>
 
         <!-- Right Sidebar -->
@@ -192,8 +174,6 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
               <li><span>Платформа:</span> <strong>{{ game.platform }}</strong></li>
               <li><span>Жанр:</span> <strong>{{ game.genre }}</strong></li>
               <li><span>Дата выхода:</span> <strong>{{ game.release_year }}</strong></li>
-              <li><span>Разработчик:</span> <strong>{{ game.developer || 'Не указан' }}</strong></li>
-              <li><span>Издатель:</span> <strong>{{ game.publisher || 'Не указан' }}</strong></li>
             </ul>
           </div>
         </aside>
@@ -204,7 +184,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
         <h2 class="section-title">Похожие игры</h2>
         <div class="similar-games-grid">
            <router-link v-for="simGame in similarGames" :key="simGame.id" :to="`/games/${simGame.id}`" class="similar-game-card">
-                <img :src="simGame.image.startsWith('img/') ? `/${simGame.image}` : `/img/${simGame.image}`" :alt="simGame.title" class="similar-game-img" />
+                <img :src="`http://localhost:8000${simGame.image}`" :alt="simGame.title" class="similar-game-img" />
                 <div class="similar-game-info">
                   <div class="similar-game-title">{{ simGame.title }}</div>
                   <div class="similar-game-price">{{ Number(simGame.price).toFixed(0) }} ₽</div>
@@ -268,9 +248,8 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .screenshot-img { width: 100%; border-radius: 8px; transition: transform 0.2s ease; }
 .screenshot-img:hover { transform: scale(1.05); }
 .content-section p { font-size: 1rem; line-height: 1.8; color: #d1d5db; }
-.requirements-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.req-block h3 { margin: 0 0 12px; color: #9ca3af; }
-.req-block ul { list-style: none; padding: 0; margin: 0; line-height: 1.6; font-size: 0.9rem; }
+.content-section > div[v-html] p:first-child { margin-top: 0; }
+.content-section > div[v-html] p:last-child { margin-bottom: 0; }
 
 /* SIMILAR GAMES */
 .similar-games-section { margin-top: 32px; }
@@ -293,7 +272,6 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
   .header-info-container { align-items: center; }
   .price-block { justify-content: center; }
   .game-title { font-size: 2.5rem; }
-  .requirements-grid { grid-template-columns: 1fr; }
 }
 
 </style>

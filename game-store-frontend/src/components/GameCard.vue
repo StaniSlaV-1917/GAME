@@ -2,7 +2,7 @@
   <div class="game-card">
     <div class="game-card-inner">
       <div class="game-card-top">
-        <img :src="game.image ? `/img/${game.image}` : '/img/noimage.png'" :alt="game.title"/>
+        <img :src="game.image ? `http://localhost:8000${game.image}` : '/img/noimage.png'" :alt="game.title"/>
         <div class="game-badges">
           <span v-if="game.is_featured" class="badge badge-featured">Хит</span>
           <span v-if="game.is_new" class="badge badge-new">Новинка</span>
@@ -41,7 +41,7 @@
 <script setup>
 import { defineProps } from 'vue';
 import { RouterLink } from 'vue-router';
-import api from '../api/axios';
+import { useCartStore } from '../stores/cart';
 
 defineProps({
   game: {
@@ -50,14 +50,10 @@ defineProps({
   }
 });
 
-const addToCart = async (gameId) => {
-  try {
-    const { data } = await api.post('/cart/add', { game_id: gameId });
-    // You might want to emit an event here to show a toast message in the parent component
-    console.log(data.message || 'Игра добавлена в корзину');
-  } catch (e) {
-    console.error('Ошибка при добавлении в корзину', e);
-  }
+const cartStore = useCartStore();
+
+const addToCart = (game) => {
+  cartStore.addItem(game);
 };
 </script>
 
