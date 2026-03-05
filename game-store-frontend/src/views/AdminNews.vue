@@ -76,8 +76,8 @@ const loadNews = async () => {
   loading.value = true;
   error.value = '';
   try {
-    // Загружаем новости с сервера, сортируем по дате публикации
-    const { data } = await api.get('api/admin/news?_sort=published_at&_order=desc');
+    // ИСПРАВЛЕНО: Убран лишний префикс 'api/'
+    const { data } = await api.get('/admin/news?_sort=published_at&_order=desc');
     news.value = data;
   } catch (e) {
     error.value = 'Ошибка при загрузке новостей.';
@@ -90,20 +90,20 @@ const loadNews = async () => {
 const handleSave = async (articleData) => {
   try {
     if (isEditing.value) {
-      // Режим редактирования - PUT
-      const { data: updatedArticle } = await api.put(`api/admin/news/${articleData.id}`, articleData);
+      // ИСПРАВЛЕНО: Убран лишний префикс 'api/'
+      const { data: updatedArticle } = await api.put(`/admin/news/${articleData.id}`, articleData);
       const index = news.value.findIndex(a => a.id === updatedArticle.id);
       if (index !== -1) {
         news.value[index] = updatedArticle;
       }
       showToast(`Новость "${updatedArticle.title}" обновлена`);
     } else {
-      // Режим создания - POST
+      // ИСПРАВЛЕНО: Убран лишний префикс 'api/'
       const payload = {
         ...articleData,
         published_at: new Date().toISOString(),
       };
-      const { data: newArticle } = await api.post('api/admin/news', payload);
+      const { data: newArticle } = await api.post('/admin/news', payload);
       news.value.unshift(newArticle);
       showToast(`Новость "${newArticle.title}" создана`);
     }
@@ -120,7 +120,8 @@ const handleDelete = async (articleId, articleTitle) => {
     return;
   }
   try {
-    await api.delete(`api/admin/news/${articleId}`);
+    // ИСПРАВЛЕНО: Убран лишний префикс 'api/'
+    await api.delete(`/admin/news/${articleId}`);
     const index = news.value.findIndex(a => a.id === articleId);
     if (index !== -1) {
       news.value.splice(index, 1);
@@ -140,7 +141,6 @@ const openAddModal = () => {
 
 const openEditModal = (article) => {
   isEditing.value = true;
-  // Глубокое копирование, чтобы избежать прямого изменения оригинала
   selectedArticle.value = JSON.parse(JSON.stringify(article));
   isModalOpen.value = true;
 };
