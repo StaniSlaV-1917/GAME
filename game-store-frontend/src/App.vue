@@ -13,7 +13,7 @@ const popularGames = ref([]);
 
 const loadPopularGames = async () => {
   try {
-    const { data } = await api.get('http://127.0.0.1:8000/games?is_hit=true&limit=4');
+    const { data } = await api.get('/games?is_hit=true&limit=4');
     popularGames.value = data;
   } catch (error) {
     console.error("Не удалось загрузить популярные игры:", error);

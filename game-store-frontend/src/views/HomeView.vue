@@ -156,7 +156,7 @@ onMounted(async () => {
   await Promise.all([
     (async () => {
         try {
-            const { data } = await api.get('http://127.0.0.1:8000/games');
+            const { data } = await api.get('/games');
             // ИСПРАВЛЕНИЕ: Обработка ответа от Laravel
             allGames.value = Array.isArray(data) ? data : data.data;
         } catch (e) {

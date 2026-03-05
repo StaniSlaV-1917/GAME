@@ -70,7 +70,6 @@ onUnmounted(() => {
   // Уничтожаем инстанс particles.js при уходе со страницы
   if (window.pJSDom && window.pJSDom[0]) {
       window.pJSDom[0].pJS.fn.vendors.destroypJS();
-      window.pJSDom = [];
   }
 });
 </script>

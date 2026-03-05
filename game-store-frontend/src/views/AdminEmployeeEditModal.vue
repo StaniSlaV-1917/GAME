@@ -1,4 +1,4 @@
-закоммитмит<template>
+<template>
   <div v-if="modelValue" class="modal-backdrop" @click.self="closeModal">
     <div class="modal-content">
       <header class="modal-header">
