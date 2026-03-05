@@ -4,14 +4,6 @@
     <p class="dashboard-subtitle">Выберите раздел для управления</p>
 
     <div class="dashboard-grid">
-      <RouterLink to="/admin/home-editor" class="dashboard-card">
-        <div class="card-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-        </div>
-        <h2 class="card-title">Редактор главной</h2>
-        <p class="card-description">Управляйте контентом на главной странице: новости, акции и чат.</p>
-      </RouterLink>
-
       <RouterLink to="/admin/games" class="dashboard-card">
         <div class="card-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.15 19.38c.05-.28.12-.56.2-.84l1.35-4.5a1.39 1.39 0 0 1 1.3-1.04h4.5c.57 0 1.1.33 1.35 1.04l1.35 4.5c.08.28.15.56.2.84"/><path d="M12.56 19.38c.05-.28.12-.56.2-.84l1.35-4.5a1.39 1.39 0 0 1 1.3-1.04h4.5c.57 0 1.1.33 1.35 1.04l1.35 4.5c.08.28.15.56.2.84"/><path d="M8.25 13L10 6.5l1.75 6.5"/><path d="m18.25 13 1.75-6.5L21.75 13"/><path d="M4 22h16"/><path d="M2 13h20"/></svg>

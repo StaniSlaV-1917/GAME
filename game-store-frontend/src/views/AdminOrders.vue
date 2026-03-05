@@ -76,7 +76,7 @@ const loadOrders = async () => {
   loading.value = true;
   error.value = '';
   try {
-    const { data } = await api.get('/manager/orders');
+    const { data } = await api.get('/admin/orders');
     orders.value = data;
   } catch (e) {
     console.error(e);
@@ -114,7 +114,7 @@ const statusLabel = (status) => {
 
 const updateStatus = async (order, newStatus) => {
   try {
-    const { data } = await api.put(`/manager/orders/${order.id}/status`, { status: newStatus });
+    const { data } = await api.put(`/admin/orders/${order.id}/status`, { status: newStatus });
     order.status = data.order.status;
     showToast(`Статус заказа #${order.id} обновлён`);
   } catch (e) {

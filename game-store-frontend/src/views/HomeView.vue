@@ -3,6 +3,7 @@
 
     <!-- Секция с главным предложением -->
     <section class="hero-section">
+      <div id="particles-js"></div>
       <div class="hero-content">
         <h1 class="hero-title">Новые горизонты в мире игр</h1>
         <p class="hero-subtitle">Откройте для себя последние новинки, эксклюзивные предложения и станьте частью игрового сообщества.</p>
@@ -65,8 +66,19 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import api from '../api/axios';
 import GameCard from '../components/GameCard.vue';
+
+useHead({
+  title: 'GameStore - Купить ключи для игр',
+  meta: [
+    {
+      name: 'description',
+      content: 'Магазин лицензионных ключей для игр. Покупайте игры для Steam, Epic Games, GOG и других платформ по выгодным ценам.'
+    }
+  ]
+});
 
 // --- Логика загрузки игр ---
 const allGames = ref([]);
@@ -103,14 +115,131 @@ onMounted(async () => {
     error.value = 'Не удалось загрузить спецпредложения.';
   }
   loading.value = false;
+
+  if (window.particlesJS) {
+    window.particlesJS('particles-js', {
+      "particles": {
+        "number": {
+          "value": 80,
+          "density": {
+            "enable": true,
+            "value_area": 800
+          }
+        },
+        "color": {
+          "value": "#ffffff"
+        },
+        "shape": {
+          "type": "circle",
+          "stroke": {
+            "width": 0,
+            "color": "#000000"
+          },
+          "polygon": {
+            "nb_sides": 5
+          }
+        },
+        "opacity": {
+          "value": 0.5,
+          "random": false,
+          "anim": {
+            "enable": false,
+            "speed": 1,
+            "opacity_min": 0.1,
+            "sync": false
+          }
+        },
+        "size": {
+          "value": 3,
+          "random": true,
+          "anim": {
+            "enable": false,
+            "speed": 40,
+            "size_min": 0.1,
+            "sync": false
+          }
+        },
+        "line_linked": {
+          "enable": true,
+          "distance": 150,
+          "color": "#ffffff",
+          "opacity": 0.4,
+          "width": 1
+        },
+        "move": {
+          "enable": true,
+          "speed": 6,
+          "direction": "none",
+          "random": false,
+          "straight": false,
+          "out_mode": "out",
+          "bounce": false,
+          "attract": {
+            "enable": false,
+            "rotateX": 600,
+            "rotateY": 1200
+          }
+        }
+      },
+      "interactivity": {
+        "detect_on": "canvas",
+        "events": {
+          "onhover": {
+            "enable": true,
+            "mode": "repulse"
+          },
+          "onclick": {
+            "enable": true,
+            "mode": "push"
+          },
+          "resize": true
+        },
+        "modes": {
+          "grab": {
+            "distance": 400,
+            "line_linked": {
+              "opacity": 1
+            }
+          },
+          "bubble": {
+            "distance": 400,
+            "size": 40,
+            "duration": 2,
+            "opacity": 8,
+            "speed": 3
+          },
+          "repulse": {
+            "distance": 200,
+            "duration": 0.4
+          },
+          "push": {
+            "particles_nb": 4
+          },
+          "remove": {
+            "particles_nb": 2
+          }
+        }
+      },
+      "retina_detect": true
+    });
+  }
 });
 </script>
 
 <style scoped>
+#particles-js {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
 .home-page { max-width: 1200px; margin: 30px auto 40px; padding: 0 18px; color: #e5e7eb; }
 
 /* Hero Section */
-.hero-section { text-align: center; padding: 60px 20px; margin-bottom: 40px; border-radius: 16px; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); }
+.hero-section { position: relative; text-align: center; padding: 60px 20px; margin-bottom: 40px; border-radius: 16px; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); overflow: hidden; }
+.hero-content { position: relative; z-index: 1; }
 .hero-title { font-size: 2.8rem; font-weight: 800; color: #fff; margin-bottom: 1rem; }
 .hero-subtitle { font-size: 1.1rem; color: #9ca3af; max-width: 600px; margin: 0 auto 2rem; }
 .hero-button { display: inline-block; padding: 12px 30px; border-radius: 8px; background: linear-gradient(90deg, #3b82f6, #6366f1); color: #fff; font-weight: 600; text-decoration: none; transition: all 0.2s ease; }

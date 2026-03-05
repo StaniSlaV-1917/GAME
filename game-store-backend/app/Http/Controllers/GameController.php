@@ -27,6 +27,12 @@ class GameController extends Controller
                 $query->orderBy('price', 'desc');
             } elseif ($sortBy === 'title_asc') {
                 $query->orderBy('title', 'asc');
+            } elseif ($sortBy === 'title_desc') {
+                $query->orderBy('title', 'desc');
+            } elseif ($sortBy === 'release_date_desc') {
+                $query->orderBy('release_year', 'desc');
+            } elseif ($sortBy === 'rating_desc') {
+                $query->orderBy('average_review_rating', 'desc');
             }
         } else {
             // Сортировка по умолчанию

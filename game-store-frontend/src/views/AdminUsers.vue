@@ -95,7 +95,7 @@ const loadUsers = async () => {
   loading.value = true;
   error.value = '';
   try {
-    const { data } = await api.get('/manager/users');
+    const { data } = await api.get('/admin/users');
     users.value = data;
     originalUsers.value = JSON.parse(JSON.stringify(data)); // Deep copy
   } catch (e) {
@@ -136,7 +136,7 @@ const isChanged = (user) => {
 
 const saveUser = async (user) => {
   try {
-    await api.put(`/manager/users/${user.id}`, { fullname: user.fullname });
+    await api.put(`/admin/users/${user.id}`, { fullname: user.fullname });
     const originalUser = originalUsers.value.find(u => u.id === user.id);
     if (originalUser) {
       originalUser.fullname = user.fullname;

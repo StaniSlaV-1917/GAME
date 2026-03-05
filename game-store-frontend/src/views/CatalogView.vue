@@ -14,9 +14,12 @@
       <div class="filter-group">
         <label for="sort-by">Сортировать по:</label>
         <select id="sort-by" v-model="sortBy" @change="applyFilters">
-          <option value="title_asc">Названию (А-Я)</option>
+          <option value="release_date_desc">Дате выхода (сначала новые)</option>
           <option value="price_asc">Цене (сначала дешевые)</option>
           <option value="price_desc">Цене (сначала дорогие)</option>
+          <option value="rating_desc">Рейтингу (сначала высокие)</option>
+          <option value="title_asc">Названию (А-Я)</option>
+          <option value="title_desc">Названию (Я-А)</option>
         </select>
       </div>
     </div>
@@ -48,7 +51,7 @@ const loading = ref(true);
 const error = ref('');
 
 const selectedGenre = ref('all');
-const sortBy = ref('title_asc');
+const sortBy = ref('release_date_desc');
 
 // Загрузка списка доступных жанров
 const fetchGenres = async () => {
@@ -66,7 +69,7 @@ const fetchGames = async () => {
   error.value = '';
   try {
     const params = {
-      genre: selectedGenre.value,
+      genre: selectedGenre.value === 'all' ? undefined : selectedGenre.value,
       sortBy: sortBy.value
     };
     const { data } = await api.get('/games', { params });
