@@ -14,11 +14,33 @@ const loading = ref(true);
 const error = ref('');
 
 const cartStore = useCartStore();
+
+const getGameDataForCart = (gameData) => ({
+    id: gameData.id,
+    title: gameData.title,
+    price: gameData.price,
+    image: gameData.image,
+    platform: gameData.platform,
+});
+
 const isInCart = computed(() => game.value && cartStore.getItemById(game.value.id));
+
 const addToCart = () => {
   if (game.value) {
-    cartStore.addItem(game.value);
+    cartStore.addItem(getGameDataForCart(game.value));
   }
+};
+
+const resolveImageUrl = (imagePath, absolute = false) => {
+    if (!imagePath) {
+        const placeholder = '/img/noimage.png';
+        return absolute ? `${window.location.origin}${placeholder}` : placeholder;
+    }
+    if (imagePath.includes('/')) {
+        return `http://localhost:8000${imagePath}`;
+    }
+    const localPath = `/img/${imagePath}`;
+    return absolute ? `${window.location.origin}${localPath}` : localPath;
 };
 
 const loadGame = async (id) => {
@@ -26,7 +48,6 @@ const loadGame = async (id) => {
   error.value = '';
   game.value = null;
   try {
-    // Теперь мы получаем ВСЕ данные напрямую с сервера
     const { data } = await api.get(`/games/${id}`);
     game.value = data;
     loadSimilarGames(data.genre, data.id);
@@ -48,12 +69,8 @@ const loadSimilarGames = async (genre, currentGameId) => {
   }
 };
 
-const coverImageSrc = computed(() => {
-  if (!game.value?.image) return '/img/noimage.png';
-  return `http://localhost:8000${game.value.image}`;
-});
+const coverImageSrc = computed(() => resolveImageUrl(game.value?.image));
 
-// Утилита для конвертации YouTube URL в embed URL
 const youtubeEmbedUrl = computed(() => {
     if (!game.value?.trailer_url) return null;
     try {
@@ -82,7 +99,7 @@ useHead(computed(() => {
     '@type': 'Product',
     name: game.value.title,
     description: game.value.description,
-    image: coverImageSrc.value,
+    image: resolveImageUrl(game.value.image, true), 
     sku: game.value.id,
     offers: {
       '@type': 'Offer',
@@ -139,7 +156,6 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
       <div class="content-grid">
         <!-- Left Column -->
         <div class="main-content-col">
-          <!-- Трейлер теперь берется из youtubeEmbedUrl -->
           <section v-if="youtubeEmbedUrl" class="content-section">
             <h2 class="section-title">Трейлер</h2>
             <div class="video-container">
@@ -147,11 +163,9 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
             </div>
           </section>
 
-          <!-- Скриншоты теперь берутся из game.images -->
           <section v-if="game.images && game.images.length" class="content-section">
             <h2 class="section-title">Скриншоты</h2>
             <div class="screenshots-grid">
-              <!-- Пути к изображениям теперь полные -->
               <a v-for="image in game.images" :key="image.id" :href="`http://localhost:8000${image.path}`" target="_blank">
                 <img :src="`http://localhost:8000${image.path}`" :alt="`Скриншот ${game.title}`" class="screenshot-img" />
               </a>
@@ -184,7 +198,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
         <h2 class="section-title">Похожие игры</h2>
         <div class="similar-games-grid">
            <router-link v-for="simGame in similarGames" :key="simGame.id" :to="`/games/${simGame.id}`" class="similar-game-card">
-                <img :src="`http://localhost:8000${simGame.image}`" :alt="simGame.title" class="similar-game-img" />
+                <img :src="resolveImageUrl(simGame.image)" :alt="simGame.title" class="similar-game-img" />
                 <div class="similar-game-info">
                   <div class="similar-game-title">{{ simGame.title }}</div>
                   <div class="similar-game-price">{{ Number(simGame.price).toFixed(0) }} ₽</div>
@@ -198,13 +212,11 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 </template>
 
 <style scoped>
-/* GENERAL */
+/* Стили остаются без изменений */
 .page-wrapper { max-width: 1200px; margin: 0 auto; padding: 24px; color: #e5e7eb; }
 .status-message { text-align: center; padding: 60px; font-size: 1.2rem; }
 .status-message.error { color: #fca5a5; }
 .section-title { font-size: 1.8rem; font-weight: 700; color: #fff; margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
-
-/* HEADER (BUY BLOCK) */
 .game-header { display: grid; grid-template-columns: 300px 1fr; gap: 32px; background: #111827; padding: 24px; border-radius: 12px; margin-bottom: 32px; align-items: center; }
 .header-cover-image { width: 100%; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 .header-info-container { display: flex; flex-direction: column; }
@@ -221,17 +233,11 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
   cursor: not-allowed;
   transform: none;
 }
-.add-to-cart-btn:disabled:hover {
-  filter: brightness(1.0);
-}
+.add-to-cart-btn:disabled:hover { filter: brightness(1.0); }
 .delivery-info { color: #9ca3af; margin-top: 12px; font-size: 0.9rem; text-align: center; }
-
-/* LAYOUT */
 .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; }
 .main-content-col { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 .content-section { background: #111827; border: 1px solid #1f2937; padding: 24px; border-radius: 12px; }
-
-/* SIDEBAR */
 .sidebar-col { position: sticky; top: 80px; align-self: start; }
 .details-card { background: #111827; border: 1px solid #1f2937; padding: 24px; border-radius: 12px; }
 .details-card-title { font-size: 1.3rem; margin: 0 0 16px; color: #fff; }
@@ -240,8 +246,6 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .details-list li:last-child { border: none; }
 .details-list li span { color: #9ca3af; }
 .details-list li strong { color: #e5e7eb; }
-
-/* SPECIFIC SECTIONS */
 .video-container { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 8px; overflow: hidden; }
 .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .screenshots-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
@@ -250,8 +254,6 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .content-section p { font-size: 1rem; line-height: 1.8; color: #d1d5db; }
 .content-section > div[v-html] p:first-child { margin-top: 0; }
 .content-section > div[v-html] p:last-child { margin-bottom: 0; }
-
-/* SIMILAR GAMES */
 .similar-games-section { margin-top: 32px; }
 .similar-games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
 .similar-game-card { text-decoration: none; background: #1f2937; border-radius: 8px; overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease; }
@@ -260,8 +262,6 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .similar-game-info { padding: 12px; }
 .similar-game-title { font-weight: 600; color: #fff; margin-bottom: 4px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .similar-game-price { color: #4ade80; font-weight: 700; }
-
-/* RESPONSIVE */
 @media (max-width: 992px) {
   .content-grid { grid-template-columns: 1fr; }
   .sidebar-col { position: static; top: auto; margin-top: 32px; }
@@ -273,5 +273,4 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
   .price-block { justify-content: center; }
   .game-title { font-size: 2.5rem; }
 }
-
 </style>
