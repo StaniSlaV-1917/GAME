@@ -16,6 +16,7 @@ return new class extends Migration {
             $table->decimal('rating', 3, 2)->nullable();
             $table->text('description')->nullable();
             $table->string('image', 100)->nullable();
+            $table->string('trailer_url', 255)->nullable(); // Добавлено поле для трейлера
             $table->string('stopgame_url_code', 100)->nullable();
         });
     }

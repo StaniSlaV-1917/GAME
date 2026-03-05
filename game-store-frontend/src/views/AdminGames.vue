@@ -21,7 +21,7 @@
     <div v-else-if="!games.length" class="admin-empty">
       Игры пока не добавлены. Нажмите "Добавить игру", чтобы начать.
     </div>
-     <div v-else-if="!filteredGames.length" class="admin-empty">
+    <div v-else-if="!filteredGames.length" class="admin-empty">
       Игры по вашему запросу не найдены.
     </div>
 
@@ -49,9 +49,7 @@
               <div style="font-size: 0.8rem; color: #9ca3af;">{{ game.genre }}</div>
             </td>
             <td>
-              <div :class="{ 'old-price': game.discount_percent }">
-                {{ Number(game.price).toFixed(2) }} ₽
-              </div>
+              <div :class="{ 'old-price': game.discount_percent }">{{ Number(game.price).toFixed(2) }} ₽</div>
               <div v-if="game.old_price && game.discount_percent" class="old-price-sub">
                  <s>{{ Number(game.old_price).toFixed(2) }} ₽</s>
               </div>
@@ -79,6 +77,7 @@
       :game="selectedGame" 
       @close="closeModal" 
       @save="handleSave" 
+      @delete-image="handleDeleteImage"
     />
     <div v-if="toastVisible" class="admin-toast">{{ toastText }}</div>
   </div>
@@ -104,14 +103,15 @@ const toastVisible = ref(false);
 const showToast = (text) => {
   toastText.value = text;
   toastVisible.value = true;
-  setTimeout(() => { toastVisible.value = false; }, 2500);
+  setTimeout(() => { toastVisible.value = false; }, 3000);
 };
 
 const loadGames = async () => {
   loading.value = true;
   error.value = '';
   try {
-    const { data } = await api.get('/games?_sort=id&_order=desc');
+    // Используем эндпоинт админки, который возвращает игры с галереями
+    const { data } = await api.get('/admin/games');
     games.value = data;
   } catch (e) {
     console.error(e);
@@ -122,9 +122,7 @@ const loadGames = async () => {
 };
 
 const filteredGames = computed(() => {
-  if (!searchQuery.value) {
-    return games.value;
-  }
+  if (!searchQuery.value) return games.value;
   const q = searchQuery.value.toLowerCase();
   return games.value.filter(game => 
     game.title.toLowerCase().includes(q) ||
@@ -141,7 +139,8 @@ const openAddModal = () => {
 
 const openEditModal = (game) => {
   isEditing.value = true;
-  selectedGame.value = { ...game };
+  // `selectedGame` теперь будет содержать и массив images, который нужен модалке
+  selectedGame.value = games.value.find(g => g.id === game.id);
   isModalOpen.value = true;
 };
 
@@ -150,34 +149,67 @@ const closeModal = () => {
   selectedGame.value = null;
 };
 
-const handleSave = async (gameData) => {
+// --- НОВАЯ ЛОГИКА СОХРАНЕНИЯ ---
+const handleSave = async (payload) => {
+  const { formData, gameId } = payload;
+
   try {
+    let response;
     if (isEditing.value) {
-      // Режим редактирования - используем PUT
-      const { data: updatedGame } = await api.put(`/games/${gameData.id}`, gameData);
+      // РЕЖИМ РЕДАКТИРОВАНИЯ: отправляем FormData POST-запросом
+      response = await api.post(`/admin/games/${gameId}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const updatedGame = response.data.game;
       const index = games.value.findIndex(g => g.id === updatedGame.id);
-      if (index !== -1) {
-        games.value[index] = updatedGame;
-      }
+      if (index !== -1) games.value[index] = updatedGame;
       showToast(`Игра "${updatedGame.title}" успешно обновлена`);
+
     } else {
-      // Режим создания - используем POST
-      const { data: newGame } = await api.post('/games', gameData);
-      games.value.unshift(newGame); // Добавляем в начало списка
+      // РЕЖИМ СОЗДАНИЯ: отправляем FormData
+      response = await api.post('/admin/games', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const newGame = response.data.game;
+      games.value.unshift(newGame);
       showToast(`Игра "${newGame.title}" успешно создана`);
     }
   } catch (e) {
     console.error(e);
-    showToast('Произошла ошибка при сохранении игры');
+    const errorMessage = e.response?.data?.message || 'Произошла ошибка при сохранении игры';
+    showToast(errorMessage);
   } finally {
     closeModal();
   }
 };
 
+// --- НОВАЯ ЛОГИКА УДАЛЕНИЯ ИЗОБРАЖЕНИЯ ---
+const handleDeleteImage = async (imageId) => {
+    try {
+        await api.delete(`/admin/games/images/${imageId}`);
+        showToast('Изображение удалено');
+
+        // Обновляем локальное состояние, чтобы изображение исчезло без перезагрузки
+        if (selectedGame.value) {
+            const gameInList = games.value.find(g => g.id === selectedGame.value.id);
+            if (gameInList) {
+                gameInList.images = gameInList.images.filter(img => img.id !== imageId);
+            }
+            // Обновляем и selectedGame, чтобы модальное окно тоже обновилось
+            selectedGame.value.images = selectedGame.value.images.filter(img => img.id !== imageId);
+        }
+
+    } catch (error) {
+        console.error('Ошибка при удалении изображения:', error);
+        showToast('Не удалось удалить изображение.');
+    }
+};
+
 const handleDelete = async (gameId, gameTitle) => {
   if (!confirm(`Вы уверены, что хотите удалить игру "${gameTitle}"?`)) return;
   try {
-    await api.delete(`/games/${gameId}`);
+    // Используем эндпоинт админки
+    await api.delete(`/admin/games/${gameId}`);
     games.value = games.value.filter((g) => g.id !== gameId);
     showToast('Игра удалена');
   } catch (e) {
@@ -192,43 +224,11 @@ onMounted(loadGames);
 <style>
 @import '../assets/admin.css';
 
-.page-header .actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.admin-search-wrapper {
-  position: relative;
-}
-
-.admin-search-wrapper .search-icon {
-  position: absolute;
-  top: 50%;
-  left: 14px;
-  transform: translateY(-50%);
-  color: #9ca3af;
-  pointer-events: none;
-}
-
-.admin-search-input {
-  padding: 0.65rem 0.9rem 0.65rem 2.5rem;
-  border-radius: 6px;
-  border: 1px solid #4a5568;
-  background-color: #2d3748;
-  color: #e2e8f0;
-  font-size: 0.95rem;
-  min-width: 280px;
-  transition: all 0.2s ease;
-}
-
-.admin-search-input:focus {
-    outline: none;
-    border-color: #4299e1;
-    background-color: #1a202c;
-    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3);
-}
-
+.page-header .actions { display: flex; gap: 1rem; align-items: center; }
+.admin-search-wrapper { position: relative; }
+.admin-search-wrapper .search-icon { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
+.admin-search-input { padding: 0.65rem 0.9rem 0.65rem 2.5rem; border-radius: 6px; border: 1px solid #4a5568; background-color: #2d3748; color: #e2e8f0; font-size: 0.95rem; min-width: 280px; transition: all 0.2s ease; }
+.admin-search-input:focus { outline: none; border-color: #4299e1; background-color: #1a202c; box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3); }
 
 .old-price { text-decoration: line-through; color: #9ca3af; }
 .old-price-sub { font-size: 0.8rem; color: #9ca3af; }
@@ -237,22 +237,6 @@ onMounted(loadGames);
 .status-badge.featured { background-color: rgba(234, 179, 8, 0.1); color: #fcd34d; }
 .status-badge.new { background-color: rgba(59, 130, 246, 0.1); color: #93c5fd; }
 
-.admin-toast {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  background: #1f2937;
-  border: 1px solid #374151;
-  color: #e5e7eb;
-  padding: 12px 18px;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-  z-index: 1300;
-  font-size: 0.95rem;
-  animation: toast-fade-in 0.3s ease-out;
-}
-
-@keyframes toast-fade-in {
-  from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); }
-}
+.admin-toast { position: fixed; right: 20px; bottom: 20px; background: #1f2937; border: 1px solid #374151; color: #e5e7eb; padding: 12px 18px; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); z-index: 1300; font-size: 0.95rem; animation: toast-fade-in 0.3s ease-out; }
+@keyframes toast-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>

@@ -13,6 +13,7 @@ class Game extends Model
 
     public $timestamps = false;
 
+    // Приведено в соответствие с миграцией
     protected $fillable = [
         'title',
         'genre',
@@ -21,6 +22,7 @@ class Game extends Model
         'rating',
         'description',
         'image',
+        'trailer_url', // Добавлено
         'stopgame_url_code',
         'is_featured',
         'is_new',

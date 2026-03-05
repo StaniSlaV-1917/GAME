@@ -4,7 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\GameImageController;
-use App\Http\Controllers\OrderController;
+use App\Http->set_error(message, details)rollers\OrderController;
 use App\Http\Controllers\Admin\AdminGameController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -15,8 +15,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ImageLibraryController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\EmployeeController;
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -65,10 +63,6 @@ Route::middleware('auth:sanctum')->group(function () {
 |--------------------------------------------------------------------------
 | Менеджер + админ (расширенный доступ)
 |--------------------------------------------------------------------------
-|
-| Требует middleware 'manager':
-|  - role = manager или admin
-|--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth:sanctum', 'manager'])
@@ -87,10 +81,6 @@ Route::middleware(['auth:sanctum', 'manager'])
 |--------------------------------------------------------------------------
 | Только админ (полный доступ)
 |--------------------------------------------------------------------------
-|
-| Требует middleware 'admin':
-|  - role = admin
-|--------------------------------------------------------------------------
 */
 
 Route::middleware(['auth:sanctum', 'admin'])
@@ -103,16 +93,14 @@ Route::middleware(['auth:sanctum', 'admin'])
 
         // Игры: полный CRUD
         Route::get('/games', [AdminGameController::class, 'index']);
+        Route::get('/games/{id}', [AdminGameController::class, 'show']); // ПОЛУЧЕНИЕ ОДНОЙ ИГРЫ
         Route::post('/games', [AdminGameController::class, 'store']);
-        Route::put('/games/{id}', [AdminGameController::class, 'update']);
+        // Для обновления используется POST для корректной отправки файлов (multipart/form-data)
+        Route::post('/games/{id}', [AdminGameController::class, 'update']);
         Route::delete('/games/{id}', [AdminGameController::class, 'destroy']);
 
-        // Галерея игр (контроллер GameImageController в корне Controllers)
-        Route::get('/games/{game}/images', [GameImageController::class, 'index']);
-        Route::post('/games/{game}/images', [GameImageController::class, 'store']);
-        Route::put('/games/{game}/images/{image}', [GameImageController::class, 'update']);
-        Route::delete('/games/{game}/images/{image}', [GameImageController::class, 'destroy']);
-        Route::get('/image-library', [ImageLibraryController::class, 'index']);
+        // Удаление одного изображения из галереи
+        Route::delete('/games/images/{imageId}', [AdminGameController::class, 'destroyImage']);
 
         // Управление ролями пользователей
         Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole']);
@@ -123,12 +111,11 @@ Route::middleware(['auth:sanctum', 'admin'])
         Route::delete('/reviews/{id}', [AdminReviewController::class, 'destroy']);
         Route::post('/reviews/{id}/restore', [AdminReviewController::class, 'restore']);
 
-         Route::get('/employees', [EmployeeController::class, 'index']);      // список сотрудников
-        Route::post('/employees', [EmployeeController::class, 'store']);      // создать сотрудника
-        Route::get('/employees/{employee}', [EmployeeController::class, 'show']);   // карточка сотрудника
-        Route::put('/employees/{employee}', [EmployeeController::class, 'update']); // редактировать
-        Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy']); // удалить
+         Route::get('/employees', [EmployeeController::class, 'index']);
+        Route::post('/employees', [EmployeeController::class, 'store']);
+        Route::get('/employees/{employee}', [EmployeeController::class, 'show']);
+        Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
+        Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy']);
 
-        // если нужно, можно добавить отдельные роуты, например:
-        Route::put('/employees/{employee}/role', [EmployeeController::class, 'updateRole']); // смена роли
+        Route::put('/employees/{employee}/role', [EmployeeController::class, 'updateRole']);
     });
