@@ -28,13 +28,6 @@ class GameImage extends Model
     ];
 
     /**
-     * Указывает, что у модели нет временных меток created_at и updated_at.
-     *
-     * @var bool
-     */
-    public $timestamps = false;
-
-    /**
      * Получить игру, которой принадлежит это изображение.
      */
     public function game()

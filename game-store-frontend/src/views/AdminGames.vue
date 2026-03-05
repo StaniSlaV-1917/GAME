@@ -76,7 +76,8 @@
       :is-editing="isEditing" 
       :game="selectedGame" 
       @close="closeModal" 
-      @save="handleSave" 
+      @save="handleSave"
+      @upload-gallery="handleUploadGallery"
       @delete-image="handleDeleteImage"
     />
     <div v-if="toastVisible" class="admin-toast">{{ toastText }}</div>
@@ -110,7 +111,6 @@ const loadGames = async () => {
   loading.value = true;
   error.value = '';
   try {
-    // Используем эндпоинт админки, который возвращает игры с галереями
     const { data } = await api.get('/admin/games');
     games.value = data;
   } catch (e) {
@@ -139,7 +139,6 @@ const openAddModal = () => {
 
 const openEditModal = (game) => {
   isEditing.value = true;
-  // `selectedGame` теперь будет содержать и массив images, который нужен модалке
   selectedGame.value = games.value.find(g => g.id === game.id);
   isModalOpen.value = true;
 };
@@ -149,54 +148,83 @@ const closeModal = () => {
   selectedGame.value = null;
 };
 
-// --- НОВАЯ ЛОГИКА СОХРАНЕНИЯ ---
+// Обработка сохранения текстовых данных
 const handleSave = async (payload) => {
-  const { formData, gameId } = payload;
-
+  const { gameData, gameId } = payload;
   try {
-    let response;
+    let savedGame;
     if (isEditing.value) {
-      // РЕЖИМ РЕДАКТИРОВАНИЯ: отправляем FormData POST-запросом
-      response = await api.post(`/admin/games/${gameId}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      const updatedGame = response.data.game;
-      const index = games.value.findIndex(g => g.id === updatedGame.id);
-      if (index !== -1) games.value[index] = updatedGame;
-      showToast(`Игра "${updatedGame.title}" успешно обновлена`);
-
+      const response = await api.put(`/admin/games/${gameId}`, gameData);
+      savedGame = response.data;
+      const index = games.value.findIndex(g => g.id === savedGame.id);
+      if (index !== -1) games.value[index] = savedGame;
+      showToast(`Игра "${savedGame.title}" успешно обновлена`);
     } else {
-      // РЕЖИМ СОЗДАНИЯ: отправляем FormData
-      response = await api.post('/admin/games', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      const newGame = response.data.game;
-      games.value.unshift(newGame);
-      showToast(`Игра "${newGame.title}" успешно создана`);
+      const response = await api.post('/admin/games', gameData);
+      savedGame = response.data;
+      games.value.unshift(savedGame);
+      showToast(`Игра "${savedGame.title}" успешно создана`);
     }
+    // Важно: обновляем selectedGame, чтобы в него попал ID созданной игры
+    if (!isEditing.value) {
+        selectedGame.value = savedGame;
+        isEditing.value = true; // Переключаем в режим редактирования для загрузки галереи
+    }
+
   } catch (e) {
     console.error(e);
     const errorMessage = e.response?.data?.message || 'Произошла ошибка при сохранении игры';
     showToast(errorMessage);
-  } finally {
-    closeModal();
+    closeModal(); // Закрываем в случае ошибки
   }
 };
 
-// --- НОВАЯ ЛОГИКА УДАЛЕНИЯ ИЗОБРАЖЕНИЯ ---
-const handleDeleteImage = async (imageId) => {
+// Обработка загрузки файлов галереи
+const handleUploadGallery = async (payload) => {
+    const { galleryFormData, gameId } = payload;
+    if (!gameId) {
+        showToast('Сначала нужно сохранить игру, чтобы добавить галерею');
+        return;
+    }
+
     try {
-        await api.delete(`/admin/games/images/${imageId}`);
+        const response = await api.post(`/admin/games/${gameId}/gallery`, galleryFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+
+        const newImages = response.data;
+        const gameIndex = games.value.findIndex(g => g.id === gameId);
+        if (gameIndex !== -1) {
+            games.value[gameIndex].images.push(...newImages);
+        }
+
+        // Обновляем и selectedGame, если модалка еще открыта
+        if (selectedGame.value && selectedGame.value.id === gameId) {
+            selectedGame.value.images.push(...newImages);
+        }
+
+        showToast('Изображения галереи успешно загружены');
+
+    } catch(e) {
+        console.error(e);
+        const errorMessage = e.response?.data?.message || 'Произошла ошибка при загрузке галереи';
+        showToast(errorMessage);
+    }
+}
+
+// Обработка удаления изображения из галереи
+const handleDeleteImage = async (payload) => {
+    const { gameId, imageId } = payload;
+    try {
+        await api.delete(`/admin/games/${gameId}/gallery/${imageId}`);
         showToast('Изображение удалено');
 
-        // Обновляем локальное состояние, чтобы изображение исчезло без перезагрузки
-        if (selectedGame.value) {
-            const gameInList = games.value.find(g => g.id === selectedGame.value.id);
-            if (gameInList) {
-                gameInList.images = gameInList.images.filter(img => img.id !== imageId);
-            }
-            // Обновляем и selectedGame, чтобы модальное окно тоже обновилось
-            selectedGame.value.images = selectedGame.value.images.filter(img => img.id !== imageId);
+        const gameIndex = games.value.findIndex(g => g.id === gameId);
+        if (gameIndex !== -1) {
+            games.value[gameIndex].images = games.value[gameIndex].images.filter(img => img.id !== imageId);
+        }
+        if (selectedGame.value && selectedGame.value.id === gameId) {
+             selectedGame.value.images = selectedGame.value.images.filter(img => img.id !== imageId);
         }
 
     } catch (error) {
@@ -208,7 +236,6 @@ const handleDeleteImage = async (imageId) => {
 const handleDelete = async (gameId, gameTitle) => {
   if (!confirm(`Вы уверены, что хотите удалить игру "${gameTitle}"?`)) return;
   try {
-    // Используем эндпоинт админки
     await api.delete(`/admin/games/${gameId}`);
     games.value = games.value.filter((g) => g.id !== gameId);
     showToast('Игра удалена');

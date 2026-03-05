@@ -45,15 +45,11 @@
         <!-- Обложка -->
         <h3 class="subsection-title">Обложка</h3>
         <div class="form-group">
-          <label for="image_file">Загрузить новую обложку</label>
-          <input id="image_file" type="file" @change="handleCoverFileChange" accept="image/*">
-          <div v-if="coverPreviewUrl" class="image-preview-container">
-             <p>Предпросмотр новой обложки:</p>
-             <img :src="coverPreviewUrl" alt="Предпросмотр обложки" class="image-preview" />
-          </div>
-          <div v-else-if="isEditing && game.image" class="image-preview-container">
+          <label for="image">URL текущей обложки</label>
+           <input id="image" v-model="form.image" type="text" placeholder="/images/image.jpg">
+           <div v-if="isEditing && form.image" class="image-preview-container">
             <p>Текущая обложка:</p>
-            <img :src="`http://localhost:8000/${game.image}`" alt="Текущая обложка" class="image-preview" />
+            <img :src="`http://localhost:8000${form.image}`" alt="Текущая обложка" class="image-preview" />
           </div>
         </div>
 
@@ -61,25 +57,25 @@
 
         <!-- Галерея -->
         <h3 class="subsection-title">Галерея изображений</h3>
-        
+
         <!-- Существующая галерея -->
         <div v-if="isEditing && form.images && form.images.length" class="gallery-grid">
           <div v-for="image in form.images" :key="image.id" class="gallery-item">
-            <img :src="`http://localhost:8000/${image.path}`" :alt="`Gallery image ${image.id}`"/>
-            <button type="button" @click="requestImageDelete(image.id)" class="btn-delete-img">Удалить</button>
+            <img :src="`http://localhost:8000${image.path}`" :alt="`Gallery image ${image.id}`"/>
+            <button type="button" @click="requestImageDelete(image)" class="btn-delete-img">Удалить</button>
           </div>
         </div>
         <p v-else-if="isEditing">У этой игры пока нет галереи.</p>
 
         <!-- Загрузка новых изображений -->
         <div class="form-group" style="margin-top: 20px;">
-          <label for="gallery_files">Добавить изображения в галерею</label>
+          <label for="gallery_files">Добавить изображения в галерею (будут загружены при сохранении)</label>
           <input id="gallery_files" type="file" multiple @change="handleGalleryFilesChange" accept="image/*">
         </div>
 
         <!-- Предпросмотр новых изображений галереи -->
-        <div v-if="newGalleryPreviews.length" class="gallery-grid">
-            <div v-for="(preview, index) in newGalleryPreviews" :key="index" class="gallery-item new-preview">
+        <div v-if="newGalleryFiles.length" class="gallery-grid">
+            <div v-for="(preview, index) in newGalleryFiles" :key="index" class="gallery-item new-preview">
                 <img :src="preview.url" :alt="`Preview ${preview.name}`" />
                 <span class="file-name">{{ preview.name }}</span>
                 <button type="button" @click="removeNewGalleryFile(index)" class="btn-delete-img">Отменить</button>
@@ -104,38 +100,22 @@ const props = defineProps({
   isEditing: Boolean
 });
 
-const emit = defineEmits(['close', 'save', 'delete-image']);
+const emit = defineEmits(['close', 'save', 'delete-image', 'upload-gallery']);
 
-// Реактивная форма для всех текстовых полей
 const form = ref({});
-
-// Отдельные ref для файлов
-const coverImageFile = ref(null);
 const newGalleryFiles = ref([]); // Массив объектов { file, url, name }
 
-// Инициализация данных формы при открытии модалки
 watch(() => props.game, (newGame) => {
   if (props.isEditing && newGame) {
-    form.value = { ...newGame };
+    form.value = { ...newGame, images: newGame.images || [] };
   } else {
     form.value = {
         title: '', price: 0, platform: 'PC', genre: '', release_year: new Date().getFullYear(),
-        description: '', trailer_url: '', images: []
+        description: '', trailer_url: '', image: '', images: []
     };
   }
-  // Сбрасываем файлы при каждой смене пропсов
-  coverImageFile.value = null;
   newGalleryFiles.value = [];
 }, { immediate: true, deep: true });
-
-// --- Обработчики файлов ---
-
-const handleCoverFileChange = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    coverImageFile.value = file;
-  }
-};
 
 const handleGalleryFilesChange = (event) => {
   const files = Array.from(event.target.files);
@@ -146,62 +126,34 @@ const handleGalleryFilesChange = (event) => {
           name: file.name,
       });
   });
-  // Очищаем input, чтобы можно было выбрать те же файлы снова
   event.target.value = null;
 };
 
 const removeNewGalleryFile = (index) => {
-    // Освобождаем память от URL.createObjectURL
     URL.revokeObjectURL(newGalleryFiles.value[index].url);
     newGalleryFiles.value.splice(index, 1);
 };
 
-// --- URL для предпросмотра --- 
-
-const coverPreviewUrl = computed(() => {
-    return coverImageFile.value ? URL.createObjectURL(coverImageFile.value) : null;
-});
-
-const newGalleryPreviews = computed(() => {
-    return newGalleryFiles.value;
-});
-
-// --- Отправка данных ---
-
 const handleSubmit = () => {
-  const formData = new FormData();
+  // 1. Отправляем основные данные игры (текстовые поля)
+  const gameData = { ...form.value };
+  emit('save', { gameData, gameId: props.game?.id });
 
-  // Добавляем все поля из формы
-  for (const key in form.value) {
-      if (key !== 'images' && form.value[key] !== null) { // Не добавляем массив картинок
-        formData.append(key, form.value[key]);
-      }
-  }
-
-  // Добавляем файл обложки, если он выбран
-  if (coverImageFile.value) {
-    formData.append('image_file', coverImageFile.value);
-  }
-
-  // Добавляем новые файлы галереи
-  if (newGalleryFiles.value.length) {
+  // 2. Если есть новые файлы для галереи, отправляем их отдельно
+  if (newGalleryFiles.value.length > 0) {
+      const galleryFormData = new FormData();
       newGalleryFiles.value.forEach(fileObj => {
-          formData.append('gallery_files[]', fileObj.file);
+          galleryFormData.append('gallery[]', fileObj.file);
       });
+      emit('upload-gallery', { galleryFormData, gameId: props.game.id });
   }
 
-  // Для метода PUT в Laravel, если это редактирование
-  if (props.isEditing) {
-      formData.append('_method', 'POST'); // Используем POST как договорились в роутах
-  }
-
-  emit('save', { formData, gameId: props.game?.id });
   close();
 };
 
-const requestImageDelete = (imageId) => {
+const requestImageDelete = (image) => {
     if (confirm('Вы уверены, что хотите удалить это изображение?')) {
-        emit('delete-image', imageId);
+        emit('delete-image', { gameId: props.game.id, imageId: image.id });
     }
 };
 
@@ -211,7 +163,7 @@ const close = () => {
 </script>
 
 <style scoped>
-/* ... Оставляем все стили как были, но добавляем новые ... */
+/* Стили остаются такими же, как и были */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;}
 .modal-content { background-color: #2a3a50; padding: 25px; border-radius: 10px; width: 90%; max-width: 750px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.4);}
 .modal-title { margin: 0 0 20px; color: #fff; font-size: 1.6rem; font-weight: 600; border-bottom: 1px solid #4a5a70; padding-bottom: 15px;}

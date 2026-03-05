@@ -100,14 +100,15 @@ Route::middleware(['auth:sanctum', 'admin'])
         Route::get('/reports/users', [AdminReportController::class, 'exportUsers']);
         Route::get('/reports/games', [AdminReportController::class, 'exportGames']);
 
-        // Игры: полный CRUD (используем новый контроллер)
+        // Игры: полный CRUD
         Route::apiResource('/games', AdminGamesController::class);
+
+        // Управление галереей
+        Route::post('/games/{game}/gallery', [AdminGamesController::class, 'uploadGallery']);
+        Route::delete('/games/{game}/gallery/{image}', [AdminGamesController::class, 'deleteGalleryImage']);
 
         // Новости: полный CRUD
         Route::apiResource('/news', AdminNewsController::class);
-
-        // Удаление одного изображения из галереи
-        Route::delete('/games/images/{imageId}', [AdminGameController::class, 'destroyImage']);
 
         // Управление ролями пользователей
         Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole']);
