@@ -1,1 +1,242 @@
-<script setup>\nimport { ref, onMounted } from \'vue\';\nimport { RouterLink, RouterView, useRouter } from \'vue-router\';\nimport { useAuthStore } from \'./stores/auth\';\nimport { storeToRefs } from \'pinia\';\nimport api from \'./api/axios\';\n\nconst authStore = useAuthStore();\nconst { user, isLoggedIn } = storeToRefs(authStore);\nconst router = useRouter();\n\nconst popularGames = ref([]);\n\nconst loadPopularGames = async () => {\n  try {\n    const { data } = await api.get(\'http://127.0.0.1:8000/games?is_hit=true&limit=4\');\n    popularGames.value = data;\n  } catch (error) {\n    console.error(\"Не удалось загрузить популярные игры:\", error);\n  }\n};\n\nconst handleLogout = async () => {\n  await authStore.logout();\n  router.push({ name: \'login\' });\n};\n\nonMounted(() => {\n  loadPopularGames();\n});\n\n</script>\n\n<template>\n  <div id=\"app-wrapper\">\n    <header class=\"main-header\">\n      <div class=\"header-content\">\n        <RouterLink to=\"/\" class=\"logo-link\">\n          <img alt=\"GameStore logo\" class=\"logo-img\" src=\"/images.png\" />\n          <span class=\"logo-text\">GameStore</span>\n        </RouterLink>\n\n        <nav class=\"main-nav\">\n          <RouterLink to=\"/\">Главная</RouterLink>\n          <RouterLink to=\"/news\">Новости</RouterLink>\n          <RouterLink to=\"/catalog\">Каталог</RouterLink>\n          <RouterLink v-if=\"user?.is_admin\" to=\"/admin\" class=\"admin-link\">Админка</RouterLink>\n        </nav>\n\n        <div class=\"user-actions\">\n          <RouterLink to=\"/cart\" class=\"action-icon-link\">\n             <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"9\" cy=\"21\" r=\"1\"></circle><circle cx=\"20\" cy=\"21\" r=\"1\"></circle><path d=\"M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6\"></path></svg>\n          </RouterLink>\n\n          <template v-if=\"isLoggedIn && user\">\n            <RouterLink to=\"/profile\" class=\"action-icon-link profile-link\">\n              <svg xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2\"></path><circle cx=\"12\" cy=\"7\" r=\"4\"></circle></svg>\n              <span>{{ user.fullname }}</span>\n            </RouterLink>\n            <button @click=\"handleLogout\" class=\"logout-btn\">Выйти</button>\n          </template>\n          \n          <template v-else>\n            <RouterLink to=\"/login\" class=\"auth-link login\">Войти</RouterLink>\n            <RouterLink to=\"/register\" class=\"auth-link register\">Регистрация</RouterLink>\n          </template>\n        </div>\n      </div>\n    </header>\n\n    <main class=\"main-content\">\n      <RouterView />\n    </main>\n\n    <footer class=\"main-footer\">\n      <div class=\"footer-main-content\">\n        <div class=\"footer-grid\">\n          <div class=\"footer-col footer-about\">\n            <h3 class=\"footer-col-title\">О магазине</h3>\n            <p>GameStore — онлайн-магазин цифровых ключей. Мы заботимся о том, чтобы ваши покупки были безопасными, а поддержка — доступной и понятной.</p>\n          </div>\n\n          <div class=\"footer-col footer-popular-games\">\n            <h3 class=\"footer-col-title\">Популярные игры</h3>\n            <div v-if=\"popularGames.length\" class=\"footer-links\">\n              <RouterLink v-for=\"game in popularGames\" :key=\"game.id\" :to=\"\`/games/${game.id}\`\">\n                {{ game.title }}\n              </RouterLink>\n            </div>\n             <p v-else>Загрузка...</p>\n          </div>\n\n          <div class=\"footer-col footer-navigation\">\n             <h3 class=\"footer-col-title\">Навигация</h3>\n             <div class=\"footer-links\">\n                <RouterLink to=\"/\">Главная</RouterLink>\n                <RouterLink to=\"/news\">Новости</RouterLink>\n                <RouterLink to=\"/catalog\">Каталог</RouterLink>\n                <RouterLink to=\"/cart\">Корзина</RouterLink>\n             </div>\n          </div>\n\n          <div class=\"footer-col footer-contacts-socials\">\n            <div class=\"footer-contacts\">\n              <h3 class=\"footer-col-title\">Связаться с нами</h3>\n              <div class=\"footer-links\">\n                <a href=\"mailto:support@gamestore.com\">support@gamestore.com</a>\n                <a href=\"tel:+79991234567\">+7 (999) 123-45-67</a>\n              </div>\n            </div>\n            <div class=\"footer-socials\">\n              <h3 class=\"footer-col-title\">Мы в соцсетях</h3>\n              <div class=\"social-links\">\n                <a href=\"#\" target=\"_blank\" class=\"social-link social-link-vk\">\n                  <img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/VK_Compact_Logo_%282021-present%29.svg/1200px-VK_Compact_Logo_%282021-present%29.svg.png\" alt=\"VK\">\n                </a>\n                <a href=\"#\" target=\"_blank\" class=\"social-link social-link-telegram\">\n                  <img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/2048px-Telegram_logo.svg.png\" alt=\"Telegram\">\n                </a>\n                <a href=\"#\" target=\"_blank\" class=\"social-link social-link-youtube\">\n                  <img src=\"https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1280px-YouTube_full-color_icon_%282017%29.svg.png\" alt=\"YouTube\">\n                </a>\n              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n      <div class=\"footer-bottom-bar\">\n        <p>&copy; {{ new Date().getFullYear() }} GameStore. Все права защищены.</p>\n      </div>\n    </footer>\n  </div>\n</template>\n\n<style scoped>\n/* --- ОБНОВЛЕННЫЙ ГЛОБАЛЬНЫЙ СТИЛЬ --- */\n#app-wrapper {\n  display: flex;\n  flex-direction: column;\n  min-height: 100vh;\n  background-color: #030712; /* Глубокий темный фон */\n  /* Эффект туманности вверху */\n  background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 113, 192, 0.2), transparent);\n}\n\n.main-content { flex-grow: 1; }\n\n/* --- ОБНОВЛЕННЫЙ ХЕДЕР --- */\n.main-header {\n  position: sticky;\n  top: 0;\n  z-index: 1000;\n  /* Эффект \"стекла\" */\n  background: rgba(17, 24, 39, 0.7);\n  backdrop-filter: blur(12px);\n  -webkit-backdrop-filter: blur(12px);\n  border-bottom: 1px solid rgba(255, 255, 255, 0.1);\n}\n.header-content { display: flex; align-items: center; max-width: 1400px; margin: 0 auto; padding: 0 24px; height: 70px; }\n\n.logo-link { display: flex; align-items: center; gap: 12px; text-decoration: none; }\n.logo-img { height: 38px; width: 38px; border-radius: 8px; }\n.logo-text { font-size: 1.6rem; font-weight: 700; color: #fff; }\n\n/* Навигация */\n.main-nav { margin-left: 48px; display: flex; gap: 16px; }\n.main-nav a {\n  font-size: 1rem;\n  font-weight: 500;\n  color: #9ca3af;\n  padding: 8px 14px;\n  border-radius: 8px;\n  text-decoration: none;\n  transition: color 0.2s, background-color 0.2s;\n}\n.main-nav a:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }\n/* Яркий акцент для активной ссылки */\n.main-nav a.router-link-exact-active { color: #fff; background: linear-gradient(90deg, #3b82f6, #6366f1); }\n.main-nav a.admin-link.router-link-exact-active { background: linear-gradient(90deg, #c026d3, #a21caf); }\n\n/* Кнопки пользователя */\n.user-actions { margin-left: auto; display: flex; align-items: center; gap: 16px; }\n.action-icon-link { color: #9ca3af; transition: color 0.2s; padding: 6px; display: flex; align-items: center; border-radius: 8px; text-decoration: none; }\n.action-icon-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }\n.profile-link span { margin-left: 8px; font-weight: 500; font-size: 0.95rem; }\n\n.logout-btn {\n  background: none;\n  border: 1px solid rgba(255, 255, 255, 0.2);\n  color: #9ca3af;\n  padding: 8px 14px;\n  border-radius: 8px;\n  cursor: pointer;\n  transition: all 0.2s;\n}\n.logout-btn:hover { background-color: rgba(255, 255, 255, 0.1); color: #fff; border-color: rgba(255, 255, 255, 0.3); }\n\n.auth-link { font-size: 0.95rem; font-weight: 600; padding: 9px 18px; border-radius: 8px; text-decoration: none; transition: all 0.2s; }\n.auth-link.login { color: #d1d5db; }\n.auth-link.login:hover { background-color: rgba(255, 255, 255, 0.1); }\n.auth-link.register { background: linear-gradient(90deg, #3b82f6, #6366f1); color: #fff; }\n.auth-link.register:hover { filter: brightness(1.1); }\n\n/* --- ОБНОВЛЕННЫЙ ФУТЕР --- */\n.main-footer {\n  background: rgba(17, 24, 39, 0.7);\n  color: #9ca3af;\n  border-top: 1px solid rgba(255, 255, 255, 0.1);\n  backdrop-filter: blur(12px);\n  -webkit-backdrop-filter: blur(12px);\n}\n\n.footer-main-content { max-width: 1400px; margin: 0 auto; padding: 48px 24px; }\n.footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 32px; }\n.footer-col-title { font-size: 1.1rem; font-weight: 600; color: #e5e7eb; margin-bottom: 16px; }\n.footer-col p { line-height: 1.7; margin: 0; }\n.footer-links { display: flex; flex-direction: column; gap: 10px; }\n.footer-links a { color: #9ca3af; text-decoration: none; transition: color 0.2s; }\n.footer-links a:hover { color: #60a5fa; } /* Ярче при наведении */\n\n.footer-socials { margin-top: 32px; }\n.social-links { display: flex; gap: 16px; }\n.social-link {\n  display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%;\n  background-color: rgba(255, 255, 255, 0.05);\n  transition: background-color 0.2s;\n}\n.social-link:hover { background-color: rgba(255, 255, 255, 0.15); }\n.social-link img { width: 24px; height: 24px; opacity: 0.8; }\n\n.footer-bottom-bar {\n  background: rgba(0, 0, 0, 0.2);\n  padding: 16px 24px; text-align: center; font-size: 0.9rem;\n}\n.footer-bottom-bar p { margin: 0; }\n\n@media (max-width: 768px) {\n  .main-nav { display: none; }\n  .header-content { padding: 0 16px; }\n  .logo-text { display: none; }\n}\n</style>
+<script setup>
+import { ref, onMounted } from 'vue';
+import { RouterLink, RouterView, useRouter } from 'vue-router';
+import { useAuthStore } from './stores/auth';
+import { storeToRefs } from 'pinia';
+import api from './api/axios';
+
+const authStore = useAuthStore();
+const { user, isLoggedIn } = storeToRefs(authStore);
+const router = useRouter();
+
+const popularGames = ref([]);
+
+const loadPopularGames = async () => {
+  try {
+    const { data } = await api.get('http://127.0.0.1:8000/games?is_hit=true&limit=4');
+    popularGames.value = data;
+  } catch (error) {
+    console.error("Не удалось загрузить популярные игры:", error);
+  }
+};
+
+const handleLogout = async () => {
+  await authStore.logout();
+  router.push({ name: 'login' });
+};
+
+onMounted(() => {
+  loadPopularGames();
+});
+
+</script>
+
+<template>
+  <div id="app-wrapper">
+    <header class="main-header">
+      <div class="header-content">
+        <RouterLink to="/" class="logo-link">
+          <img alt="GameStore logo" class="logo-img" src="/images.png" />
+          <span class="logo-text">GameStore</span>
+        </RouterLink>
+
+        <nav class="main-nav">
+          <RouterLink to="/">Главная</RouterLink>
+          <RouterLink to="/news">Новости</RouterLink>
+          <RouterLink to="/catalog">Каталог</RouterLink>
+          <RouterLink v-if="user?.is_admin" to="/admin" class="admin-link">Админка</RouterLink>
+        </nav>
+
+        <div class="user-actions">
+          <RouterLink to="/cart" class="action-icon-link">
+             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          </RouterLink>
+
+          <template v-if="isLoggedIn && user">
+            <RouterLink to="/profile" class="action-icon-link profile-link">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <span>{{ user.fullname }}</span>
+            </RouterLink>
+            <button @click="handleLogout" class="logout-btn">Выйти</button>
+          </template>
+          
+          <template v-else>
+            <RouterLink to="/login" class="auth-link login">Войти</RouterLink>
+            <RouterLink to="/register" class="auth-link register">Регистрация</RouterLink>
+          </template>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <RouterView />
+    </main>
+
+    <footer class="main-footer">
+      <div class="footer-main-content">
+        <div class="footer-grid">
+          <div class="footer-col footer-about">
+            <h3 class="footer-col-title">О магазине</h3>
+            <p>GameStore — онлайн-магазин цифровых ключей. Мы заботимся о том, чтобы ваши покупки были безопасными, а поддержка — доступной и понятной.</p>
+          </div>
+
+          <div class="footer-col footer-popular-games">
+            <h3 class="footer-col-title">Популярные игры</h3>
+            <div v-if="popularGames.length" class="footer-links">
+              <RouterLink v-for="game in popularGames" :key="game.id" :to="`/games/${game.id}`">
+                {{ game.title }}
+              </RouterLink>
+            </div>
+             <p v-else>Загрузка...</p>
+          </div>
+
+          <div class="footer-col footer-navigation">
+             <h3 class="footer-col-title">Навигация</h3>
+             <div class="footer-links">
+                <RouterLink to="/">Главная</RouterLink>
+                <RouterLink to="/news">Новости</RouterLink>
+                <RouterLink to="/catalog">Каталог</RouterLink>
+                <RouterLink to="/cart">Корзина</RouterLink>
+             </div>
+          </div>
+
+          <div class="footer-col footer-contacts-socials">
+            <div class="footer-contacts">
+              <h3 class="footer-col-title">Связаться с нами</h3>
+              <div class="footer-links">
+                <a href="mailto:support@gamestore.com">support@gamestore.com</a>
+                <a href="tel:+79991234567">+7 (999) 123-45-67</a>
+              </div>
+            </div>
+            <div class="footer-socials">
+              <h3 class="footer-col-title">Мы в соцсетях</h3>
+              <div class="social-links">
+                <a href="#" target="_blank" class="social-link social-link-vk">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/VK_Compact_Logo_%282021-present%29.svg/1200px-VK_Compact_Logo_%282021-present%29.svg.png" alt="VK">
+                </a>
+                <a href="#" target="_blank" class="social-link social-link-telegram">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/2048px-Telegram_logo.svg.png" alt="Telegram">
+                </a>
+                <a href="#" target="_blank" class="social-link social-link-youtube">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1280px-YouTube_full-color_icon_%282017%29.svg.png" alt="YouTube">
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom-bar">
+        <p>&copy; {{ new Date().getFullYear() }} GameStore. Все права защищены.</p>
+      </div>
+    </footer>
+  </div>
+</template>
+
+<style scoped>
+/* --- ОБНОВЛЕННЫЙ ГЛОБАЛЬНЫЙ СТИЛЬ --- */
+#app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #030712; /* Глубокий темный фон */
+  /* Эффект туманности вверху */
+  background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 113, 192, 0.2), transparent);
+}
+
+.main-content { flex-grow: 1; }
+
+/* --- ОБНОВЛЕННЫЙ ХЕДЕР --- */
+.main-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  /* Эффект стекла */
+  background: rgba(17, 24, 39, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.header-content { display: flex; align-items: center; max-width: 1400px; margin: 0 auto; padding: 0 24px; height: 70px; }
+
+.logo-link { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.logo-img { height: 38px; width: 38px; border-radius: 8px; }
+.logo-text { font-size: 1.6rem; font-weight: 700; color: #fff; }
+
+/* Навигация */
+.main-nav { margin-left: 48px; display: flex; gap: 16px; }
+.main-nav a {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #9ca3af;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: color 0.2s, background-color 0.2s;
+}
+.main-nav a:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
+/* Яркий акцент для активной ссылки */
+.main-nav a.router-link-exact-active { color: #fff; background: linear-gradient(90deg, #3b82f6, #6366f1); }
+.main-nav a.admin-link.router-link-exact-active { background: linear-gradient(90deg, #c026d3, #a21caf); }
+
+/* Кнопки пользователя */
+.user-actions { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.action-icon-link { color: #9ca3af; transition: color 0.2s; padding: 6px; display: flex; align-items: center; border-radius: 8px; text-decoration: none; }
+.action-icon-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
+.profile-link span { margin-left: 8px; font-weight: 500; font-size: 0.95rem; }
+
+.logout-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #9ca3af;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.logout-btn:hover { background-color: rgba(255, 255, 255, 0.1); color: #fff; border-color: rgba(255, 255, 255, 0.3); }
+
+.auth-link { font-size: 0.95rem; font-weight: 600; padding: 9px 18px; border-radius: 8px; text-decoration: none; transition: all 0.2s; }
+.auth-link.login { color: #d1d5db; }
+.auth-link.login:hover { background-color: rgba(255, 255, 255, 0.1); }
+.auth-link.register { background: linear-gradient(90deg, #3b82f6, #6366f1); color: #fff; }
+.auth-link.register:hover { filter: brightness(1.1); }
+
+/* --- ОБНОВЛЕННЫЙ ФУТЕР --- */
+.main-footer {
+  background: rgba(17, 24, 39, 0.7);
+  color: #9ca3af;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.footer-main-content { max-width: 1400px; margin: 0 auto; padding: 48px 24px; }
+.footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 32px; }
+.footer-col-title { font-size: 1.1rem; font-weight: 600; color: #e5e7eb; margin-bottom: 16px; }
+.footer-col p { line-height: 1.7; margin: 0; }
+.footer-links { display: flex; flex-direction: column; gap: 10px; }
+.footer-links a { color: #9ca3af; text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: #60a5fa; } /* Ярче при наведении */
+
+.footer-socials { margin-top: 32px; }
+.social-links { display: flex; gap: 16px; }
+.social-link {
+  display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.05);
+  transition: background-color 0.2s;
+}
+.social-link:hover { background-color: rgba(255, 255, 255, 0.15); }
+.social-link img { width: 24px; height: 24px; opacity: 0.8; }
+
+.footer-bottom-bar {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 16px 24px; text-align: center; font-size: 0.9rem;
+}
+.footer-bottom-bar p { margin: 0; }
+
+@media (max-width: 768px) {
+  .main-nav { display: none; }
+  .header-content { padding: 0 16px; }
+  .logo-text { display: none; }
+}
+</style>
