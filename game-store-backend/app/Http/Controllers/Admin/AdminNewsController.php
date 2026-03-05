@@ -19,13 +19,15 @@ class AdminNewsController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'image' => 'nullable|image|max:2048', // Теперь это файл изображения
+            'image' => 'nullable|image|max:2048',
             'published_at' => 'nullable|date',
         ]);
 
         if ($request->hasFile('image')) {
+            // Сохраняем файл и получаем относительный путь
             $path = $request->file('image')->store('public/images/news');
-            $validated['image'] = Storage::url($path);
+            // Сохраняем в базу только путь относительно папки 'storage/app'
+            $validated['image'] = str_replace('public/', '', $path);
         }
 
         $news = News::create($validated);
@@ -43,21 +45,26 @@ class AdminNewsController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'image' => 'nullable|image|max:2048',
+            'image' => 'nullable|sometimes|image|max:2048',
             'published_at' => 'nullable|date',
         ]);
 
         if ($request->hasFile('image')) {
-            // Удаляем старое изображение, если оно есть
+            // Если есть старое изображение, удаляем его
             if ($news->image) {
-                Storage::delete(str_replace('/storage', 'public', $news->image));
+                Storage::disk('public')->delete($news->image);
             }
 
+            // Сохраняем новый файл и получаем относительный путь
             $path = $request->file('image')->store('public/images/news');
-            $validated['image'] = Storage::url($path);
-        }
+            // Сохраняем в базу только путь относительно папки 'storage/app/public'
+            $validated['image'] = str_replace('public/', '', $path);
+        } 
 
         $news->update($validated);
+
+        // Загружаем модель заново, чтобы получить аксесуар
+        $news->refresh();
 
         return response()->json($news);
     }
@@ -65,7 +72,7 @@ class AdminNewsController extends Controller
     public function destroy(News $news)
     {
         if ($news->image) {
-            Storage::delete(str_replace('/storage', 'public', $news->image));
+            Storage::disk('public')->delete($news->image);
         }
 
         $news->delete();
