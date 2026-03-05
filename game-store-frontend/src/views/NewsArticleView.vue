@@ -41,6 +41,9 @@ const formatDate = (dateString) => {
 
 <template>
   <main class="article-page">
+    <div class="back-link-container">
+      <RouterLink to="/news" class="back-link">&larr; Обратно ко всем новостям</RouterLink>
+    </div>
     <div v-if="loading" class="loading-placeholder">Загрузка статьи...</div>
     <div v-if="error" class="error-message">{{ error }}</div>
 
@@ -148,4 +151,18 @@ const formatDate = (dateString) => {
 .share-vk { background-color: #4a76a8; }
 .share-telegram { background-color: #24a1de; }
 .share-twitter { background-color: #1da1f2; }
+.back-link-container {
+  margin-bottom: 20px;
+}
+
+.back-link {
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: #e5e7eb;
+}
 </style>

@@ -3,6 +3,7 @@
     <h1 class="page-title">Управление новостями</h1>
 
     <div class="actions-bar">
+      <RouterLink to="/admin" class="btn btn-secondary">Назад в админку</RouterLink>
       <button @click="openAddModal" class="btn btn-primary">Добавить новость</button>
     </div>
 
@@ -48,6 +49,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { RouterLink } from 'vue-router';
 import api from '../api/axios';
 import AdminNewsEditModal from './AdminNewsEditModal.vue';
 
@@ -172,8 +174,7 @@ const closeModal = () => {
 const formatDate = (dateString) => {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleString('ru-RU', {
-    year: 'numeric', month: 'long', day: 'numeric',
-    hour: '2-digit', minute: '2-digit'
+    year: 'numeric', month: 'long', day: 'numeric',    hour: '2-digit', minute: '2-digit'
   });
 };
 </script>
@@ -182,7 +183,7 @@ const formatDate = (dateString) => {
 /* Стили полностью заимствованы из AdminGames для консистентности */
 .admin-page { padding: 2rem; max-width: 1200px; margin: 0 auto;}
 .page-title { color: #fff; margin-bottom: 1.5rem; }
-.actions-bar { margin-bottom: 1.5rem; }
+.actions-bar { margin-bottom: 1.5rem; display: flex; gap: 1rem; }
 .loading-indicator, .error-message { color: #fff; text-align: center; padding: 2rem; }
 .error-message { color: #ef4444; }
 
@@ -196,7 +197,7 @@ tbody tr:last-child { border: none; }
 td { padding: 12px 15px; color: #9ca3af; }
 td.actions-cell { display: flex; gap: 10px; }
 
-.btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; font-weight: 500; }
+.btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s; font-weight: 500; text-decoration: none; display: inline-block; }
 .btn-primary { background-color: #3b82f6; color: white; }
 .btn-primary:hover { background-color: #2563eb; }
 .btn-secondary { background-color: #6b7280; color: white; }
