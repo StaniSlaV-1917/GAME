@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\News;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AdminNewsController extends Controller
 {
@@ -18,9 +19,14 @@ class AdminNewsController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'image' => 'nullable|string|max:255',
+            'image' => 'nullable|image|max:2048', // Теперь это файл изображения
             'published_at' => 'nullable|date',
         ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('public/images/news');
+            $validated['image'] = Storage::url($path);
+        }
 
         $news = News::create($validated);
 
@@ -37,9 +43,19 @@ class AdminNewsController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'image' => 'nullable|string|max:255',
+            'image' => 'nullable|image|max:2048',
             'published_at' => 'nullable|date',
         ]);
+
+        if ($request->hasFile('image')) {
+            // Удаляем старое изображение, если оно есть
+            if ($news->image) {
+                Storage::delete(str_replace('/storage', 'public', $news->image));
+            }
+
+            $path = $request->file('image')->store('public/images/news');
+            $validated['image'] = Storage::url($path);
+        }
 
         $news->update($validated);
 
@@ -48,6 +64,10 @@ class AdminNewsController extends Controller
 
     public function destroy(News $news)
     {
+        if ($news->image) {
+            Storage::delete(str_replace('/storage', 'public', $news->image));
+        }
+
         $news->delete();
 
         return response()->json(null, 204);
