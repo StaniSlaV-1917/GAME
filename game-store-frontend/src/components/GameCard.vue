@@ -31,10 +31,8 @@
               class="game-buy-btn" 
               type="button" 
               @click="handleAddToCart"
-              :disabled="isInCart"
-              :class="{ 'in-cart': isInCart }"
             >
-              {{ isInCart ? 'Добавлено' : 'В корзину' }}
+              В корзину
             </button>
             <RouterLink class="details-btn" :to="{ name: 'game', params: { id: game.id } }" title="Подробнее">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.4 2.2a2.3 2.3 0 013.2 0l7.3 8.3c.6.6.7 1.5.3 2.2l-5 8.3c-.6.9-1.8 1-2.7.3l-7.3-8.3c-.6-.6-.7-1.5-.3-2.2l5-8.3z"></path><path d="M9.2 12.3a3 3 0 11-2.8 4.3"></path></svg>
@@ -67,8 +65,6 @@ const getGameDataForCart = (gameData) => ({
     image: gameData.image,
     platform: gameData.platform,
 });
-
-const isInCart = computed(() => cartStore.getItemById(props.game.id));
 
 const handleAddToCart = () => {
   cartStore.addItem(getGameDataForCart(props.game));
