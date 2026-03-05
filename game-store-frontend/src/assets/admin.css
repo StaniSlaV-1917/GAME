@@ -1,0 +1,231 @@
+/* ========== General Admin Layout ========== */
+
+.admin-page-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+.admin-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  transition: color 0.2s ease;
+}
+
+.admin-back-button:hover {
+  color: #e5e7eb;
+}
+
+.admin-page-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #f9fafb;
+  margin-bottom: 0.5rem;
+}
+
+.admin-page-subtitle {
+  font-size: 1.1rem;
+  color: #9ca3af;
+  margin-bottom: 2.5rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+
+/* ========== Buttons ========== */
+
+.admin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-button-primary {
+  background-color: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
+}
+
+.admin-button-primary:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.admin-button-danger {
+  background-color: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
+}
+
+.admin-button-danger:hover {
+  background-color: #dc2626;
+  border-color: #dc2626;
+}
+
+.admin-button-secondary {
+  background-color: #374151;
+  color: #e5e7eb;
+  border-color: #4b5563;
+}
+
+.admin-button-secondary:hover {
+  background-color: #4b5563;
+}
+
+
+/* ========== Table Styles ========== */
+
+.admin-table-wrapper {
+  background-color: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #d1d5db;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 1rem 1.25rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-table thead {
+  background-color: #1f2937;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.admin-table tbody tr {
+  border-bottom: 1px solid #1f2937;
+}
+
+.admin-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+  background-color: #1f2937;
+}
+
+.admin-table .action-buttons {
+  width: 150px;
+}
+
+.admin-table .action-buttons .button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-table .action-buttons .button-group .admin-button {
+  width: 100%;
+  margin: 0;
+}
+
+
+
+/* ========== Loading & Error & Empty States ========== */
+
+.admin-loading,
+.admin-error,
+.admin-empty {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 2rem;
+  background-color: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  color: #9ca3af;
+  font-size: 1.1rem;
+}
+
+.admin-error {
+  color: #fca5a5;
+}
+
+
+/* ========== Modal Styles ========== */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #111827;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #1f2937;
+  width: 90%;
+  max-width: 600px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #f9fafb;
+}
+
+.modal-close-button {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.modal-close-button:hover {
+  color: #fff;
+}
+
+.modal-body {
+  margin-bottom: 2rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}

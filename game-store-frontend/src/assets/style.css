@@ -1,0 +1,537 @@
+/* ===== БАЗОВЫЙ ЛЕЙАУТ ===== */
+html, body {
+    height: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    scroll-behavior: smooth;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+    background: #111827;
+    color: #e5e7eb;
+}
+
+body {
+    flex: 1 0 auto;
+}
+
+.nav-logout-btn {
+    font-size: 0.9rem;
+    padding: 6px 14px;
+    border-radius: 6px;
+}
+
+/* ===== AUTH PAGE ===== */
+body.auth-bg {
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #020617, #020617 60%, #111827 100%);
+    color: #f9fafb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-container {
+    background: #020617;
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.7);
+    max-width: 410px;
+    margin: 18vh auto;
+    padding: 32px 26px 24px 26px;
+    box-sizing: border-box;
+    position: relative;
+    animation: fade-in-up 0.25s ease-out;
+    border: 1px solid #1f2933;
+}
+
+.auth-container h2 {
+    text-align: center;
+    margin-bottom: 24px;
+    font-size: 1.7rem;
+    font-weight: 600;
+    color: #e5e7eb;
+    letter-spacing: 0.05em;
+}
+
+.auth-form input {
+    display: block;
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    background: #020b12;
+    border: 1px solid #1f2933;
+    border-radius: 7px;
+    color: #e5e7eb;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.auth-form input:focus {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 1px rgba(34,197,94,0.4);
+    background: #020816;
+}
+
+.auth-form button {
+    width: 100%;
+    padding: 11px 0;
+    border: none;
+    background: #22c55e;
+    color: #022c22;
+    border-radius: 7px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(34,197,94,0.25);
+    letter-spacing: 0.03em;
+    transition:
+        background-color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.16s ease;
+}
+
+.auth-form button:hover {
+    background: #16a34a;
+    box-shadow: 0 14px 28px rgba(22,163,74,0.28);
+    transform: translateY(-1px);
+    color: #022c22;
+}
+
+.auth-errors {
+    background: #1f2933;
+    color: #fed7aa;
+    border-left: 4px solid #f97316;
+    border-radius: 7px;
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    font-size: 0.9em;
+    box-shadow: 0 0 0 1px rgba(15,23,42,0.5);
+}
+
+.auth-link {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.auth-link a {
+    color: #22c55e;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.14s ease;
+}
+
+.auth-link a:hover {
+    color: #4ade80;
+}
+
+/* ===== FOOTER ===== */
+.site-footer {
+    width: 100%;
+    margin-top: auto;
+    background: #020617;
+    border-top: 1px solid #111827;
+    padding: 28px 0 14px 0;
+}
+
+.footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    max-width: 1180px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 0 6vw;
+}
+
+.footer-logo a {
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-decoration: none;
+    letter-spacing: 1.1px;
+    color: #e5e7eb;
+}
+
+.footer-nav {
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.footer-nav a {
+    color: #9ca3af;
+    text-decoration: none;
+    font-size: 0.98rem;
+    transition: color 0.16s ease, border-color 0.16s ease;
+    font-weight: 500;
+    padding-bottom: 1px;
+    border-bottom: 1px solid transparent;
+}
+
+.footer-nav a:hover {
+    color: #e5e7eb;
+    border-bottom-color: #6b7280;
+}
+
+.footer-contact {
+    color: #9ca3af;
+    font-size: 0.96em;
+    min-width: 170px;
+}
+
+.footer-contact a {
+    color: #e5e7eb;
+    text-decoration: underline dotted;
+    transition: color 0.19s ease;
+}
+
+.footer-contact a:hover {
+    color: #f9fafb;
+}
+
+.footer-copyright {
+    margin-top: 5px;
+    color: #6b7280;
+    font-size: 0.92em;
+}
+
+/* ===== АНИМАЦИИ (минимал) ===== */
+@keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== КАРТОЧКИ И ИГРЫ (общие эффекты) ===== */
+.game-card {
+    animation: fade-in-up 0.3s ease-out both;
+}
+
+.games-list .game-card:nth-child(1) { animation-delay: 0.03s; }
+.games-list .game-card:nth-child(2) { animation-delay: 0.06s; }
+.games-list .game-card:nth-child(3) { animation-delay: 0.09s; }
+.games-list .game-card:nth-child(4) { animation-delay: 0.12s; }
+.games-list .game-card:nth-child(5) { animation-delay: 0.15s; }
+.games-list .game-card:nth-child(6) { animation-delay: 0.18s; }
+.games-list .game-card:nth-child(7) { animation-delay: 0.21s; }
+.games-list .game-card:nth-child(8) { animation-delay: 0.24s; }
+.games-list .game-card:nth-child(n+9) { animation-delay: 0.27s; }
+
+/* кнопки общего типа */
+.game-buy-btn,
+.order-btn,
+.auth-form button,
+.profile-form button,
+.register-form button {
+    transition:
+        background-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.16s ease;
+}
+
+/* навигация */
+.nav a {
+    position: relative;
+    transition:
+        color 0.18s ease,
+        border-bottom 0.23s ease;
+}
+
+.nav a:hover {
+    border-bottom-width: 2px;
+    border-bottom-color: #22c55e;
+}
+
+.nav a.active,
+.nav a:focus {
+    color: #22c55e !important;
+    border-bottom: 2px solid #22c55e;
+}
+
+/* ===== RESPONSIVE HEADER & NAV ===== */
+@media (max-width: 900px) {
+    header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 16px 8vw 12px 8vw !important;
+    }
+    .logo {
+        font-size: 1.5rem !important;
+        text-align: center;
+        margin: 0 auto 7px auto;
+        letter-spacing: 1px;
+    }
+    .nav {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+    }
+    .nav a {
+        font-size: 1rem !important;
+        padding: 2px 4px;
+    }
+}
+
+@media (max-width: 600px) {
+    header {
+        padding: 12px 6vw 9px 6vw !important;
+    }
+    .logo {
+        font-size: 1.15rem !important;
+        margin-bottom: 3px;
+    }
+    .nav {
+        gap: 9px;
+    }
+}
+
+/* ===== RESPONSIVE GAMES LIST & CARDS ===== */
+@media (max-width: 1200px) {
+    .games-list {
+        padding: 35px 4vw 45px 4vw !important;
+    }
+    .game-card img {
+        width: 28vw !important;
+        max-width: 190px;
+        height: 19vw !important;
+        min-height: 70px;
+        object-fit: cover;
+    }
+}
+@media (max-width: 900px) {
+    .games-list {
+        padding: 18px 2vw 30px 2vw !important;
+        gap: 22px 14px;
+    }
+    .game-card {
+        padding: 11px 7px 12px 7px !important;
+        min-width: 0;
+    }
+    .game-card img {
+        width: 35vw !important;
+        max-width: 150px;
+        height: 21vw !important;
+    }
+}
+@media (max-width: 700px) {
+    .games-list {
+        grid-template-columns: 1fr !important;
+        padding: 11px 1vw 17px 1vw !important;
+    }
+    .game-card {
+        margin-bottom: 12px;
+    }
+    .game-card img {
+        width: 94vw !important;
+        max-width: 98vw;
+        height: 36vw !important;
+        max-height: 44vw;
+    }
+}
+@media (max-width: 440px) {
+    .games-list {
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+    }
+    .nav {
+        flex-direction: column;
+        gap: 5px;
+    }
+    .game-card img {
+        width: 99vw !important;
+        max-width: 99vw;
+        height: 44vw !important;
+        min-height: 55px;
+    }
+    .game-card {
+        padding: 7px 2vw 8px 2vw !important;
+        border-radius: 10px;
+    }
+}
+
+/* ===== RESPONSIVE AUTH & FOOTER ===== */
+@media (max-width: 1200px) {
+    .footer-row {
+        max-width: 100vw;
+        padding: 0 2vw;
+    }
+    .auth-container {
+        max-width: 90vw;
+    }
+}
+@media (max-width: 900px) {
+    .auth-container {
+        padding: 28px 18px 18px 18px;
+    }
+    .footer-row {
+        flex-direction: column;
+        gap: 10px;
+        padding: 0 3vw;
+    }
+}
+@media (max-width: 800px) {
+    .footer-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 13px;
+        padding: 0 4vw;
+    }
+    .site-footer {
+        padding: 24px 0 10px 0;
+    }
+}
+@media (max-width: 700px) {
+    html, body {
+        font-size: 15px;
+    }
+    .auth-container {
+        margin: 8vw auto;
+    }
+    .site-footer {
+        padding-left: 0;
+        padding-right: 0;
+    }
+}
+@media (max-width: 600px) {
+    html, body {
+        font-size: 14px;
+    }
+    .auth-container {
+        max-width: 98vw;
+        padding: 18px 5vw 10px 5vw;
+    }
+    .footer-row, .footer-contact {
+        padding: 0 2vw;
+        min-width: 0;
+    }
+    .footer-logo a {
+        font-size: 1.4rem;
+    }
+    .footer-contact {
+        font-size: 0.9em;
+    }
+}
+@media (max-width: 440px) {
+    html, body {
+        font-size: 13px;
+    }
+    .auth-container {
+        margin: 16px auto;
+        padding: 13px 2vw 10px 2vw;
+    }
+}
+
+/* ===== ADAPTIVE FORMS ===== */
+@media (max-width: 600px) {
+    .auth-container,
+    .profile-container,
+    .register-container {
+        max-width: 99vw !important;
+        padding: 11vw 3vw 6vw 3vw !important;
+        margin: 12vw auto !important;
+    }
+    .auth-form input,
+    .auth-form button,
+    .profile-form input,
+    .profile-form button,
+    .register-form input,
+    .register-form button {
+        width: 100% !important;
+        font-size: 1em !important;
+        padding: 11px 8px !important;
+        margin-bottom: 11px !important;
+    }
+    .auth-errors {
+        padding: 7px 4vw !important;
+        font-size: 0.9em;
+        text-align: left;
+        margin-bottom: 14px !important;
+    }
+    .auth-link,
+    .profile-link {
+        padding: 7px 0 0 0;
+        font-size: 0.95em;
+        text-align: center;
+    }
+}
+@media (max-width: 420px) {
+    .auth-container,
+    .profile-container,
+    .register-container {
+        padding: 12px 1vw 13px 1vw !important;
+        margin: 13px auto !important;
+        min-width: 0 !important;
+    }
+    .auth-form input,
+    .profile-form input,
+    .register-form input {
+        font-size: 0.95em !important;
+    }
+}
+
+/* ===== RESPONSIVE TABLES ===== */
+@media (max-width: 900px) {
+    .cart-container,
+    .admin-container {
+        max-width: 98vw !important;
+        padding: 18px 2vw !important;
+        margin: 20px auto !important;
+    }
+}
+@media (max-width: 650px) {
+    .cart-table,
+    .admin-table,
+    table {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        border-radius: 8px;
+        background: none;
+        margin-bottom: 14px !important;
+        font-size: 0.97em !important;
+    }
+    .cart-table tr,
+    .admin-table tr {
+        display: table-row;
+    }
+    .cart-table th,
+    .cart-table td,
+    .admin-table th,
+    .admin-table td {
+        min-width: 90px;
+        padding: 8px 4px !important;
+        text-align: center;
+        font-size: 0.98em !important;
+    }
+    .cart-table td img {
+        width: 52px !important;
+        height: 35px !important;
+    }
+    .cart-remove,
+    .order-btn {
+        font-size: 1em !important;
+        min-width: 36px;
+        padding: 8px 0 !important;
+    }
+    .cart-total {
+        font-size: 1.04em !important;
+        text-align: right;
+    }
+}
+@media (max-width: 440px) {
+    .cart-container,
+    .admin-container {
+        padding: 7px 1vw 9px 1vw !important;
+        border-radius: 9px;
+    }
+    .cart-table,
+    .admin-table {
+        font-size: 0.96em !important;
+    }
+}
+
+/* Дополнительно: html smooth scroll */
+html { scroll-behavior: smooth; }

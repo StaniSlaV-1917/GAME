@@ -1,0 +1,277 @@
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import api from '../api/axios';
+
+const router = useRouter();
+const cart = ref(null);
+const loading = ref(true);
+const globalError = ref('');
+const successMessage = ref('');
+
+// Состояния для отдельных элементов
+const updatingItemId = ref(null);
+const removingItemId = ref(null);
+
+const loadCart = async () => {
+  loading.value = true;
+  globalError.value = '';
+  try {
+    const { data } = await api.get('/cart');
+    cart.value = data;
+  } catch (e) {
+    if (e.response?.status === 401) {
+      globalError.value = 'Необходима авторизация для просмотра корзины.';
+      cart.value = null;
+    } else {
+      globalError.value = 'Ошибка загрузки корзины.';
+    }
+  } finally {
+    loading.value = false;
+  }
+};
+
+const updateQuantity = async (itemId, newQuantity) => {
+  if (newQuantity < 1 || updatingItemId.value) return;
+  updatingItemId.value = itemId;
+  globalError.value = ''; // Сбрасываем глобальную ошибку
+  try {
+    const { data } = await api.post('/cart/update', { game_id: itemId, quantity: newQuantity });
+    if (data && data.items && data.total != null) {
+      cart.value = data;
+    } else {
+      await loadCart(); 
+    }
+  } catch (e) {
+    console.error('Ошибка обновления количества:', e.response?.data?.message || e.message);
+    globalError.value = e.response?.data?.message || 'Не удалось обновить количество. Возможно, этого товара нет в наличии.';
+    await loadCart();
+  } finally {
+    updatingItemId.value = null;
+  }
+};
+
+const removeItem = async (itemId) => {
+  if (removingItemId.value) return;
+  removingItemId.value = itemId;
+  globalError.value = '';
+  try {
+    const { data } = await api.post('/cart/remove', { game_id: itemId });
+    if (data && data.items && data.total != null) {
+      cart.value = data;
+    } else {
+      await loadCart();
+    }
+  } catch (e) {
+    globalError.value = 'Не удалось удалить товар.';
+  } finally {
+    removingItemId.value = null;
+  }
+};
+
+const makeOrder = async () => {
+  successMessage.value = '';
+  globalError.value = '';
+  loading.value = true;
+  try {
+    const { data } = await api.post('/orders');
+    successMessage.value = data.message || 'Ваш заказ успешно оформлен!';
+    cart.value = null; // Очищаем корзину в UI
+  } catch (e) {
+    globalError.value = e.response?.data?.message || 'Ошибка при оформлении заказа.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const cartItems = computed(() => cart.value?.items || []);
+const cartTotal = computed(() => cart.value?.total || 0);
+
+onMounted(loadCart);
+
+</script>
+
+<template>
+  <main class="cart-page-container">
+    <h1>Корзина</h1>
+
+    <!-- Глобальные сообщения -->
+    <div v-if="globalError" class="status-indicator error-message">{{ globalError }}</div>
+    <div v-if="loading && !cartItems.length" class="status-indicator">Загрузка...</div>
+    
+    <div v-else-if="successMessage" class="status-indicator success-message">
+      <p>{{ successMessage }}</p>
+      <button @click="router.push('/catalog')" class="action-btn">В каталог</button>
+    </div>
+    
+    <div v-else-if="!cartItems.length" class="status-indicator cart-empty">
+      <p>Ваша корзина пуста</p>
+      <button @click="router.push('/catalog')" class="action-btn">Выбрать игры</button>
+    </div>
+
+    <div v-else class="cart-layout">
+      <div class="cart-items-list">
+        <div 
+          v-for="item in cartItems" 
+          :key="item.id" 
+          class="cart-item-card" 
+          :class="{ 'is-processing': removingItemId === item.id || updatingItemId === item.id }"
+        >
+          <img :src="item.image ? `/img/${item.image}` : '/img/noimage.png'" :alt="item.title" class="item-image" />
+          
+          <div class="item-details">
+            <router-link :to="`/game/${item.id}`" class="item-title">{{ item.title }}</router-link>
+            <p class="item-meta">{{ item.platform }} / {{ item.genre }}</p>
+          </div>
+
+          <div class="item-quantity-controls">
+            <button @click="updateQuantity(item.id, item.quantity - 1)" :disabled="item.quantity <= 1 || updatingItemId === item.id">-</button>
+            <span>{{ updatingItemId === item.id ? '...' : item.quantity }}</span>
+            <button @click="updateQuantity(item.id, item.quantity + 1)" :disabled="updatingItemId === item.id">+</button>
+          </div>
+
+          <div class="item-price">
+            {{ Number(item.sum).toFixed(0) }} ₽
+          </div>
+
+          <button class="item-remove-btn" @click="removeItem(item.id)" :disabled="removingItemId === item.id">
+            &times;
+          </button>
+        </div>
+      </div>
+
+      <aside class="cart-summary-card">
+        <h2>Итог заказа</h2>
+        <div class="summary-row">
+          <span>Товары ({{ cartItems.length }})</span>
+          <span>{{ Number(cartTotal).toFixed(0) }} ₽</span>
+        </div>
+        <div class="summary-row total">
+          <span>К оплате</span>
+          <span>{{ Number(cartTotal).toFixed(0) }} ₽</span>
+        </div>
+        <button class="checkout-btn" @click="makeOrder" :disabled="loading || updatingItemId || removingItemId">
+          {{ loading ? 'Оформление...' : 'Оформить заказ' }}
+        </button>
+      </aside>
+    </div>
+  </main>
+</template>
+
+<style scoped>
+.cart-page-container { max-width: 1200px; margin: 24px auto; padding: 0 24px; color: #e5e7eb; }
+h1 { font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 24px; }
+
+.status-indicator {
+  background: #111827; 
+  border: 1px solid #1f2937;
+  border-radius: 12px; 
+  padding: 40px;
+  margin-bottom: 24px;
+  text-align: center;
+  color: #9ca3af;
+}
+.status-indicator p { margin: 0 0 16px; font-size: 1.1rem; }
+.error-message { background: #3a1a1a; border-color: #ef4444; color: #fecaca; }
+.success-message { background: #162a22; border-color: #22c55e; color: #a7f3d0; }
+
+.action-btn {
+  background: #3b82f6; color: #fff; border: none; padding: 10px 20px;
+  border-radius: 8px; font-size: 1rem; cursor: pointer; transition: background .2s;
+}
+.action-btn:hover { background: #2563eb; }
+
+.cart-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: flex-start; }
+
+.cart-items-list { display: flex; flex-direction: column; gap: 16px; }
+
+@media (max-width: 992px) {
+  .cart-layout { grid-template-columns: 1fr; }
+  .cart-summary-card { position: static; } 
+}
+
+.cart-item-card {
+  display: grid;
+  grid-template-columns: 100px 1fr auto auto auto;
+  align-items: center;
+  gap: 16px;
+  background: #111827; 
+  border: 1px solid #1f2937;
+  padding: 16px;
+  border-radius: 12px;
+  transition: opacity .2s, border-color .2s;
+}
+.cart-item-card:hover { border-color: #374151; }
+.cart-item-card.is-processing { opacity: 0.5; pointer-events: none; }
+
+.item-image { width: 100px; height: 65px; object-fit: cover; border-radius: 8px; }
+
+.item-details { display: flex; flex-direction: column; gap: 4px; }
+.item-title { font-size: 1.1rem; font-weight: 600; color: #fff; text-decoration: none; }
+.item-title:hover { color: #3b82f6; }
+.item-meta { font-size: 0.85rem; color: #6b7280; }
+
+.item-price { font-size: 1.1rem; font-weight: 600; color: #e5e7eb; white-space: nowrap; }
+
+.item-quantity-controls {
+  display: flex; align-items: center; gap: 8px; background: #1f2937; border-radius: 8px;
+}
+.item-quantity-controls button {
+  background: transparent; color: #9ca3af; border: none; font-size: 1.2rem; cursor: pointer;
+  width: 32px; height: 32px; transition: color .2s;
+}
+.item-quantity-controls button:hover:enabled { color: #fff; }
+.item-quantity-controls button:disabled { color: #4b5563; cursor: not-allowed; }
+.item-quantity-controls span { font-weight: 600; font-size: 1rem; min-width: 20px; text-align: center; }
+
+.item-remove-btn {
+  background: #374151; color: #9ca3af; width: 32px; height: 32px;
+  border: none; border-radius: 50%; font-size: 1.5rem; line-height: 1;
+  cursor: pointer; transition: all .2s;
+}
+.item-remove-btn:hover:enabled { background: #ef4444; color: #fff; }
+
+.cart-summary-card {
+  background: #111827; 
+  border: 1px solid #1f2937;
+  border-radius: 12px;
+  padding: 24px;
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cart-summary-card h2 { font-size: 1.4rem; color: #fff; margin: 0; }
+
+.summary-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 1rem; color: #9ca3af;
+}
+.summary-row.total {
+  font-size: 1.2rem; font-weight: 600; color: #fff;
+  border-top: 1px solid #374151; padding-top: 16px;
+}
+
+.checkout-btn {
+  background: #22c55e; color: #fff; border: none; padding: 12px; 
+  border-radius: 8px; font-size: 1.1rem; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.checkout-btn:hover:enabled { background: #16a34a; transform: scale(1.02); }
+.checkout-btn:disabled { background: #1e462d; color: #537a65; cursor: not-allowed; }
+
+@media (max-width: 768px) {
+  .cart-item-card {
+    grid-template-columns: 80px 1fr auto;
+    grid-template-rows: auto auto;
+    padding: 12px;
+  }
+  .item-image { grid-row: 1 / 3; }
+  .item-details { grid-column: 2 / 4; }
+  .item-quantity-controls { grid-column: 2; grid-row: 2; justify-self: start; }
+  .item-price { grid-column: 3; grid-row: 2; justify-self: end; }
+  .item-remove-btn { position: absolute; top: 12px; right: 12px; background: none; }
+}
+
+</style>
