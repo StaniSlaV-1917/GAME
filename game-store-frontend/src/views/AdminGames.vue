@@ -152,10 +152,6 @@ const handleSaveGame = async (payload) => {
     const { gameData, gameId, galleryFormData } = payload;
     let savedGame;
 
-    // *** НАЧАЛО ДИАГНОСТИЧЕСКОГО КОДА ***
-    console.log('Отправка данных на сервер:', JSON.parse(JSON.stringify(gameData)));
-    // *** КОНЕЦ ДИАГНОСТИЧЕСКОГО КОДА ***
-
     try {
         if (isEditing.value) {
             const response = await api.put(`/admin/games/${gameId}`, gameData);

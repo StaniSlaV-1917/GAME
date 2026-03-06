@@ -13,7 +13,6 @@ class Game extends Model
 
     public $timestamps = false;
 
-    // Приведено в соответствие с миграцией
     protected $fillable = [
         'title',
         'genre',
@@ -22,13 +21,27 @@ class Game extends Model
         'rating',
         'description',
         'image',
-        'trailer_url', // Добавлено
+        'trailer_url',
         'stopgame_url_code',
         'is_featured',
         'is_new',
         'old_price',
         'discount_percent',
         'release_year',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'is_featured' => 'boolean',
+        'is_new' => 'boolean',
+        'price' => 'decimal:2',
+        'old_price' => 'decimal:2',
+        'rating' => 'decimal:2',
+        'release_year' => 'integer',
     ];
 
     protected $appends = [
