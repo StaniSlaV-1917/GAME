@@ -18,7 +18,6 @@ const AdminNews = () => import('../views/AdminNews.vue'); // << ДОБАВЛЕН
 const AdminOrders = () => import('../views/AdminOrders.vue');
 const AdminUsers = () => import('../views/AdminUsers.vue');
 const AdminReviewsPage = () => import('../views/AdminReviewsPage.vue');
-const AdminHomeEditor = () => import('../views/AdminHomeEditor.vue');
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },
@@ -63,12 +62,6 @@ const routes = [
     name: 'AdminNews',
     component: AdminNews,
     meta: { requiresAuth: true, roles: ['admin'] } 
-  },
-  {
-    path: '/admin/home-editor',
-    name: 'AdminHomeEditor',
-    component: AdminHomeEditor,
-    meta: { requiresAuth: true, roles: ['admin'] }
   },
   {
     path: '/admin/orders',
