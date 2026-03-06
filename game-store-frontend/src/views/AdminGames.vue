@@ -138,7 +138,10 @@ const openAddModal = () => {
 
 const openEditModal = (game) => {
   isEditing.value = true;
-  selectedGame.value = { ...games.value.find(g => g.id === game.id) };
+  // Мы используем find, чтобы гарантировать, что мы редактируем самую свежую версию объекта
+  const gameToEdit = games.value.find(g => g.id === game.id);
+  // Глубокое копирование, чтобы избежать мутаций до сохранения
+  selectedGame.value = JSON.parse(JSON.stringify(gameToEdit));
   isModalOpen.value = true;
 };
 
@@ -148,60 +151,60 @@ const closeModal = () => {
 };
 
 const handleSaveGame = async (payload) => {
-  const { gameData, gameId, galleryFormData } = payload;
-  
-  try {
+    const { gameData, gameId, galleryFormData } = payload;
     let savedGame;
-    // Сначала сохраняем основную информацию об игре
-    if (isEditing.value) {
-      const response = await api.put(`/admin/games/${gameId}`, gameData);
-      savedGame = response.data;
-      const index = games.value.findIndex(g => g.id === savedGame.id);
-      if (index !== -1) games.value[index] = savedGame;
-      showToast(`Игра "${savedGame.title}" успешно обновлена`);
-    } else {
-      const response = await api.post('/admin/games', gameData);
-      savedGame = response.data;
-      games.value.unshift(savedGame);
-      showToast(`Игра "${savedGame.title}" успешно создана`);
+
+    try {
+        if (isEditing.value) {
+            const response = await api.put(`/admin/games/${gameId}`, gameData);
+            savedGame = response.data;
+            const index = games.value.findIndex(g => g.id === savedGame.id);
+            if (index !== -1) {
+                games.value[index] = savedGame;
+            }
+            showToast(`Игра "${savedGame.title}" успешно обновлена`);
+        } else {
+            const response = await api.post('/admin/games', gameData);
+            savedGame = response.data;
+            games.value.unshift(savedGame);
+            showToast(`Игра "${savedGame.title}" успешно создана`);
+        }
+
+        if (galleryFormData && savedGame && galleryFormData.has('gallery[0]')) {
+            await handleUploadGallery({ galleryFormData, gameId: savedGame.id });
+            // После загрузки галереи, нужно обновить данные игры, чтобы получить новые images
+            const freshGameData = await api.get(`/admin/games/${savedGame.id}`);
+            const index = games.value.findIndex(g => g.id === savedGame.id);
+            if (index !== -1) {
+                games.value[index] = freshGameData.data;
+            }
+        }
+
+    } catch (e) {
+        console.error('Save/Upload Error:', e);
+        const errorMessage = e.response?.data?.message || 'Произошла ошибка при сохранении игры';
+        showToast(errorMessage);
+    } finally {
+        closeModal();
     }
-
-    // Затем, если есть галерея, загружаем ее
-    if (galleryFormData) {
-      await handleUploadGallery({ galleryFormData, gameId: savedGame.id });
-    }
-
-    // Обновляем список, чтобы увидеть все изменения
-    loadGames();
-
-  } catch (e) {
-    console.error('Save/Upload Error:', e);
-    const errorMessage = e.response?.data?.message || 'Произошла ошибка при сохранении игры';
-    showToast(errorMessage);
-  } finally {
-    closeModal();
-  }
 };
 
-// Эта функция теперь в основном вызывается из handleSaveGame
 const handleUploadGallery = async (payload) => {
     const { galleryFormData, gameId } = payload;
     if (!gameId) {
         showToast('Ошибка: ID игры не найден для загрузки галереи.');
         return;
     }
-
     try {
         await api.post(`/admin/games/${gameId}/gallery`, galleryFormData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
         showToast('Галерея успешно обновлена!');
-    } catch(e) {
-        console.error(e);
-        const errorMessage = e.response?.data?.message || 'Произошла ошибка при загрузке галереи';
-        showToast(errorMessage);
+    } catch (e) {
+        console.error('Ошибка при загрузке галереи:', e);
+        showToast(e.response?.data?.message || 'Произошла ошибка при загрузке галереи');
     }
-}
+};
 
 const handleDeleteImage = async (payload) => {
     const { gameId, imageId } = payload;
