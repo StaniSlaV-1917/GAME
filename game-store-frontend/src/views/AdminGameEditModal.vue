@@ -1,4 +1,3 @@
-
 <template>
   <div class="modal-overlay" @click.self="close">
     <div class="modal-content">
@@ -28,9 +27,9 @@
             <label for="release_year">Год выхода</label>
             <input id="release_year" v-model.number="form.release_year" type="number">
           </div>
-          <div class="form-group">
-            <label for="trailer_url">URL трейлера (YouTube)</label>
-            <input id="trailer_url" v-model="form.trailer_url" type="text" placeholder="https://www.youtube.com/watch?v=...">
+           <div class="form-group">
+            <label for="rating">Рейтинг (0-10)</label>
+            <input id="rating" v-model.number="form.rating" type="number" step="0.1">
           </div>
         </div>
 
@@ -38,6 +37,45 @@
         <div class="form-group">
             <label for="description">Описание</label>
             <textarea id="description" v-model="form.description" rows="4"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="trailer_url">URL трейлера (YouTube)</label>
+            <input id="trailer_url" v-model="form.trailer_url" type="url" placeholder="https://www.youtube.com/watch?v=...">
+        </div>
+
+        <div class="form-group">
+            <label for="stopgame_url_code">Код страницы на StopGame</label>
+            <input id="stopgame_url_code" v-model="form.stopgame_url_code" type="text" placeholder="izumrudnyy_gorod">
+        </div>
+        
+
+        <hr class="form-divider" />
+
+        <!-- Цены и скидки -->
+        <h3 class="subsection-title">Цены и скидки</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="old_price">Старая цена (₽)</label>
+                <input id="old_price" v-model.number="form.old_price" type="number" step="0.01">
+            </div>
+            <div class="form-group">
+                <label for="discount_percent">Процент скидки (%)</label>
+                <input id="discount_percent" v-model.number="form.discount_percent" type="number">
+            </div>
+        </div>
+
+        <!-- Статусы -->
+        <h3 class="subsection-title">Статусы</h3>
+        <div class="form-grid-flags">
+            <div class="form-group-checkbox">
+                <input id="is_featured" v-model="form.is_featured" type="checkbox">
+                <label for="is_featured">Хит продаж</label>
+            </div>
+            <div class="form-group-checkbox">
+                <input id="is_new" v-model="form.is_new" type="checkbox">
+                <label for="is_new">Новинка</label>
+            </div>
         </div>
 
         <hr class="form-divider" />
@@ -57,8 +95,6 @@
 
         <!-- Галерея -->
         <h3 class="subsection-title">Галерея изображений</h3>
-
-        <!-- Существующая галерея -->
         <div v-if="isEditing && form.images && form.images.length" class="gallery-grid">
           <div v-for="image in form.images" :key="image.id" class="gallery-item">
             <img :src="`http://localhost:8000${image.path}`" :alt="`Gallery image ${image.id}`"/>
@@ -66,14 +102,10 @@
           </div>
         </div>
         <p v-else-if="isEditing">У этой игры пока нет галереи.</p>
-
-        <!-- Загрузка новых изображений -->
         <div class="form-group" style="margin-top: 20px;">
-          <label for="gallery_files">Добавить изображения в галерею (будут загружены при сохранении)</label>
+          <label for="gallery_files">Добавить изображения в галерею</label>
           <input id="gallery_files" type="file" multiple @change="handleGalleryFilesChange" accept="image/*">
         </div>
-
-        <!-- Предпросмотр новых изображений галереи -->
         <div v-if="newGalleryFiles.length" class="gallery-grid">
             <div v-for="(preview, index) in newGalleryFiles" :key="index" class="gallery-item new-preview">
                 <img :src="preview.url" :alt="`Preview ${preview.name}`" />
@@ -93,26 +125,37 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch } from 'vue';
 
-const props = defineProps({
-  game: Object,
-  isEditing: Boolean
-});
-
-const emit = defineEmits(['close', 'save', 'delete-image', 'upload-gallery']);
+const props = defineProps({ game: Object, isEditing: Boolean });
+const emit = defineEmits(['close', 'save', 'delete-image']);
 
 const form = ref({});
 const newGalleryFiles = ref([]); // Массив объектов { file, url, name }
 
+const getInitialForm = () => ({
+    title: '',
+    genre: '',
+    platform: 'PC',
+    price: 0,
+    old_price: null,
+    discount_percent: null,
+    rating: null,
+    release_year: new Date().getFullYear(),
+    description: '',
+    image: '',
+    stopgame_url_code: '',
+    trailer_url: '',
+    is_featured: false,
+    is_new: false,
+    images: [],
+});
+
 watch(() => props.game, (newGame) => {
   if (props.isEditing && newGame) {
-    form.value = { ...newGame, images: newGame.images || [] };
+    form.value = { ...getInitialForm(), ...newGame };
   } else {
-    form.value = {
-        title: '', price: 0, platform: 'PC', genre: '', release_year: new Date().getFullYear(),
-        description: '', trailer_url: '', image: '', images: []
-    };
+    form.value = getInitialForm();
   }
   newGalleryFiles.value = [];
 }, { immediate: true, deep: true });
@@ -120,11 +163,7 @@ watch(() => props.game, (newGame) => {
 const handleGalleryFilesChange = (event) => {
   const files = Array.from(event.target.files);
   files.forEach(file => {
-      newGalleryFiles.value.push({
-          file: file,
-          url: URL.createObjectURL(file),
-          name: file.name,
-      });
+      newGalleryFiles.value.push({ file: file, url: URL.createObjectURL(file), name: file.name });
   });
   event.target.value = null;
 };
@@ -135,21 +174,24 @@ const removeNewGalleryFile = (index) => {
 };
 
 const handleSubmit = () => {
-  const gameData = {
-    title: form.value.title,
-    price: form.value.price,
-    platform: form.value.platform,
-    genre: form.value.genre,
-    release_year: form.value.release_year,
-    description: form.value.description,
-    trailer_url: form.value.trailer_url,
-    image: form.value.image,
-  };
+  // Создаем чистый объект данных для отправки
+  const gameData = { ...form.value };
+
+  // Преобразуем булевы значения в 0 или 1 для бэкенда
+  gameData.is_featured = gameData.is_featured ? 1 : 0;
+  gameData.is_new = gameData.is_new ? 1 : 0;
+
+  // Удаляем реактивные и ненужные для бэкенда свойства
+  delete gameData.images;
+  delete gameData.average_review_rating;
+  delete gameData.reviews_count;
 
   const galleryFormData = new FormData();
-  newGalleryFiles.value.forEach(fileObj => {
-    galleryFormData.append('gallery[]', fileObj.file);
-  });
+  if (newGalleryFiles.value.length > 0) {
+    newGalleryFiles.value.forEach(fileObj => {
+        galleryFormData.append('gallery[]', fileObj.file);
+    });
+  }
 
   emit('save', {
     gameData,
@@ -166,23 +208,27 @@ const requestImageDelete = (image) => {
     }
 };
 
-const close = () => {
-  emit('close');
-};
+const close = () => { emit('close'); };
 
 </script>
 
 <style scoped>
-/* Стили остаются такими же, как и были */
+/* Стили остаются без изменений */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;}
 .modal-content { background-color: #2a3a50; padding: 25px; border-radius: 10px; width: 90%; max-width: 750px; max-height: 90vh; overflow-y: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.4);}
 .modal-title { margin: 0 0 20px; color: #fff; font-size: 1.6rem; font-weight: 600; border-bottom: 1px solid #4a5a70; padding-bottom: 15px;}
 .subsection-title { color: #a0c3ff; font-size: 1.2rem; margin: 25px 0 15px; font-weight: 500; border-bottom: 1px solid #4a5a70; padding-bottom: 8px;}
 .form-divider { border: none; border-top: 1px solid #4a5a70; margin: 25px 0;}
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;}
+.form-grid-flags { display: flex; gap: 30px; align-items: center; margin: 20px 0; }
 .form-group { display: flex; flex-direction: column; margin-bottom: 15px;}
+.form-group-checkbox { display: flex; align-items: center; gap: 10px; }
+.form-group-checkbox label { margin: 0; color: #c0d0e0; font-size: 1rem; font-weight: 500; cursor: pointer; }
+.form-group-checkbox input { width: 18px; height: 18px; accent-color: #3b82f6; cursor: pointer; }
 .form-group label { margin-bottom: 8px; color: #c0d0e0; font-size: 0.9rem; font-weight: 500;}
 .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #4a5a70; border-radius: 5px; background-color: #1e2a3a; color: #e0e0e0; font-size: 1rem; transition: border-color 0.2s;}
+.form-group input[type="number"] { -moz-appearance: textfield; }
+.form-group input[type="number"]::-webkit-outer-spin-button, .form-group input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #3b82f6;}
 .form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #4a5a70;}
 .btn-save, .btn-cancel { padding: 12px 24px; border-radius: 6px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s;}
@@ -195,63 +241,11 @@ const close = () => {
 .image-preview-container { margin-top: 15px; }
 .image-preview { max-width: 150px; border-radius: 5px; border: 2px solid #4a5a70; }
 
-.gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 15px;
-    margin-top: 10px;
-}
-
-.gallery-item {
-    position: relative;
-    border-radius: 5px;
-    overflow: hidden;
-}
-
-.gallery-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.gallery-item .btn-delete-img {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background-color: rgba(239, 68, 68, 0.8);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-    line-height: 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    opacity: 0;
-}
-
-.gallery-item:hover .btn-delete-img {
-    opacity: 1;
-}
-
-.gallery-item.new-preview .file-name {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    background: rgba(0,0,0,0.6);
-    color: #fff;
-    font-size: 11px;
-    padding: 4px;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.gallery-item.new-preview .btn-delete-img {
-    opacity: 1; /* Всегда показывать кнопку для новых превью */
-}
-
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; margin-top: 10px; }
+.gallery-item { position: relative; border-radius: 5px; overflow: hidden; }
+.gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-item .btn-delete-img { position: absolute; top: 5px; right: 5px; background-color: rgba(239, 68, 68, 0.8); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; line-height: 24px; text-align: center; cursor: pointer; transition: background-color 0.2s; opacity: 0; }
+.gallery-item:hover .btn-delete-img { opacity: 1; }
+.gallery-item.new-preview .file-name { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); color: #fff; font-size: 11px; padding: 4px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gallery-item.new-preview .btn-delete-img { opacity: 1; }
 </style>

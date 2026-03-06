@@ -138,9 +138,7 @@ const openAddModal = () => {
 
 const openEditModal = (game) => {
   isEditing.value = true;
-  // Мы используем find, чтобы гарантировать, что мы редактируем самую свежую версию объекта
   const gameToEdit = games.value.find(g => g.id === game.id);
-  // Глубокое копирование, чтобы избежать мутаций до сохранения
   selectedGame.value = JSON.parse(JSON.stringify(gameToEdit));
   isModalOpen.value = true;
 };
@@ -153,6 +151,10 @@ const closeModal = () => {
 const handleSaveGame = async (payload) => {
     const { gameData, gameId, galleryFormData } = payload;
     let savedGame;
+
+    // *** НАЧАЛО ДИАГНОСТИЧЕСКОГО КОДА ***
+    console.log('Отправка данных на сервер:', JSON.parse(JSON.stringify(gameData)));
+    // *** КОНЕЦ ДИАГНОСТИЧЕСКОГО КОДА ***
 
     try {
         if (isEditing.value) {
@@ -172,7 +174,6 @@ const handleSaveGame = async (payload) => {
 
         if (galleryFormData && savedGame && galleryFormData.has('gallery[0]')) {
             await handleUploadGallery({ galleryFormData, gameId: savedGame.id });
-            // После загрузки галереи, нужно обновить данные игры, чтобы получить новые images
             const freshGameData = await api.get(`/admin/games/${savedGame.id}`);
             const index = games.value.findIndex(g => g.id === savedGame.id);
             if (index !== -1) {
