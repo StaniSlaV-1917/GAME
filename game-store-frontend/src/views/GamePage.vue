@@ -144,9 +144,8 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
           </div>
           <button 
             @click="addToCart" 
-            :disabled="isInCart" 
-            :class="['add-to-cart-btn', { 'in-cart': isInCart }]">
-            {{ isInCart ? 'Добавлено в корзину' : 'Добавить в корзину' }}
+            class="add-to-cart-btn">
+            Добавить в корзину
           </button>
           <p class="delivery-info">Мгновенная доставка ключа на e-mail</p>
         </div>
