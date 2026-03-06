@@ -76,8 +76,7 @@
       :is-editing="isEditing" 
       :game="selectedGame" 
       @close="closeModal" 
-      @save="handleSave"
-      @upload-gallery="handleUploadGallery"
+      @save="handleSaveGame"
       @delete-image="handleDeleteImage"
     />
     <div v-if="toastVisible" class="admin-toast">{{ toastText }}</div>
@@ -139,7 +138,7 @@ const openAddModal = () => {
 
 const openEditModal = (game) => {
   isEditing.value = true;
-  selectedGame.value = games.value.find(g => g.id === game.id);
+  selectedGame.value = { ...games.value.find(g => g.id === game.id) };
   isModalOpen.value = true;
 };
 
@@ -148,11 +147,12 @@ const closeModal = () => {
   selectedGame.value = null;
 };
 
-// Обработка сохранения текстовых данных
-const handleSave = async (payload) => {
-  const { gameData, gameId } = payload;
+const handleSaveGame = async (payload) => {
+  const { gameData, gameId, galleryFormData } = payload;
+  
   try {
     let savedGame;
+    // Сначала сохраняем основную информацию об игре
     if (isEditing.value) {
       const response = await api.put(`/admin/games/${gameId}`, gameData);
       savedGame = response.data;
@@ -165,46 +165,37 @@ const handleSave = async (payload) => {
       games.value.unshift(savedGame);
       showToast(`Игра "${savedGame.title}" успешно создана`);
     }
-    // Важно: обновляем selectedGame, чтобы в него попал ID созданной игры
-    if (!isEditing.value) {
-        selectedGame.value = savedGame;
-        isEditing.value = true; // Переключаем в режим редактирования для загрузки галереи
+
+    // Затем, если есть галерея, загружаем ее
+    if (galleryFormData) {
+      await handleUploadGallery({ galleryFormData, gameId: savedGame.id });
     }
 
+    // Обновляем список, чтобы увидеть все изменения
+    loadGames();
+
   } catch (e) {
-    console.error(e);
+    console.error('Save/Upload Error:', e);
     const errorMessage = e.response?.data?.message || 'Произошла ошибка при сохранении игры';
     showToast(errorMessage);
-    closeModal(); // Закрываем в случае ошибки
+  } finally {
+    closeModal();
   }
 };
 
-// Обработка загрузки файлов галереи
+// Эта функция теперь в основном вызывается из handleSaveGame
 const handleUploadGallery = async (payload) => {
     const { galleryFormData, gameId } = payload;
     if (!gameId) {
-        showToast('Сначала нужно сохранить игру, чтобы добавить галерею');
+        showToast('Ошибка: ID игры не найден для загрузки галереи.');
         return;
     }
 
     try {
-        const response = await api.post(`/admin/games/${gameId}/gallery`, galleryFormData, {
+        await api.post(`/admin/games/${gameId}/gallery`, galleryFormData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         });
-
-        const newImages = response.data;
-        const gameIndex = games.value.findIndex(g => g.id === gameId);
-        if (gameIndex !== -1) {
-            games.value[gameIndex].images.push(...newImages);
-        }
-
-        // Обновляем и selectedGame, если модалка еще открыта
-        if (selectedGame.value && selectedGame.value.id === gameId) {
-            selectedGame.value.images.push(...newImages);
-        }
-
-        showToast('Изображения галереи успешно загружены');
-
+        showToast('Галерея успешно обновлена!');
     } catch(e) {
         console.error(e);
         const errorMessage = e.response?.data?.message || 'Произошла ошибка при загрузке галереи';
@@ -212,21 +203,15 @@ const handleUploadGallery = async (payload) => {
     }
 }
 
-// Обработка удаления изображения из галереи
 const handleDeleteImage = async (payload) => {
     const { gameId, imageId } = payload;
     try {
         await api.delete(`/admin/games/${gameId}/gallery/${imageId}`);
         showToast('Изображение удалено');
-
-        const gameIndex = games.value.findIndex(g => g.id === gameId);
-        if (gameIndex !== -1) {
-            games.value[gameIndex].images = games.value[gameIndex].images.filter(img => img.id !== imageId);
+        const game = games.value.find(g => g.id === gameId);
+        if (game) {
+            game.images = game.images.filter(img => img.id !== imageId);
         }
-        if (selectedGame.value && selectedGame.value.id === gameId) {
-             selectedGame.value.images = selectedGame.value.images.filter(img => img.id !== imageId);
-        }
-
     } catch (error) {
         console.error('Ошибка при удалении изображения:', error);
         showToast('Не удалось удалить изображение.');

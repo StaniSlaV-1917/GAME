@@ -7,10 +7,58 @@ use Illuminate\Http\Request;
 
 class CartController extends Controller
 {
+    // POST /api/cart/sync
+    // Новый метод для синхронизации корзины из localStorage
+    public function sync(Request $request)
+    {
+        $data = $request->validate([
+            'game_ids'   => 'present|array',
+            'game_ids.*' => 'integer|exists:games,id',
+        ]);
+
+        $gameIds = $data['game_ids'];
+
+        if (empty($gameIds)) {
+            return response()->json(['items' => [], 'total' => 0]);
+        }
+
+        // Получаем игры и индексируем по ID для быстрого доступа
+        $games = Game::whereIn('id', $gameIds)->get();
+
+        $items = [];
+        $total = 0;
+
+        // Считаем количество каждого товара
+        $quantities = array_count_values($gameIds);
+
+        foreach ($games as $game) {
+            $quantity = $quantities[$game->id] ?? 1;
+            $sum = $game->price * $quantity;
+            $items[] = [
+                'id'       => $game->id,
+                'title'    => $game->title,
+                'genre'    => $game->genre,
+                'platform' => $game->platform,
+                'image'    => $game->image,
+                'price'    => $game->price,
+                'quantity' => $quantity,
+                'sum'      => $sum,
+            ];
+            $total += $sum;
+        }
+
+        // Сортируем, чтобы порядок товаров в корзине был предсказуемым
+        usort($items, fn($a, $b) => $a['id'] <=> $b['id']);
+
+        return response()->json([
+            'items' => $items,
+            'total' => $total,
+        ]);
+    }
+
     // GET /api/cart
     public function index(Request $request)
     {
-        // Просто возвращаем актуальное состояние корзины
         return $this->buildCartResponse($request);
     }
 
@@ -24,12 +72,10 @@ class CartController extends Controller
         $cart = $request->session()->get('cart', []);
         $gameId = $data['game_id'];
 
-        // Увеличиваем количество товара или добавляем новый
         $cart[$gameId] = ($cart[$gameId] ?? 0) + 1;
 
         $request->session()->put('cart', $cart);
         
-        // Возвращаем обновленное состояние корзины
         return $this->buildCartResponse($request);
     }
 
@@ -38,21 +84,19 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'game_id'  => 'required|integer|exists:games,id',
-            'quantity' => 'required|integer|min:1', // Количество должно быть 1 или больше
+            'quantity' => 'required|integer|min:1',
         ]);
 
         $cart = $request->session()->get('cart', []);
         $gameId = $data['game_id'];
         $quantity = $data['quantity'];
 
-        // Устанавливаем точное количество для товара
         if (isset($cart[$gameId])) {
             $cart[$gameId] = $quantity;
         }
 
         $request->session()->put('cart', $cart);
 
-        // Возвращаем обновленное состояние корзины, которое ждет фронтенд
         return $this->buildCartResponse($request);
     }
 
@@ -70,14 +114,9 @@ class CartController extends Controller
 
         $request->session()->put('cart', $cart);
 
-        // Возвращаем обновленное состояние корзины
         return $this->buildCartResponse($request);
     }
 
-    /**
-     * Приватный метод для сборки ответа с содержимым корзины.
-     * Используется всеми методами контроллера, чтобы избежать дублирования кода.
-     */
     private function buildCartResponse(Request $request)
     {
         $cart = $request->session()->get('cart', []);
@@ -87,7 +126,6 @@ class CartController extends Controller
         }
 
         $ids = array_keys($cart);
-        // Получаем игры и индексируем по ID для быстрого доступа
         $games = Game::whereIn('id', $ids)->get()->keyBy('id');
 
         $items = [];
@@ -96,7 +134,6 @@ class CartController extends Controller
         foreach ($cart as $gameId => $quantity) {
             $game = $games->get($gameId);
 
-            // Добавляем товар, только если он все еще существует в БД
             if ($game) {
                 $sum = $game->price * $quantity;
                 $items[] = [
@@ -113,7 +150,6 @@ class CartController extends Controller
             }
         }
         
-        // Сортируем, чтобы порядок товаров в корзине был предсказуемым
         usort($items, fn($a, $b) => $a['id'] <=> $b['id']);
 
         return response()->json([

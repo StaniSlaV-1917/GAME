@@ -135,30 +135,27 @@ const removeNewGalleryFile = (index) => {
 };
 
 const handleSubmit = () => {
-  // 1. Отправляем основные данные игры (текстовые поля)
-  const gameData = { ...form.value };
-  emit('save', { gameData, gameId: props.game?.id });
+  const gameData = {
+    title: form.value.title,
+    price: form.value.price,
+    platform: form.value.platform,
+    genre: form.value.genre,
+    release_year: form.value.release_year,
+    description: form.value.description,
+    trailer_url: form.value.trailer_url,
+    image: form.value.image,
+  };
 
-  // 2. Если есть новые файлы для галереи, отправляем их отдельно
-  if (newGalleryFiles.value.length > 0) {
-      const galleryFormData = new FormData();
-      newGalleryFiles.value.forEach(fileObj => {
-          galleryFormData.append('gallery[]', fileObj.file);
-      });
+  const galleryFormData = new FormData();
+  newGalleryFiles.value.forEach(fileObj => {
+    galleryFormData.append('gallery[]', fileObj.file);
+  });
 
-      // Если игра новая, мы не можем сразу загрузить галерею, т.к. не знаем ID
-      // В этом случае событие 'save' вернет промис, который разрешится с созданной игрой
-      if (!props.isEditing) {
-          const savePromise = emit('save', { gameData, gameId: null });
-          if(savePromise && typeof savePromise.then === 'function') {
-              savePromise.then(createdGame => {
-                  emit('upload-gallery', { galleryFormData, gameId: createdGame.id });
-              })
-          }
-      } else {
-          emit('upload-gallery', { galleryFormData, gameId: props.game.id });
-      }
-  }
+  emit('save', {
+    gameData,
+    gameId: props.game?.id,
+    galleryFormData: newGalleryFiles.value.length > 0 ? galleryFormData : null
+  });
 
   close();
 };

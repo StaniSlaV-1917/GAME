@@ -35,6 +35,8 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+// --- Публичный маршрут для синхронизации корзины --- //
+Route::post('/cart/sync', [CartController::class, 'sync']);
 
 // --- Админка (защищено) --- //
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {

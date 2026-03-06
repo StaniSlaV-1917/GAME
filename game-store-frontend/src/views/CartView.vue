@@ -2,14 +2,15 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../api/axios';
+import { useCartStore } from '../stores/cart';
 
 const router = useRouter();
-const cart = ref(null);
+const cartStore = useCartStore();
 const loading = ref(true);
 const globalError = ref('');
 const successMessage = ref('');
 
-// Состояния для отдельных элементов
+const cart = ref(null);
 const updatingItemId = ref(null);
 const removingItemId = ref(null);
 
@@ -17,56 +18,29 @@ const loadCart = async () => {
   loading.value = true;
   globalError.value = '';
   try {
-    const { data } = await api.get('/cart');
+    const game_ids = cartStore.items.map(item => item.id);
+    const { data } = await api.post('/cart/sync', { game_ids });
     cart.value = data;
   } catch (e) {
-    if (e.response?.status === 401) {
-      globalError.value = 'Необходима авторизация для просмотра корзины.';
-      cart.value = null;
-    } else {
-      globalError.value = 'Ошибка загрузки корзины.';
-    }
+    globalError.value = 'Ошибка загрузки корзины.';
+    cart.value = null; // Очистка старых данных
   } finally {
     loading.value = false;
   }
 };
 
 const updateQuantity = async (itemId, newQuantity) => {
-  if (newQuantity < 1 || updatingItemId.value) return;
-  updatingItemId.value = itemId;
-  globalError.value = ''; // Сбрасываем глобальную ошибку
-  try {
-    const { data } = await api.post('/cart/update', { game_id: itemId, quantity: newQuantity });
-    if (data && data.items && data.total != null) {
-      cart.value = data;
-    } else {
-      await loadCart(); 
-    }
-  } catch (e) {
-    console.error('Ошибка обновления количества:', e.response?.data?.message || e.message);
-    globalError.value = e.response?.data?.message || 'Не удалось обновить количество. Возможно, этого товара нет в наличии.';
-    await loadCart();
-  } finally {
-    updatingItemId.value = null;
+  if (newQuantity < 1) return;
+  const item = cart.value.items.find(i => i.id === itemId);
+  if (item) {
+    item.quantity = newQuantity;
+    cartStore.items.find(i => i.id === itemId).quantity = newQuantity;
   }
 };
 
 const removeItem = async (itemId) => {
-  if (removingItemId.value) return;
-  removingItemId.value = itemId;
-  globalError.value = '';
-  try {
-    const { data } = await api.post('/cart/remove', { game_id: itemId });
-    if (data && data.items && data.total != null) {
-      cart.value = data;
-    } else {
-      await loadCart();
-    }
-  } catch (e) {
-    globalError.value = 'Не удалось удалить товар.';
-  } finally {
-    removingItemId.value = null;
-  }
+  cartStore.removeItem(itemId);
+  loadCart(); // Перезагружаем корзину с сервера
 };
 
 const makeOrder = async () => {
@@ -76,19 +50,22 @@ const makeOrder = async () => {
   try {
     const { data } = await api.post('/orders');
     successMessage.value = data.message || 'Ваш заказ успешно оформлен!';
-    cart.value = null; // Очищаем корзину в UI
+    cartStore.clearCart();
+    cart.value = null; 
   } catch (e) {
-    globalError.value = e.response?.data?.message || 'Ошибка при оформлении заказа.';
+    globalError.value = e.response?.data?.message || 'Ошибка при оформлении заказа. Возможно, вы не авторизованы.';
   } finally {
     loading.value = false;
   }
 };
 
 const cartItems = computed(() => cart.value?.items || []);
-const cartTotal = computed(() => cart.value?.total || 0);
+const cartTotal = computed(() => {
+  if (!cart.value || !cart.value.items) return 0;
+  return cart.value.items.reduce((total, item) => total + item.price * item.quantity, 0);
+});
 
 onMounted(loadCart);
-
 </script>
 
 <template>
@@ -120,7 +97,7 @@ onMounted(loadCart);
           <img :src="item.image ? `/img/${item.image}` : '/img/noimage.png'" :alt="item.title" class="item-image" />
           
           <div class="item-details">
-            <router-link :to="`/game/${item.id}`" class="item-title">{{ item.title }}</router-link>
+            <router-link :to="`/games/${item.id}`" class="item-title">{{ item.title }}</router-link>
             <p class="item-meta">{{ item.platform }} / {{ item.genre }}</p>
           </div>
 
@@ -131,7 +108,7 @@ onMounted(loadCart);
           </div>
 
           <div class="item-price">
-            {{ Number(item.sum).toFixed(0) }} ₽
+            {{ Number(item.price * item.quantity).toFixed(0) }} ₽
           </div>
 
           <button class="item-remove-btn" @click="removeItem(item.id)" :disabled="removingItemId === item.id">
