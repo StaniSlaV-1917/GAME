@@ -145,7 +145,19 @@ const handleSubmit = () => {
       newGalleryFiles.value.forEach(fileObj => {
           galleryFormData.append('gallery[]', fileObj.file);
       });
-      emit('upload-gallery', { galleryFormData, gameId: props.game.id });
+
+      // Если игра новая, мы не можем сразу загрузить галерею, т.к. не знаем ID
+      // В этом случае событие 'save' вернет промис, который разрешится с созданной игрой
+      if (!props.isEditing) {
+          const savePromise = emit('save', { gameData, gameId: null });
+          if(savePromise && typeof savePromise.then === 'function') {
+              savePromise.then(createdGame => {
+                  emit('upload-gallery', { galleryFormData, gameId: createdGame.id });
+              })
+          }
+      } else {
+          emit('upload-gallery', { galleryFormData, gameId: props.game.id });
+      }
   }
 
   close();
@@ -160,6 +172,7 @@ const requestImageDelete = (image) => {
 const close = () => {
   emit('close');
 };
+
 </script>
 
 <style scoped>
