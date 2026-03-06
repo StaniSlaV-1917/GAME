@@ -26,13 +26,13 @@ class AdminGamesController extends Controller
     {
         $validated = $request->validate([
             'title'             => 'required|string|max:255',
-            'genre'             => 'string|max:100',
-            'platform'          => 'string|max:100',
+            'genre'             => 'nullable|string|max:100',
+            'platform'          => 'nullable|string|max:100',
             'price'             => 'required|numeric|min:0',
             'rating'            => 'nullable|numeric|min:0|max:10',
             'description'       => 'nullable|string',
             'image'             => 'nullable|string',
-            'trailer_url'       => 'nullable|string|max:255',
+            'trailer_url'       => 'nullable|url|max:255',
             'stopgame_url_code' => 'nullable|string|max:255',
             'is_featured'       => 'boolean',
             'is_new'            => 'boolean',
@@ -50,19 +50,19 @@ class AdminGamesController extends Controller
     {
         $validated = $request->validate([
             'title'             => 'sometimes|string|max:255',
-            'genre'             => 'sometimes|string|max:100',
-            'platform'          => 'sometimes|string|max:100',
+            'genre'             => 'sometimes|nullable|string|max:100',
+            'platform'          => 'sometimes|nullable|string|max:100',
             'price'             => 'sometimes|numeric|min:0',
-            'rating'            => 'nullable|numeric|min:0|max:10',
-            'description'       => 'nullable|string',
-            'image'             => 'nullable|string',
-            'trailer_url'       => 'nullable|string|max:255',
-            'stopgame_url_code' => 'nullable|string|max:255',
+            'rating'            => 'sometimes|nullable|numeric|min:0|max:10',
+            'description'       => 'sometimes|nullable|string',
+            'image'             => 'sometimes|nullable|string',
+            'trailer_url'       => 'sometimes|nullable|url|max:255',
+            'stopgame_url_code' => 'sometimes|nullable|string|max:255',
             'is_featured'       => 'sometimes|boolean',
             'is_new'            => 'sometimes|boolean',
-            'old_price'         => 'nullable|numeric|min:0',
-            'discount_percent'  => 'nullable|integer|min:0|max:100',
-            'release_year'      => 'nullable|integer|min:1980',
+            'old_price'         => 'sometimes|nullable|numeric|min:0',
+            'discount_percent'  => 'sometimes|nullable|integer|min:0|max:100',
+            'release_year'      => 'sometimes|nullable|integer|min:1980',
         ]);
 
         $game->update($validated);
