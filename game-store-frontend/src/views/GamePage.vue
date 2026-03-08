@@ -70,20 +70,18 @@ const loadSimilarGames = async (genre, currentGameId) => {
 };
 
 const stopGameUrl = computed(() => {
-    // 1. Предпочитаем прямую ссылку из данных
     if (game.value?.stopgame_url_code) {
         return game.value.stopgame_url_code;
     }
-    // 2. В качестве запасного варианта - поиск по названию
     if (game.value?.title) {
         const query = encodeURIComponent(game.value.title);
         return `https://stopgame.ru/search?q=${query}`;
     }
-    // 3. Если нет данных, возвращаем безопасное значение
     return '#';
 });
 
 const coverImageSrc = computed(() => resolveImageUrl(game.value?.image));
+const backgroundImageUrl = computed(() => game.value ? `url(${coverImageSrc.value})` : 'none');
 
 const youtubeEmbedUrl = computed(() => {
     if (!game.value?.trailer_url) return null;
@@ -139,7 +137,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 </script>
 
 <template>
-  <main class="page-wrapper">
+  <main class="page-wrapper" :class="{ 'game-loaded': game }">
     <div v-if="loading" class="status-message">Загрузка...</div>
     <div v-else-if="error" class="status-message error">{{ error }}</div>
 
@@ -229,17 +227,64 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 </template>
 
 <style scoped>
-.page-wrapper { max-width: 1200px; margin: 0 auto; padding: 24px; color: #e5e7eb; }
+.page-wrapper { 
+  position: relative;
+  max-width: 1200px; 
+  margin: 0 auto; 
+  padding: 24px; 
+  color: #e5e7eb; 
+  z-index: 1;
+}
+
+.page-wrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  background-image: v-bind(backgroundImageUrl);
+  background-size: cover;
+  background-position: center;
+  filter: blur(24px) brightness(0.4);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.8s ease-in-out;
+}
+
+.page-wrapper.game-loaded::before {
+  opacity: 1;
+}
+
+.game-layout-grid {
+  opacity: 0;
+  transition: opacity 0.5s 0.2s ease-in-out; /* Added delay */
+}
+
+.page-wrapper.game-loaded .game-layout-grid {
+  opacity: 1;
+}
+
 .status-message { text-align: center; padding: 60px; font-size: 1.2rem; }
 .status-message.error { color: #fca5a5; }
 .section-title { font-size: 1.8rem; font-weight: 700; color: #fff; margin-top: 0; margin-bottom: 20px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
-.game-header { display: grid; grid-template-columns: 300px 1fr; gap: 32px; background: #111827; padding: 24px; border-radius: 12px; margin-bottom: 32px; align-items: center; }
+
+.game-header, .content-section, .details-card, .similar-games-section {
+    background: rgba(17, 24, 39, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.game-header { display: grid; grid-template-columns: 300px 1fr; gap: 32px; padding: 24px; border-radius: 12px; margin-bottom: 32px; align-items: center; }
 .header-cover-image { width: 100%; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 .header-info-container { display: flex; flex-direction: column; }
-.game-title { font-size: 3rem; font-weight: 800; line-height: 1.1; margin: 0 0 16px; }
+.game-title { font-size: 3rem; font-weight: 800; line-height: 1.1; margin: 0 0 16px; text-shadow: 0 0 20px rgba(0,0,0,0.7); }
 .price-block { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
 .current-price { font-size: 2.5rem; font-weight: 800; color: #4ade80; }
-.old-price { font-size: 1.25rem; color: #6b7280; text-decoration: line-through; }
+.old-price { font-size: 1.25rem; color: #9ca3af; text-decoration: line-through; }
 .discount-badge { background-color: #ef4444; color: white; padding: 5px 10px; border-radius: 6px; font-weight: 700; }
 
 .action-buttons {
@@ -287,15 +332,15 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
   transform: translateY(-2px);
 }
 
-.delivery-info { color: #9ca3af; margin-top: 0; font-size: 0.9rem; text-align: center; }
+.delivery-info { color: #d1d5db; margin-top: 0; font-size: 0.9rem; text-align: center; }
 .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; }
 .main-content-col { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
-.content-section { background: #111827; border: 1px solid #1f2937; padding: 24px; border-radius: 12px; }
+.content-section { padding: 24px; border-radius: 12px; }
 .sidebar-col { position: sticky; top: 80px; align-self: start; display: flex; flex-direction: column; gap: 32px; }
-.details-card { background: #111827; border: 1px solid #1f2937; padding: 24px; border-radius: 12px; }
+.details-card { padding: 24px; border-radius: 12px; }
 .details-card-title { font-size: 1.3rem; margin: 0 0 16px; color: #fff; }
 .details-list { list-style: none; padding: 0; margin: 0; }
-.details-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #1f2937; font-size: 0.95rem; }
+.details-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 0.95rem; }
 .details-list li:last-child { border: none; }
 .details-list li span { color: #9ca3af; }
 .details-list li strong { color: #e5e7eb; }
@@ -313,7 +358,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .description-content :first-child, .content-section > p:first-child { margin-top: 0; }
 .description-content :last-child, .content-section > p:last-child { margin-bottom: 0; }
 
-.similar-games-section { margin-top: 32px; }
+.similar-games-section { margin-top: 32px; padding: 24px; border-radius: 12px;}
 .similar-games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
 .similar-game-card { text-decoration: none; background: #1f2937; border-radius: 8px; overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .similar-game-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
