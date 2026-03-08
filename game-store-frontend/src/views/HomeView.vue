@@ -11,14 +11,9 @@
       </div>
     </section>
 
-    <!-- Секция Специальные предложения -->
+    <!-- Секция Карусель Игр -->
     <section class="home-section">
-      <h2 class="section-title">Специальные предложения</h2>
-      <div v-if="loading" class="loading-placeholder">Загрузка игр...</div>
-      <div v-if="error" class="error-message">{{ error }}</div>
-      <div v-if="!loading && specialOffers.length" class="games-grid">
-        <GameCard v-for="game in specialOffers" :key="game.id" :game="game" />
-      </div>
+      <GameCarousel />
     </section>
 
     <!-- Секция "Почему мы?" -->
@@ -65,10 +60,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useHead } from '@vueuse/head';
-import api from '../api/axios';
-import GameCard from '../components/GameCard.vue';
+import GameCarousel from '../components/GameCarousel.vue';
 
 useHead({
   title: 'GameStore - Купить ключи для игр',
@@ -78,18 +72,6 @@ useHead({
       content: 'Магазин лицензионных ключей для игр. Покупайте игры для Steam, Epic Games, GOG и других платформ по выгодным ценам.'
     }
   ]
-});
-
-// --- Логика загрузки игр ---
-const allGames = ref([]);
-const loading = ref(true);
-const error = ref('');
-
-const specialOffers = computed(() => {
-  if (!allGames.value || !Array.isArray(allGames.value)) return [];
-  return allGames.value
-    .filter(g => g.discount_percent > 0 || g.is_featured)
-    .slice(0, 4);
 });
 
 // --- Логика FAQ ---
@@ -104,18 +86,7 @@ const openFaqItem = ref(null);
 const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null : id; };
 
 // --- Загрузка всех данных при монтировании ---
-onMounted(async () => {
-  loading.value = true;
-  error.value = '';
-  try {
-    const { data } = await api.get('/games');
-    allGames.value = Array.isArray(data) ? data : data.data;
-  } catch (e) {
-    console.error(e);
-    error.value = 'Не удалось загрузить спецпредложения.';
-  }
-  loading.value = false;
-
+onMounted(() => {
   if (window.particlesJS) {
     window.particlesJS('particles-js', {
       "particles": {
