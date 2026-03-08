@@ -1,224 +1,262 @@
 <template>
-  <div class="game-carousel-container">
+  <div class="carousel-container">
     <h2 class="carousel-title">Что купить сегодня?</h2>
-    <div class="game-carousel" v-if="games.length">
-      <div class="carousel-wrapper" :style="{ transform: `translateX(${translateValue}px)` }">
+    <div class="carousel-viewport">
+      <div
+        class="carousel-track"
+        :style="trackStyle"
+        ref="track"
+        @transitionend="handleTransitionEnd"
+      >
         <div
-          v-for="(game, index) in games"
-          :key="game.id"
+          v-for="(game, index) in displayedGames"
+          :key="index"
           class="game-card"
-          :class="{
-            'active': index === activeIndex,
-            'prev': index === prevIndex,
-            'next': index === nextIndex,
-            'winner': index === winnerIndex
-          }"
+          :class="{ 'active': index === activeCardIndex, 'winner': index === winnerIndex }"
         >
-          <img :src="game.cover_image_url" :alt="game.title" />
-          <div class="game-info">
-            <h3>{{ game.title }}</h3>
-            <p>{{ game.price }} руб.</p>
+          <div class="card-content">
+            <img :src="game.cover_image_url" :alt="game.title" class="game-image" />
+            <div class="game-info">
+              <h3>{{ game.title }}</h3>
+              <p>{{ game.price }} руб.</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <div v-else class="loading">Загрузка игр...</div>
-
-    <button @click="startRoulette" class="roulette-button" :disabled="isSpinning">
-      {{ isSpinning ? 'Крутится...' : 'Испытать удачу!' }}
-    </button>
+    <div class="carousel-controls">
+      <button @click="startRoulette" :disabled="isSpinning" class="roulette-button">
+        {{ isSpinning ? 'Крутится...' : 'Испытать удачу!' }}
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue';
 import axios from '@/api/axios';
 
 const games = ref([]);
-const activeIndex = ref(0);
+const displayedGames = ref([]);
 const isSpinning = ref(false);
 const winnerIndex = ref(null);
-let carouselInterval = null;
+const track = ref(null);
+
+const CARD_WIDTH = 320; // Ширина карточки + отступы
+const VISIBLE_CARDS = 5;
+const CLONES = 10; // Количество клонов для "бесконечной" прокрутки
+
+const state = reactive({
+  currentIndex: CLONES, // Начинаем с первого "настоящего" элемента
+  currentOffset: 0,
+  transitionDuration: '0s',
+});
+
+const activeCardIndex = computed(() => {
+  // Этот индекс будет постоянно указывать на центральную карту в видимой области
+  return state.currentIndex + Math.floor(VISIBLE_CARDS / 2) - 3;
+});
+
+const trackStyle = computed(() => ({
+  transform: `translateX(${state.currentOffset}px)`,
+  transition: `transform ${state.transitionDuration} cubic-bezier(0.22, 0.61, 0.36, 1)`,
+}));
+
 
 const fetchGames = async () => {
   try {
     const response = await axios.get('/games');
-    games.value = response.data;
-    // Duplicate games to create a seamless loop
-    games.value = [...games.value, ...games.value, ...games.value];
+    const originalGames = response.data;
+    if (originalGames.length > 0) {
+      // Создаем клоны для "бесконечной" прокрутки
+      const clonesStart = originalGames.slice(-CLONES);
+      const clonesEnd = originalGames.slice(0, CLONES);
+      games.value = [...clonesStart, ...originalGames, ...clonesEnd];
+      displayedGames.value = games.value;
+      await nextTick();
+      centerOnInitialCard();
+    }
   } catch (error) {
     console.error('Ошибка при загрузке игр:', error);
   }
 };
 
-const nextSlide = () => {
-  activeIndex.value = (activeIndex.value + 1) % games.value.length;
-};
-
-const startCarousel = () => {
-  carouselInterval = setInterval(nextSlide, 3000);
+const centerOnInitialCard = () => {
+  state.transitionDuration = '0s';
+  const initialOffset = -state.currentIndex * CARD_WIDTH + (window.innerWidth / 2) - (CARD_WIDTH / 2);
+  state.currentOffset = initialOffset;
 };
 
 const startRoulette = () => {
   if (isSpinning.value) return;
 
   isSpinning.value = true;
-  winnerIndex.value = null; // Reset winner on new spin
-  clearInterval(carouselInterval);
+  winnerIndex.value = null;
 
-  let spinDuration = 5000; // 5 seconds
-  let spinInterval = 50;
-  let spins = spinDuration / spinInterval;
-  let currentSpin = 0;
+  // Рассчитываем случайное количество шагов для прокрутки
+  const totalGames = games.value.length - (2 * CLONES);
+  const randomSpins = Math.floor(Math.random() * totalGames) + totalGames * 2; // Прокрутка минимум 2 круга
+  const targetIndex = state.currentIndex + randomSpins;
 
-  const spin = () => {
-    if (currentSpin < spins) {
-      nextSlide();
-      currentSpin++;
-      const easing = 1 - (currentSpin / spins);
-      spinInterval = 50 + (200 * easing); // Slow down
-      setTimeout(spin, spinInterval);
-    } else {
-      isSpinning.value = false;
-      showWinner();
-      startCarousel(); // Restart auto-scroll
-    }
-  };
+  // Рассчитываем конечное смещение
+  const finalOffset = -targetIndex * CARD_WIDTH + (window.innerWidth / 2) - (CARD_WIDTH / 2);
 
-  spin();
+  // Устанавливаем длительность анимации
+  state.transitionDuration = '6s'; // Длительность вращения
+  state.currentOffset = finalOffset;
+  state.currentIndex = targetIndex;
+};
+
+
+const handleTransitionEnd = () => {
+  // Если мы остановились на клоне, "перепрыгиваем" на реальный элемент
+  const totalOriginalGames = games.value.length - 2 * CLONES;
+  if (state.currentIndex >= totalOriginalGames + CLONES) {
+    state.transitionDuration = '0s';
+    state.currentIndex -= totalOriginalGames;
+    state.currentOffset = -state.currentIndex * CARD_WIDTH + (window.innerWidth / 2) - (CARD_WIDTH / 2);
+  } else if (state.currentIndex < CLONES) {
+      state.transitionDuration = '0s';
+    state.currentIndex += totalOriginalGames;
+    state.currentOffset = -state.currentIndex * CARD_WIDTH + (window.innerWidth / 2) - (CARD_WIDTH / 2);
+  }
+
+  if (isSpinning.value) {
+    isSpinning.value = false;
+    showWinner();
+  }
 };
 
 const showWinner = () => {
-  const winnerGame = games.value[activeIndex.value];
-  console.log('Победитель:', winnerGame.title);
+  const winnerGameIndex = state.currentIndex % (games.value.length - 2 * CLONES) + CLONES;
+  winnerIndex.value = winnerGameIndex;
   
-  winnerIndex.value = activeIndex.value;
+  const winnerGame = games.value[winnerGameIndex];
 
   setTimeout(() => {
     alert(`Поздравляем! Вы выиграли ${winnerGame.title} по специальной цене!`);
     winnerIndex.value = null;
-  }, 2500);
+  }, 3000); // Показываем свечение 3 секунды
 };
+
 
 onMounted(() => {
   fetchGames();
-  startCarousel();
+  window.addEventListener('resize', centerOnInitialCard);
 });
 
 onUnmounted(() => {
-  clearInterval(carouselInterval);
+  window.removeEventListener('resize', centerOnInitialCard);
 });
-
-const prevIndex = computed(() => (activeIndex.value - 1 + games.value.length) % games.value.length);
-const nextIndex = computed(() => (activeIndex.value + 1) % games.value.length);
-const translateValue = computed(() => {
-    if (!games.value.length) return 0;
-    const cardWidth = 300; // Adjust based on your card width + margin
-    return -activeIndex.value * cardWidth + (window.innerWidth / 2) - (cardWidth / 2);
-});
-
 </script>
 
 <style scoped>
-.game-carousel-container {
-  padding: 2rem 0;
-  text-align: center;
-  position: relative;
+.carousel-container {
+  width: 100%;
+  padding: 3rem 0;
+  background: #121212;
   overflow: hidden;
+  position: relative;
 }
 
 .carousel-title {
+  text-align: center;
   font-size: 2.5rem;
   margin-bottom: 2rem;
   color: #fff;
 }
 
-.game-carousel {
-  position: relative;
+.carousel-viewport {
   width: 100%;
-  height: 450px;
-  display: flex;
-  align-items: center;
+  position: relative;
 }
 
-.carousel-wrapper {
+.carousel-track {
   display: flex;
-  transition: transform 0.5s ease;
+  will-change: transform;
 }
 
 .game-card {
-  width: 280px;
+  width: 300px;
   margin: 0 10px;
-  border-radius: 10px;
-  overflow: hidden;
-  transition: transform 0.5s ease, filter 0.5s ease, box-shadow 0.5s ease;
-  transform: scale(0.8);
-  filter: blur(3px);
-  background: #202020;
+  flex-shrink: 0;
+  border-radius: 15px;
+  transition: transform 0.5s ease, opacity 0.5s ease;
+  transform: scale(0.85);
+  opacity: 0.5;
+  background-color: #1a1a1a;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .game-card.active {
   transform: scale(1);
-  filter: blur(0);
-  z-index: 10;
+  opacity: 1;
 }
 
-.game-card.prev,
-.game-card.next {
-  transform: scale(0.9);
-  filter: blur(1px);
+.game-card.winner .card-content {
+  box-shadow: 0 0 25px 5px #ffdf00, 0 0 35px 12px #ffbf00;
+  border-radius: 15px;
 }
 
-.game-card.winner {
-  box-shadow: 0 0 25px 10px #ffdf00, 0 0 35px 15px #ffbf00;
-  transform: scale(1.05);
+.card-content {
+    transition: box-shadow 0.4s ease-in-out;
 }
 
-
-.game-card img {
+.game-image {
   width: 100%;
-  height: 350px;
+  height: 380px;
   object-fit: cover;
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+  display: block;
 }
 
 .game-info {
-  padding: 1rem;
+  padding: 1.2rem;
+  text-align: left;
 }
 
 .game-info h3 {
-  font-size: 1.2rem;
-  margin: 0;
+  font-size: 1.3rem;
+  margin: 0 0 0.5rem 0;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .game-info p {
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: #4caf50;
-  margin: 0.5rem 0 0;
+  margin: 0;
+}
+
+.carousel-controls {
+  text-align: center;
+  margin-top: 2.5rem;
 }
 
 .roulette-button {
-  margin-top: 2rem;
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
+  padding: 1rem 2.5rem;
+  font-size: 1.3rem;
+  font-weight: bold;
   cursor: pointer;
-  background-color: #4caf50;
+  background: linear-gradient(45deg, #4caf50, #2e7d32);
   color: white;
   border: none;
-  border-radius: 5px;
-  transition: background-color 0.3s;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
 }
 
 .roulette-button:disabled {
-  background-color: #666;
+  background: #666;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .roulette-button:hover:not(:disabled) {
-  background-color: #45a049;
-}
-
-.loading {
-    color: white;
-    font-size: 1.5rem;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.6);
 }
 </style>
