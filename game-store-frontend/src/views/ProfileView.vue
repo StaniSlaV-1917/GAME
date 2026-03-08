@@ -140,7 +140,7 @@ onMounted(loadInitialData);
             </div>
              <div class="stat-card">
               <p class="stat-label">Дата регистрации</p>
-              <p class="stat-value small">{{ formatDate(user.created_at) }}</p>
+              <p class="stat-value small">{{ formatDate(user.reg_date) }}</p>
             </div>
           </div>
         </section>
@@ -154,7 +154,7 @@ onMounted(loadInitialData);
             <div v-for="order in orders" :key="order.id" class="order-item-card">
               <div class="order-header">
                 <h3>Заказ #{{ order.id }}</h3>
-                <p class="order-date">{{ formatDate(order.created_at) }}</p>
+                <p class="order-date">{{ formatDate(order.order_date) }}</p>
                 <p class="order-total">{{ Number(order.total).toFixed(0) }} ₽</p>
               </div>
               <ul class="order-games-list">

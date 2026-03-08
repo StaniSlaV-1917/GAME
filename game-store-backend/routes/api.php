@@ -42,34 +42,39 @@ Route::post('/cart/sync', [CartController::class, 'sync']);
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     Route::get('/users', [AdminUserController::class, 'index']);
     Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
+    Route::put('/users/{id}', [AdminUserController::class, 'update']);          // обновить ФИО/email/телефон
+    Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole']); // сменить роль
+
 
     Route::get('/games', [AdminGamesController::class, 'index']);
-    Route::get('/games/{id}', [AdminGamesController::class, 'show']);
+    Route::get('/games/{game}', [AdminGamesController::class, 'show']);        // было {id}
     Route::post('/games', [AdminGamesController::class, 'store']);
-    Route::put('/games/{id}', [AdminGamesController::class, 'update']);
-    Route::delete('/games/{id}', [AdminGamesController::class, 'destroy']);
+    Route::put('/games/{game}', [AdminGamesController::class, 'update']);      // уже поправил правильно
+    Route::delete('/games/{game}', [AdminGamesController::class, 'destroy']);  // было {id}
     Route::post('/games/{game}/gallery', [AdminGamesController::class, 'uploadGallery']);
     Route::delete('/games/{game}/gallery/{image}', [AdminGamesController::class, 'deleteGalleryImage']);
-
+    
+    // дальше остальные админские
     Route::get('/reviews', [AdminReviewController::class, 'index']);
     Route::put('/reviews/{id}', [AdminReviewController::class, 'update']);
     Route::delete('/reviews/{id}', [AdminReviewController::class, 'destroy']);
 
     Route::get('/orders', [AdminOrderController::class, 'index']);
+    Route::put('/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
+
 
     Route::get('/employees', [EmployeeController::class, 'index']);
     Route::post('/employees', [EmployeeController::class, 'store']);
-    Route::get('/employees/{id}', [EmployeeController::class, 'show']);
-    Route::put('/employees/{id}', [EmployeeController::class, 'update']);
-    Route::delete('/employees/{id}', [EmployeeController::class, 'destroy']);
+    Route::get('/employees/{employee}', [EmployeeController::class, 'show']);
+    Route::put('/employees/{employee}', [EmployeeController::class, 'update']);
+    Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy']);
 
     Route::get('/news', [AdminNewsController::class, 'index']);
     Route::post('/news', [AdminNewsController::class, 'store']);
-    Route::get('/news/{id}', [AdminNewsController::class, 'show']);
-    Route::put('/news/{id}', [AdminNewsController::class, 'update']);
-    Route::delete('/news/{id}', [AdminNewsController::class, 'destroy']);
+    Route::get('/news/{news}', [AdminNewsController::class, 'show']);
+    Route::put('/news/{news}', [AdminNewsController::class, 'update']);
+    Route::delete('/news/{news}', [AdminNewsController::class, 'destroy']);
 });
-
 
 // --- Основные публичные маршруты --- //
 

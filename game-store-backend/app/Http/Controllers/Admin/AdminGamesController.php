@@ -8,6 +8,7 @@ use App\Models\GameImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class AdminGamesController extends Controller
 {
@@ -43,11 +44,17 @@ class AdminGamesController extends Controller
 
         $game = Game::create($validated);
         $game->load('images');
+
         return response()->json($game, 201);
     }
 
     public function update(Request $request, Game $game)
     {
+        Log::info('ADMIN UPDATE GAME REQUEST', [
+            'game_id' => $game->id,
+            'all'     => $request->all(),
+        ]);
+
         $validated = $request->validate([
             'title'             => 'sometimes|string|max:255',
             'genre'             => 'sometimes|nullable|string|max:100',
@@ -65,7 +72,12 @@ class AdminGamesController extends Controller
             'release_year'      => 'sometimes|nullable|integer|min:1980',
         ]);
 
+        Log::info('ADMIN UPDATE GAME VALIDATED', $validated);
+
         $game->update($validated);
+
+        Log::info('ADMIN UPDATE GAME AFTER UPDATE', $game->fresh()->toArray());
+
         $game->load('images');
 
         return response()->json($game);
@@ -95,7 +107,7 @@ class AdminGamesController extends Controller
         foreach ($request->file('gallery') as $imageFile) {
             $path = $imageFile->store('public/gallery/game_' . $game->id);
             $game->images()->create([
-                'path' => Storage::url($path),
+                'path'    => Storage::url($path),
                 'game_id' => $game->id
             ]);
         }

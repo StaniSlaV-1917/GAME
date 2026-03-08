@@ -15,10 +15,10 @@ class HomePageController extends Controller
     public function getEditorData()
     {
         // Берем 5 последних новостей, отсортированных по дате создания
-        $latestNews = News::with('author:id,name') // Загружаем автора, выбирая только id и name
-            ->latest() // Сортировка по created_at (от новых к старым)
-            ->take(5)  // Берем 5 записей
-            ->get();
+        $latestNews = News::with('author:id,name')
+        ->orderByDesc('published_at') // или ->orderByDesc('id')
+        ->take(5)
+        ->get();
 
         // Трансформируем данные в нужный формат
         $transformedNews = $latestNews->map(function ($newsItem) {

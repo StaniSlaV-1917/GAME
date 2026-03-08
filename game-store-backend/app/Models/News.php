@@ -11,6 +11,8 @@ class News extends Model
 
     protected $table = 'news';
 
+    public $timestamps = false;
+
     protected $fillable = [
         'title',
         'content',

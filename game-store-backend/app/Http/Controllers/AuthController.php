@@ -14,16 +14,16 @@ class AuthController extends Controller
      * Формирует стандартизированный ответ с данными пользователя.
      */
     private function fullUserResponse(User $user)
-    {
-        return [
-            'id'       => $user->id,
-            'fullname' => $user->fullname,
-            'email'    => $user->email,
-            'phone'    => $user->phone,
-            'is_admin' => $user->role === 'admin', // Создаем поле is_admin
-            'reg_date' => $user->created_at, // Используем стандартное поле created_at
-        ];
-    }
+{
+    return [
+        'id'       => $user->id,
+        'fullname' => $user->fullname,
+        'email'    => $user->email,
+        'phone'    => $user->phone,
+        'is_admin' => $user->role === 'admin',
+        'reg_date' => $user->reg_date, // ← вместо created_at
+    ];
+}
 
     // POST /api/auth/register
     public function register(Request $request)
