@@ -18,6 +18,28 @@ const loading = ref({ orders: false, reviews: false });
 const error = ref({ orders: '', reviews: '', profile: '', password: '' });
 const message = ref({ profile: '', password: '' });
 
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    const parts = dateString.split(/[- :]/);
+    if (parts.length >= 6) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const hour = parseInt(parts[3], 10);
+      const minute = parseInt(parts[4], 10);
+      const second = parseInt(parts[5], 10);
+      const alternativeDate = new Date(year, month, day, hour, minute, second);
+      if (!isNaN(alternativeDate.getTime())) {
+        return alternativeDate.toLocaleDateString('ru-RU');
+      }
+    }
+    return 'Неверная дата';
+  }
+  return date.toLocaleDateString('ru-RU');
+};
+
 const loadInitialData = async () => {
   if (!user.value) return;
   profileForm.value.fullname = user.value.fullname || '';
@@ -57,7 +79,7 @@ const saveProfile = async () => {
   try {
     const { data } = await api.put('/auth/profile', profileForm.value);
     message.value.profile = data.message || 'Профиль успешно обновлен!';
-    await authStore.fetchUser(); // Обновляем данные пользователя в сторе
+    await authStore.fetchUser();
     setTimeout(() => message.value.profile = '', 3000);
   } catch (e) {
     error.value.profile = e.response?.data?.message || 'Ошибка обновления профиля.';
@@ -105,7 +127,6 @@ onMounted(loadInitialData);
       </aside>
 
       <div class="profile-content">
-        <!-- Overview -->
         <section v-show="activeTab === 'overview'" class="content-section">
           <h1 class="section-title">Обзор профиля</h1>
           <div class="stats-grid">
@@ -119,12 +140,11 @@ onMounted(loadInitialData);
             </div>
              <div class="stat-card">
               <p class="stat-label">Дата регистрации</p>
-              <p class="stat-value small">{{ new Date(user.created_at).toLocaleDateString('ru-RU') }}</p>
+              <p class="stat-value small">{{ formatDate(user.created_at) }}</p>
             </div>
           </div>
         </section>
 
-        <!-- Orders -->
         <section v-show="activeTab === 'orders'" class="content-section">
           <h1 class="section-title">Мои заказы</h1>
           <div v-if="loading.orders">Загрузка...</div>
@@ -134,7 +154,7 @@ onMounted(loadInitialData);
             <div v-for="order in orders" :key="order.id" class="order-item-card">
               <div class="order-header">
                 <h3>Заказ #{{ order.id }}</h3>
-                <p class="order-date">{{ new Date(order.created_at).toLocaleDateString('ru-RU') }}</p>
+                <p class="order-date">{{ formatDate(order.created_at) }}</p>
                 <p class="order-total">{{ Number(order.total).toFixed(0) }} ₽</p>
               </div>
               <ul class="order-games-list">
@@ -147,7 +167,6 @@ onMounted(loadInitialData);
           </div>
         </section>
 
-        <!-- Reviews -->
         <section v-show="activeTab === 'reviews'" class="content-section">
            <h1 class="section-title">Мои отзывы</h1>
             <div v-if="loading.reviews">Загрузка...</div>
@@ -160,12 +179,11 @@ onMounted(loadInitialData);
                     </div>
                     <div class="review-rating">Оценка: {{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</div>
                     <p class="review-body">{{ review.body }}</p>
-                    <div class="review-date">{{ new Date(review.created_at).toLocaleDateString('ru-RU') }}</div>
+                    <div class="review-date">{{ formatDate(review.created_at) }}</div>
                 </div>
             </div>
         </section>
 
-        <!-- Settings -->
         <section v-show="activeTab === 'settings'" class="content-section">
           <h1 class="section-title">Настройки</h1>
           <div class="form-container">
@@ -221,7 +239,6 @@ onMounted(loadInitialData);
 
 .profile-layout { display: grid; grid-template-columns: 260px 1fr; gap: 32px; align-items: flex-start; }
 
-/* Sidebar */
 .profile-sidebar { position: sticky; top: 92px; }
 .user-card { background: #111827; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 16px; border: 1px solid #1f2937;}
 .user-avatar { width: 80px; height: 80px; border-radius: 50%; background: #3b82f6; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-weight: 600; margin: 0 auto 16px; }
@@ -233,19 +250,16 @@ onMounted(loadInitialData);
 .sidebar-nav a:hover { background: #1f2937; color: #fff; }
 .sidebar-nav a.active { background: #3b82f6; color: #fff; }
 
-/* Content */
 .profile-content { min-width: 0; }
 .content-section { background: #111827; border-radius: 12px; padding: 24px; border: 1px solid #1f2937;}
 .section-title { font-size: 1.8rem; font-weight: 700; color: #fff; margin: 0 0 24px; }
 
-/* Overview */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
 .stat-card { background: #1f2937; padding: 20px; border-radius: 10px; }
 .stat-label { margin: 0 0 8px; color: #9ca3af; font-size: 0.9rem; }
 .stat-value { margin: 0; font-size: 2.25rem; font-weight: 700; color: #fff; }
 .stat-value.small { font-size: 1.5rem; }
 
-/* Orders */
 .empty-state, .error-box { text-align: center; color: #9ca3af; padding: 40px; }
 .error-box { background: #3a1a1a; border: 1px solid #ef4444; color: #fecaca; border-radius: 10px; }
 .orders-list { display: flex; flex-direction: column; gap: 16px; }
@@ -260,7 +274,6 @@ onMounted(loadInitialData);
 .order-games-list li a:hover { text-decoration: underline; }
 .order-games-list li span { color: #9ca3af; }
 
-/* Reviews */
 .reviews-list { display: flex; flex-direction: column; gap: 16px; }
 .review-item-card { background: #1f2937; padding: 16px; border-radius: 10px; }
 .review-game-title a { color: #fff; font-weight: 600; text-decoration: none; font-size: 1.1rem; }
@@ -269,7 +282,6 @@ onMounted(loadInitialData);
 .review-body { color: #d1d5db; margin: 8px 0; }
 .review-date { font-size: 0.8rem; color: #6b7280; text-align: right; }
 
-/* Settings */
 .form-container { background: #1f2937; border-radius: 10px; padding: 24px; margin-top: 16px; }
 .form-container h2 { font-size: 1.25rem; margin: 0 0 16px; color: #fff; }
 .form-group { margin-bottom: 16px; }
