@@ -11,7 +11,7 @@ class Game extends Model
 
     protected $table = 'games';
 
-    public $timestamps = false;
+    // public $timestamps = false;
 
     protected $fillable = [
         'title',
