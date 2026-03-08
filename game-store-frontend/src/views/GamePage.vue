@@ -69,6 +69,20 @@ const loadSimilarGames = async (genre, currentGameId) => {
   }
 };
 
+const stopGameUrl = computed(() => {
+    // 1. Предпочитаем прямую ссылку из данных
+    if (game.value?.stopgame_url_code) {
+        return game.value.stopgame_url_code;
+    }
+    // 2. В качестве запасного варианта - поиск по названию
+    if (game.value?.title) {
+        const query = encodeURIComponent(game.value.title);
+        return `https://stopgame.ru/search?q=${query}`;
+    }
+    // 3. Если нет данных, возвращаем безопасное значение
+    return '#';
+});
+
 const coverImageSrc = computed(() => resolveImageUrl(game.value?.image));
 
 const youtubeEmbedUrl = computed(() => {
@@ -142,11 +156,16 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
               <span v-if="game.old_price" class="old-price">{{ Number(game.old_price).toFixed(0) }} ₽</span>
               <span class="current-price">{{ Number(game.price).toFixed(0) }} ₽</span>
           </div>
-          <button 
-            @click="addToCart" 
-            class="add-to-cart-btn">
-            Добавить в корзину
-          </button>
+          <div class="action-buttons">
+            <button 
+              @click="addToCart" 
+              class="add-to-cart-btn">
+              Добавить в корзину
+            </button>
+            <a :href="stopGameUrl" target="_blank" rel="noopener noreferrer" class="external-link-btn">
+              Обзоры на StopGame
+            </a>
+          </div>
           <p class="delivery-info">Мгновенная доставка ключа на e-mail</p>
         </div>
       </header>
@@ -170,13 +189,6 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
               </a>
             </div>
           </section>
-
-          <section class="content-section">
-            <h2 class="section-title">Об игре {{ game.title }}</h2>
-            <div v-if="game.description" v-html="game.description"></div>
-            <p v-else>В онлайн-магазине <strong>GameStore</strong> вы можете <strong>купить ключ {{ game.title }}</strong> для платформы {{ game.platform }} по самой выгодной цене. Это знаменитая игра в жанре <em>{{ game.genre }}</em>, выпущенная в {{ game.release_year }} году, которая уже успела завоевать сердца тысяч геймеров.</p>
-          </section>
-
         </div>
 
         <!-- Right Sidebar -->
@@ -189,6 +201,12 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
               <li><span>Дата выхода:</span> <strong>{{ game.release_year }}</strong></li>
             </ul>
           </div>
+
+          <section class="content-section">
+            <h2 class="section-title">Об игре {{ game.title }}</h2>
+            <div v-if="game.description" v-html="game.description" class="description-content"></div>
+            <p v-else>В онлайн-магазине <strong>GameStore</strong> вы можете <strong>купить ключ {{ game.title }}</strong> для платформы {{ game.platform }} по самой выгодной цене. Это знаменитая игра в жанре <em>{{ game.genre }}</em>, выпущенная в {{ game.release_year }} году, которая уже успела завоевать сердца тысяч геймеров.</p>
+          </section>
         </aside>
       </div>
 
@@ -211,7 +229,6 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 </template>
 
 <style scoped>
-/* Стили остаются без изменений */
 .page-wrapper { max-width: 1200px; margin: 0 auto; padding: 24px; color: #e5e7eb; }
 .status-message { text-align: center; padding: 60px; font-size: 1.2rem; }
 .status-message.error { color: #fca5a5; }
@@ -224,8 +241,35 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .current-price { font-size: 2.5rem; font-weight: 800; color: #4ade80; }
 .old-price { font-size: 1.25rem; color: #6b7280; text-decoration: line-through; }
 .discount-badge { background-color: #ef4444; color: white; padding: 5px 10px; border-radius: 6px; font-weight: 700; }
-.add-to-cart-btn { background-color: #3b82f6; color: white; border: none; font-size: 1.2rem; font-weight: 700; padding: 16px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; text-align: center; }
-.add-to-cart-btn:hover:not(:disabled) { background-color: #2563eb; transform: scale(1.03); }
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.add-to-cart-btn, .external-link-btn {
+  width: 100%;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 16px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-to-cart-btn {
+  background-color: #3b82f6;
+  color: white;
+}
+.add-to-cart-btn:hover:not(:disabled) { background-color: #2563eb; transform: translateY(-2px); }
 .add-to-cart-btn:disabled,
 .add-to-cart-btn.in-cart {
   background-color: #22c55e;
@@ -233,11 +277,21 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
   transform: none;
 }
 .add-to-cart-btn:disabled:hover { filter: brightness(1.0); }
-.delivery-info { color: #9ca3af; margin-top: 12px; font-size: 0.9rem; text-align: center; }
+
+.external-link-btn {
+  background-color: #4b5563;
+  color: white;
+}
+.external-link-btn:hover {
+  background-color: #6b7280;
+  transform: translateY(-2px);
+}
+
+.delivery-info { color: #9ca3af; margin-top: 0; font-size: 0.9rem; text-align: center; }
 .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 32px; }
 .main-content-col { display: flex; flex-direction: column; gap: 32px; min-width: 0; }
 .content-section { background: #111827; border: 1px solid #1f2937; padding: 24px; border-radius: 12px; }
-.sidebar-col { position: sticky; top: 80px; align-self: start; }
+.sidebar-col { position: sticky; top: 80px; align-self: start; display: flex; flex-direction: column; gap: 32px; }
 .details-card { background: #111827; border: 1px solid #1f2937; padding: 24px; border-radius: 12px; }
 .details-card-title { font-size: 1.3rem; margin: 0 0 16px; color: #fff; }
 .details-list { list-style: none; padding: 0; margin: 0; }
@@ -250,9 +304,15 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .screenshots-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .screenshot-img { width: 100%; border-radius: 8px; transition: transform 0.2s ease; }
 .screenshot-img:hover { transform: scale(1.05); }
-.content-section p { font-size: 1rem; line-height: 1.8; color: #d1d5db; }
-.content-section > div[v-html] p:first-child { margin-top: 0; }
-.content-section > div[v-html] p:last-child { margin-bottom: 0; }
+
+.description-content, .content-section > p {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #d1d5db;
+}
+.description-content :first-child, .content-section > p:first-child { margin-top: 0; }
+.description-content :last-child, .content-section > p:last-child { margin-bottom: 0; }
+
 .similar-games-section { margin-top: 32px; }
 .similar-games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
 .similar-game-card { text-decoration: none; background: #1f2937; border-radius: 8px; overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease; }
@@ -261,9 +321,10 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .similar-game-info { padding: 12px; }
 .similar-game-title { font-weight: 600; color: #fff; margin-bottom: 4px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .similar-game-price { color: #4ade80; font-weight: 700; }
+
 @media (max-width: 992px) {
   .content-grid { grid-template-columns: 1fr; }
-  .sidebar-col { position: static; top: auto; margin-top: 32px; }
+  .sidebar-col { position: static; top: auto; }
 }
 @media (max-width: 768px) {
   .game-header { grid-template-columns: 1fr; text-align: center; }
@@ -271,5 +332,6 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
   .header-info-container { align-items: center; }
   .price-block { justify-content: center; }
   .game-title { font-size: 2.5rem; }
+  .action-buttons { grid-template-columns: 1fr; }
 }
 </style>
