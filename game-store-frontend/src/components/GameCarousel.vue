@@ -1,6 +1,7 @@
 <template>
   <div class="carousel-container">
     <h2 class="carousel-title">Что купить сегодня?</h2>
+
     <div class="carousel-viewport">
       <div
         class="carousel-track"
@@ -12,20 +13,29 @@
           v-for="(game, index) in displayedGames"
           :key="index"
           class="game-card"
-          :class="{ 'active': index === activeCardIndex, 'winner': index === winnerIndex }"
+          :class="{ active: index === activeCardIndex, winner: index === winnerIndex }"
         >
           <div class="card-content">
-            <img :src="game.cover_image_url" :alt="game.title" class="game-image" />
+            <img
+              :src="resolveImageUrl(game.image)"
+              :alt="game.title"
+              class="game-image"
+            />
             <div class="game-info">
               <h3>{{ game.title }}</h3>
-              <p>{{ game.price }} руб.</p>
+              <p>{{ Number(game.price).toFixed(0) }} руб.</p>
             </div>
           </div>
         </div>
       </div>
     </div>
+
     <div class="carousel-controls">
-      <button @click="startRoulette" :disabled="isSpinning" class="roulette-button">
+      <button
+        @click="startRoulette"
+        :disabled="isSpinning"
+        class="roulette-button"
+      >
         {{ isSpinning ? 'Крутится...' : 'Испытать удачу!' }}
       </button>
     </div>
@@ -42,18 +52,18 @@ const isSpinning = ref(false);
 const winnerIndex = ref(null);
 const track = ref(null);
 
-const CARD_WIDTH = 320; // Ширина карточки + отступы
+const CARD_WIDTH = 320; // ширина карточки + отступы
 const VISIBLE_CARDS = 5;
-const CLONES = 10; // Количество клонов для "бесконечной" прокрутки
+const CLONES = 10; // количество клонов для "бесконечной" прокрутки
 
 const state = reactive({
-  currentIndex: CLONES, // Начинаем с первого "настоящего" элемента
+  currentIndex: CLONES, // начинаем с первого "настоящего" элемента
   currentOffset: 0,
   transitionDuration: '0s',
 });
 
+// та же логика центрирования, что была
 const activeCardIndex = computed(() => {
-  // Этот индекс будет постоянно указывать на центральную карту в видимой области
   return state.currentIndex + Math.floor(VISIBLE_CARDS / 2) - 3;
 });
 
@@ -62,13 +72,24 @@ const trackStyle = computed(() => ({
   transition: `transform ${state.transitionDuration} cubic-bezier(0.22, 0.61, 0.36, 1)`,
 }));
 
+// та же функция, что в GamePage (упрощённый вариант для относительных путей/имён файлов)
+const resolveImageUrl = (imagePath) => {
+  if (!imagePath) {
+    return '/img/noimage.png';
+  }
+  // если пришёл уже путь вида /storage/... или /images/...
+  if (imagePath.includes('/')) {
+    return `http://localhost:8000${imagePath}`;
+  }
+  // если только имя файла (DOOM.png) — берём из локальной папки /img
+  return `/img/${imagePath}`;
+};
 
 const fetchGames = async () => {
   try {
     const response = await axios.get('/games');
     const originalGames = response.data;
     if (originalGames.length > 0) {
-      // Создаем клоны для "бесконечной" прокрутки
       const clonesStart = originalGames.slice(-CLONES);
       const clonesEnd = originalGames.slice(0, CLONES);
       games.value = [...clonesStart, ...originalGames, ...clonesEnd];
@@ -83,7 +104,10 @@ const fetchGames = async () => {
 
 const centerOnInitialCard = () => {
   state.transitionDuration = '0s';
-  const initialOffset = -state.currentIndex * CARD_WIDTH + (window.innerWidth / 2) - (CARD_WIDTH / 2);
+  const initialOffset =
+    -state.currentIndex * CARD_WIDTH +
+    window.innerWidth / 2 -
+    CARD_WIDTH / 2;
   state.currentOffset = initialOffset;
 };
 
@@ -93,32 +117,38 @@ const startRoulette = () => {
   isSpinning.value = true;
   winnerIndex.value = null;
 
-  // Рассчитываем случайное количество шагов для прокрутки
-  const totalGames = games.value.length - (2 * CLONES);
-  const randomSpins = Math.floor(Math.random() * totalGames) + totalGames * 2; // Прокрутка минимум 2 круга
+  const totalGames = games.value.length - 2 * CLONES;
+  const randomSpins =
+    Math.floor(Math.random() * totalGames) + totalGames * 2; // минимум 2 круга
   const targetIndex = state.currentIndex + randomSpins;
 
-  // Рассчитываем конечное смещение
-  const finalOffset = -targetIndex * CARD_WIDTH + (window.innerWidth / 2) - (CARD_WIDTH / 2);
+  const finalOffset =
+    -targetIndex * CARD_WIDTH +
+    window.innerWidth / 2 -
+    CARD_WIDTH / 2;
 
-  // Устанавливаем длительность анимации
-  state.transitionDuration = '6s'; // Длительность вращения
+  state.transitionDuration = '6s';
   state.currentOffset = finalOffset;
   state.currentIndex = targetIndex;
 };
 
-
 const handleTransitionEnd = () => {
-  // Если мы остановились на клоне, "перепрыгиваем" на реальный элемент
   const totalOriginalGames = games.value.length - 2 * CLONES;
+
   if (state.currentIndex >= totalOriginalGames + CLONES) {
     state.transitionDuration = '0s';
     state.currentIndex -= totalOriginalGames;
-    state.currentOffset = -state.currentIndex * CARD_WIDTH + (window.innerWidth / 2) - (CARD_WIDTH / 2);
+    state.currentOffset =
+      -state.currentIndex * CARD_WIDTH +
+      window.innerWidth / 2 -
+      CARD_WIDTH / 2;
   } else if (state.currentIndex < CLONES) {
-      state.transitionDuration = '0s';
+    state.transitionDuration = '0s';
     state.currentIndex += totalOriginalGames;
-    state.currentOffset = -state.currentIndex * CARD_WIDTH + (window.innerWidth / 2) - (CARD_WIDTH / 2);
+    state.currentOffset =
+      -state.currentIndex * CARD_WIDTH +
+      window.innerWidth / 2 -
+      CARD_WIDTH / 2;
   }
 
   if (isSpinning.value) {
@@ -128,17 +158,19 @@ const handleTransitionEnd = () => {
 };
 
 const showWinner = () => {
-  const winnerGameIndex = state.currentIndex % (games.value.length - 2 * CLONES) + CLONES;
+  const totalOriginalGames = games.value.length - 2 * CLONES;
+  const winnerGameIndex =
+    (state.currentIndex % totalOriginalGames) + CLONES;
+
   winnerIndex.value = winnerGameIndex;
-  
+
   const winnerGame = games.value[winnerGameIndex];
 
   setTimeout(() => {
     alert(`Поздравляем! Вы выиграли ${winnerGame.title} по специальной цене!`);
     winnerIndex.value = null;
-  }, 3000); // Показываем свечение 3 секунды
+  }, 3000);
 };
-
 
 onMounted(() => {
   fetchGames();
@@ -199,7 +231,7 @@ onUnmounted(() => {
 }
 
 .card-content {
-    transition: box-shadow 0.4s ease-in-out;
+  transition: box-shadow 0.4s ease-in-out;
 }
 
 .game-image {
