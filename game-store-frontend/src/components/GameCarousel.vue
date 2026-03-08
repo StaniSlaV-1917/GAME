@@ -27,14 +27,14 @@
       {{ isSpinning ? 'Крутится...' : 'Испытать удачу!' }}
     </button>
 
-    <div v-if="showConfetti" class="confetti-container"></div>
+    <canvas v-if="showConfetti" class="confetti-container"></canvas>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import axios from '@/api/axios';
-import 'canvas-confetti';
+import confetti from 'canvas-confetti';
 
 const games = ref([]);
 const activeIndex = ref(0);
@@ -95,17 +95,20 @@ const showWinner = () => {
 
   // Trigger confetti
   showConfetti.value = true;
-  const canvas = document.querySelector('.confetti-container');
-  if (canvas) {
-    const myConfetti = confetti.create(canvas, {
-      resize: true,
-      useWorker: true,
-    });
-    myConfetti({
-      particleCount: 150,
-      spread: 60,
-    });
-  }
+  nextTick(() => {
+      const canvas = document.querySelector('.confetti-container');
+      if (canvas) {
+        const myConfetti = confetti.create(canvas, {
+          resize: true,
+          useWorker: true,
+        });
+        myConfetti({
+          particleCount: 150,
+          spread: 60,
+        });
+      }
+  });
+
 
   setTimeout(() => {
     showConfetti.value = false;
