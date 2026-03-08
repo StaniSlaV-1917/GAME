@@ -10,7 +10,8 @@
           :class="{
             'active': index === activeIndex,
             'prev': index === prevIndex,
-            'next': index === nextIndex
+            'next': index === nextIndex,
+            'winner': index === winnerIndex
           }"
         >
           <img :src="game.cover_image_url" :alt="game.title" />
@@ -26,20 +27,17 @@
     <button @click="startRoulette" class="roulette-button" :disabled="isSpinning">
       {{ isSpinning ? 'Крутится...' : 'Испытать удачу!' }}
     </button>
-
-    <canvas v-if="showConfetti" class="confetti-container"></canvas>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import axios from '@/api/axios';
-import confetti from 'canvas-confetti';
 
 const games = ref([]);
 const activeIndex = ref(0);
 const isSpinning = ref(false);
-const showConfetti = ref(false);
+const winnerIndex = ref(null);
 let carouselInterval = null;
 
 const fetchGames = async () => {
@@ -65,6 +63,7 @@ const startRoulette = () => {
   if (isSpinning.value) return;
 
   isSpinning.value = true;
+  winnerIndex.value = null; // Reset winner on new spin
   clearInterval(carouselInterval);
 
   let spinDuration = 5000; // 5 seconds
@@ -92,29 +91,13 @@ const startRoulette = () => {
 const showWinner = () => {
   const winnerGame = games.value[activeIndex.value];
   console.log('Победитель:', winnerGame.title);
-
-  // Trigger confetti
-  showConfetti.value = true;
-  nextTick(() => {
-      const canvas = document.querySelector('.confetti-container');
-      if (canvas) {
-        const myConfetti = confetti.create(canvas, {
-          resize: true,
-          useWorker: true,
-        });
-        myConfetti({
-          particleCount: 150,
-          spread: 60,
-        });
-      }
-  });
-
+  
+  winnerIndex.value = activeIndex.value;
 
   setTimeout(() => {
-    showConfetti.value = false;
-    // Here you can add logic to show a special offer modal
     alert(`Поздравляем! Вы выиграли ${winnerGame.title} по специальной цене!`);
-  }, 2000);
+    winnerIndex.value = null;
+  }, 2500);
 };
 
 onMounted(() => {
@@ -168,7 +151,7 @@ const translateValue = computed(() => {
   margin: 0 10px;
   border-radius: 10px;
   overflow: hidden;
-  transition: transform 0.5s ease, filter 0.5s ease;
+  transition: transform 0.5s ease, filter 0.5s ease, box-shadow 0.5s ease;
   transform: scale(0.8);
   filter: blur(3px);
   background: #202020;
@@ -185,6 +168,12 @@ const translateValue = computed(() => {
   transform: scale(0.9);
   filter: blur(1px);
 }
+
+.game-card.winner {
+  box-shadow: 0 0 25px 10px #ffdf00, 0 0 35px 15px #ffbf00;
+  transform: scale(1.05);
+}
+
 
 .game-card img {
   width: 100%;
@@ -231,15 +220,5 @@ const translateValue = computed(() => {
 .loading {
     color: white;
     font-size: 1.5rem;
-}
-
-.confetti-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 100;
 }
 </style>

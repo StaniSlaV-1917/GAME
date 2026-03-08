@@ -10,9 +10,6 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
-  optimizeDeps: {
-    include: ['canvas-confetti']
-  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
