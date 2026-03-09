@@ -2,7 +2,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000/api',
+  // ЗАМЕНИТЬ: Поменяй этот URL на публичный адрес твоего Laravel API
+  baseURL: 'https://your-backend-api.com/api',
 });
 
 // перехватчик для всех запросов
