@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
+use App\Mail\LoginCodeMail;
 
 class AuthController extends Controller
 {
@@ -14,16 +18,16 @@ class AuthController extends Controller
      * Формирует стандартизированный ответ с данными пользователя.
      */
     private function fullUserResponse(User $user)
-{
-    return [
-        'id'       => $user->id,
-        'fullname' => $user->fullname,
-        'email'    => $user->email,
-        'phone'    => $user->phone,
-        'is_admin' => $user->role === 'admin',
-        'reg_date' => $user->reg_date, // ← вместо created_at
-    ];
-}
+    {
+        return [
+            'id'       => $user->id,
+            'fullname' => $user->fullname,
+            'email'    => $user->email,
+            'phone'    => $user->phone,
+            'is_admin' => $user->role === 'admin',
+            'reg_date' => $user->reg_date, // ← вместо created_at
+        ];
+    }
 
     // POST /api/auth/register
     public function register(Request $request)
@@ -87,6 +91,57 @@ class AuthController extends Controller
         }
 
         // Создаем токен для входа
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user'  => $this->fullUserResponse($user),
+        ]);
+    }
+    
+    // POST /api/auth/passwordless
+    public function sendLoginCode(Request $request)
+    {
+        $data = $request->validate(['email' => 'required|email']);
+        $email = $data['email'];
+        $code = random_int(100000, 999999);
+        Cache::put('login_code:' . $email, $code, now()->addMinutes(10));
+        Mail::to($email)->send(new LoginCodeMail($code));
+        return response()->json(['message' => 'Код отправлен на ваш email.']);
+    }
+
+    // POST /api/auth/passwordless/login
+    public function loginWithCode(Request $request)
+    {
+        $data = $request->validate([
+            'email' => 'required|email',
+            'code'  => 'required|string',
+        ]);
+
+        $email = $data['email'];
+        $code = $data['code'];
+
+        $cachedCode = Cache::get('login_code:' . $email);
+
+        if (! $cachedCode || $cachedCode != $code) {
+            throw ValidationException::withMessages([
+                'code' => ['Неверный код.'],
+            ]);
+        }
+
+        Cache::forget('login_code:' . $email);
+
+        $user = User::firstOrCreate(
+            ['email' => $email],
+            [
+                'fullname' => 'New User', // или как-то иначе
+                'password' => Hash::make(Str::random(16)),
+                'email_hash' => hash('sha256', $email),
+                'phone' => ' ',
+                'phone_hash' => hash('sha256', ' ')
+            ]
+        );
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([

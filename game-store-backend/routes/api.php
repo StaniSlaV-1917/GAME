@@ -25,6 +25,8 @@ use App\Http\Controllers\Admin\AdminReviewController;
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/passwordless', [AuthController::class, 'sendLoginCode']);
+    Route::post('/passwordless/login', [AuthController::class, 'loginWithCode']);
     
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -103,4 +105,3 @@ Route::middleware('auth:sanctum')->prefix('cart')->group(function () {
     Route::post('/update', [CartController::class, 'update']);
     Route::post('/remove', [CartController::class, 'remove']);
 });
-
