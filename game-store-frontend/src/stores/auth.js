@@ -48,6 +48,25 @@ export const useAuthStore = defineStore('auth', () => {
       throw error.response.data.message || 'Login failed';
     }
   }
+  
+  async function sendLoginCode(email) {
+    try {
+        await api.post('/auth/passwordless', { email });
+    } catch (error) {
+        throw error.response.data.message || 'Failed to send code';
+    }
+  }
+
+  async function loginWithCode(credentials) {
+    try {
+        const { data } = await api.post('/auth/passwordless/login', credentials);
+        setToken(data.token);
+        setUser(data.user);
+        return true;
+    } catch (error) {
+        throw error.response.data.message || 'Login with code failed';
+    }
+  }
 
   async function register(credentials) {
     try {
@@ -79,5 +98,5 @@ export const useAuthStore = defineStore('auth', () => {
     setToken(token.value);
   }
 
-  return { user, token, isLoggedIn, login, register, logout, fetchUser, setToken, setUser };
+  return { user, token, isLoggedIn, login, register, logout, fetchUser, setToken, setUser, sendLoginCode, loginWithCode };
 });

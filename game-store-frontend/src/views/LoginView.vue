@@ -6,18 +6,34 @@ import { useAuthStore } from '../stores/auth';
 const router = useRouter();
 const authStore = useAuthStore();
 
-const form = ref({ login: '', password: '' });
+const form = ref({ email: '', code: '' });
 const isLoading = ref(false);
 const error = ref('');
+const step = ref('email'); // 'email' or 'code'
 const wrapperEl = ref(null);
 
-// --- Логика для управления CSS-классами при фокусе и отправке ---
 const handleFocus = (isFocused) => {
   if (!wrapperEl.value) return;
   wrapperEl.value.classList.toggle('is-focused', isFocused);
 };
 
-const submit = async () => {
+const sendCode = async () => {
+  if (isLoading.value) return;
+  isLoading.value = true;
+  error.value = '';
+
+  try {
+    await authStore.sendLoginCode(form.value.email);
+    step.value = 'code';
+  } catch (e) {
+    error.value = 'Не удалось отправить код. Проверьте email и попробуйте снова.';
+    console.error(e);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const loginWithCode = async () => {
   if (isLoading.value) return;
   isLoading.value = true;
   error.value = '';
@@ -28,17 +44,16 @@ const submit = async () => {
   }
 
   try {
-    await authStore.login(form.value);
+    await authStore.loginWithCode(form.value);
     router.push({ name: 'profile' });
   } catch (e) {
-    error.value = 'Неверный логин или пароль. Попробуйте снова.';
+    error.value = 'Неверный код. Попробуйте снова.';
     console.error(e);
   } finally {
     isLoading.value = false;
   }
 };
 
-// --- Инициализация particles.js с новым эффектом "пузыря" ---
 const initParticles = () => {
   if (window.particlesJS) {
     window.particlesJS('particles-js', {
@@ -67,7 +82,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // Уничтожаем инстанс particles.js при уходе со страницы
   if (window.pJSDom && window.pJSDom[0]) {
       window.pJSDom[0].pJS.fn.vendors.destroypJS();
   }
@@ -80,21 +94,26 @@ onUnmounted(() => {
 
     <div class="auth-card">
       <div class="card-header">
-        <h1 class="title">С возвращением!</h1>
-        <p class="subtitle">Войдите в свой аккаунт, чтобы продолжить</p>
+        <h1 class="title">Вход без пароля</h1>
+        <p class="subtitle">{{ step === 'email' ? 'Введите ваш email для входа' : 'Мы отправили код на ' + form.email }}</p>
       </div>
       <div v-if="error" class="error-banner"><p>{{ error }}</p></div>
-      <form @submit.prevent="submit" class="auth-form">
+      <form v-if="step === 'email'" @submit.prevent="sendCode" class="auth-form">
         <div class="input-group">
-          <label for="login">Логин</label>
-          <input id="login" v-model="form.login" placeholder="Ваш email или телефон" required type="text" @focus="handleFocus(true)" @blur="handleFocus(false)" />
+          <label for="email">Email</label>
+          <input id="email" v-model="form.email" placeholder="Ваш email" required type="email" @focus="handleFocus(true)" @blur="handleFocus(false)" />
         </div>
+        <button type="submit" class="submit-button" :disabled="isLoading">{{ isLoading ? 'Отправка...' : 'Отправить код' }}</button>
+      </form>
+      
+      <form v-if="step === 'code'" @submit.prevent="loginWithCode" class="auth-form">
         <div class="input-group">
-          <label for="password">Пароль</label>
-          <input id="password" v-model="form.password" type="password" placeholder="••••••••" required @focus="handleFocus(true)" @blur="handleFocus(false)" />
+          <label for="code">Код</label>
+          <input id="code" v-model="form.code" type="text" placeholder="••••••" required @focus="handleFocus(true)" @blur="handleFocus(false)" />
         </div>
         <button type="submit" class="submit-button" :disabled="isLoading">{{ isLoading ? 'Проверка...' : 'Войти' }}</button>
       </form>
+      
       <div class="card-footer"><p>Еще нет аккаунта? <RouterLink to="/register" class="link">Создать сейчас</RouterLink></p></div>
     </div>
   </div>
