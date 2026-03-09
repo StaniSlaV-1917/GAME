@@ -31,7 +31,8 @@
               class="game-buy-btn" 
               type="button" 
               @click="handleAddToCart"
-              :disabled="isInCart"
+              :disabled="!authStore.isLoggedIn || isInCart"
+              :title="!authStore.isLoggedIn ? 'Войдите в аккаунт, чтобы добавить в корзину' : (isInCart ? 'Игра уже в корзине' : 'Добавить в корзину')"
               :class="{ 'in-cart': isInCart }"
             >
               {{ isInCart ? 'В корзине' : 'В корзину' }}
@@ -50,6 +51,7 @@
 import { defineProps, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useCartStore } from '../stores/cart';
+import { useAuthStore } from '../stores/auth'; // <<< 1. Импортируем хранилище авторизации
 
 const props = defineProps({
   game: {
@@ -59,6 +61,7 @@ const props = defineProps({
 });
 
 const cartStore = useCartStore();
+const authStore = useAuthStore(); // <<< 2. Создаем экземпляр хранилища
 
 const isInCart = computed(() => cartStore.getItemById(props.game.id));
 
@@ -71,6 +74,8 @@ const getGameDataForCart = (gameData) => ({
 });
 
 const handleAddToCart = () => {
+  // Дополнительная проверка, на случай если клик все же пройдет
+  if (!authStore.isLoggedIn) return;
   cartStore.addItem(getGameDataForCart(props.game));
 };
 
@@ -87,7 +92,7 @@ const imageUrl = computed(() => resolveImageUrl(props.game.image));
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
+/* ... (остальные стили без изменений) ... */
 .game-card { height: 100%; }
 .game-card-inner { display: flex; flex-direction: column; height: 100%; border-radius: 12px; overflow: hidden; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.25s ease-in-out; }
 .game-card-inner:hover { transform: translateY(-6px); border-color: #3b82f6; box-shadow: 0 18px 40px rgba(0,0,0,0.6), 0 0 25px rgba(59, 130, 246, 0.4); }
@@ -120,11 +125,19 @@ const imageUrl = computed(() => resolveImageUrl(props.game.image));
   color: #fff; font-weight: 600; transition: all 0.2s ease; 
 }
 .game-buy-btn:hover:not(:disabled) { filter: brightness(1.15); transform: scale(1.05); }
-.game-buy-btn:disabled, 
-.game-buy-btn.in-cart {
-  background: #22c55e;
+
+/* <<< ИЗМЕНЕНИЯ СТИЛЕЙ ЗДЕСЬ */
+.game-buy-btn:disabled {
+  background: #4b5563; /* Серый цвет для неактивной кнопки */
   cursor: not-allowed;
+  filter: none;
+  transform: none;
 }
+
+.game-buy-btn.in-cart {
+  background: #22c55e; /* Зеленый, только если игра уже в корзине */
+}
+
 .details-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255, 255, 255, 0.05); display: grid; place-items: center; color: #9ca3af; transition: all 0.2s ease; }
 .details-btn:hover { border-color: #60a5fa; color: #fff; background: rgba(255, 255, 255, 0.1); }
 </style>

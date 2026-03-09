@@ -62,7 +62,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue'; // <<< 1. Импортируем хуки
 import axios from '@/api/axios';
 
 const games = ref([]);
@@ -75,6 +75,22 @@ const centerSlot = Math.floor(VISIBLE / 2);
 
 let autoTimer = null;
 let spinTimer = null;
+
+// --- Логика загрузки данных ---
+const loadGames = async () => {
+  try {
+    const { data } = await axios.get('/games');
+    if (data && data.length) {
+        // Простое сравнение, чтобы не обновлять, если данные те же
+        if (JSON.stringify(games.value) !== JSON.stringify(data)) {
+            games.value = data;
+        }
+    }
+  } catch (e) {
+    console.error('Ошибка при загрузке игр:', e);
+  }
+};
+
 
 const resolveImageUrl = (imagePath) => {
   if (!imagePath) return '/img/noimage.png';
@@ -161,29 +177,32 @@ const startRoulette = () => {
   }, Math.max(18, intervalMs)); // чуть медленнее, плавнее
 };
 
-const fetchGames = async () => {
-  try {
-    const { data } = await axios.get('/games');
-    if (!data.length) return;
-    games.value = data;
-    centerIndex.value = 0;
-    startAutoScroll();
-  } catch (e) {
-    console.error('Ошибка при загрузке игр:', e);
-  }
-};
+// --- Хуки жизненного цикла ---
 
-onMounted(() => {
-  fetchGames();
+onMounted(async () => {
+  await loadGames(); // <<< 2. Загружаем игры при первом монтировании
+  startAutoScroll();
 });
 
 onUnmounted(() => {
   stopAutoScroll();
   if (spinTimer) clearInterval(spinTimer);
 });
+
+// <<< 3. Управление при (де)активации компонента
+onActivated(async () => {
+  await loadGames(); // Перезагружаем данные при возвращении на страницу
+  startAutoScroll(); // и перезапускаем скролл
+});
+
+onDeactivated(() => {
+  stopAutoScroll(); // Останавливаем скролл при уходе со страницы
+});
+
 </script>
 
 <style scoped>
+/* Стили остаются без изменений */
 .carousel-wrapper {
   position: relative;
   width: 100%;
