@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const api = axios.create({
   // ЗАМЕНИТЬ: Поменяй этот URL на публичный адрес твоего Laravel API
-  baseURL: 'https://your-backend-api.com/api',
+  baseURL: 'https://game-store-backend-mgut.onrender.com/api',
 });
 
 // перехватчик для всех запросов
