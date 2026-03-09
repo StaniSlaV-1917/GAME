@@ -131,14 +131,19 @@ class AuthController extends Controller
 
         Cache::forget('login_code:' . $email);
 
+        // --- ИСПРАВЛЕНИЕ ЗДЕСЬ ---
+        // Ищем пользователя по хешу почты, а не по самой почте,
+        // так как поле email в базе данных зашифровано.
+        $emailHash = hash('sha256', $email);
+
         $user = User::firstOrCreate(
-            ['email' => $email],
+            ['email_hash' => $emailHash], // Искать нужно по этому уникальному полю
             [
-                'fullname' => 'New User', // или как-то иначе
-                'password' => Hash::make(Str::random(16)),
-                'email_hash' => hash('sha256', $email),
-                'phone' => ' ',
-                'phone_hash' => hash('sha256', ' ')
+                'email'      => $email, // Это поле попадёт только при создании
+                'fullname'   => 'Новый пользователь', // Имя для нового пользователя
+                'password'   => Hash::make(Str::random(16)),
+                'phone'      => ' ', // Заглушка, т.к. телефона нет
+                'phone_hash' => hash('sha256', ' ') // Заглушка для хеша телефона
             ]
         );
 
