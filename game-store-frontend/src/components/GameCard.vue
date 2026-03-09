@@ -1,6 +1,10 @@
 <template>
   <div class="game-card">
     <div class="game-card-inner">
+
+      <!-- Ссылка-обертка для навигации -->
+      <RouterLink class="card-main-link" :to="{ name: 'game', params: { id: game.id } }" :aria-label="game.title"></RouterLink>
+
       <div class="game-card-top">
         <img :src="imageUrl" :alt="game.title"/>
         <div class="game-badges">
@@ -8,7 +12,7 @@
           <span v-if="game.is_new" class="badge badge-new">Новинка</span>
           <span v-if="game.discount_percent" class="badge badge-discount">-{{ game.discount_percent }}%</span>
         </div>
-        <a class="external-link-icon" :href="game.stopgame_url_code" target="_blank" rel="noopener" title="Обзор на StopGame">
+        <a class="external-link-icon" :href="game.stopgame_url_code" target="_blank" rel="noopener" title="Обзор на StopGame" @click.stop>
            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
         </a>
       </div>
@@ -30,14 +34,14 @@
             <button 
               class="game-buy-btn" 
               type="button" 
-              @click="handleAddToCart"
+              @click.stop="handleAddToCart" <!-- <<< Добавляем .stop -->
               :disabled="!authStore.isLoggedIn || isInCart"
-              :title="!authStore.isLoggedIn ? 'Войдите в аккаунт, чтобы добавить в корзину' : (isInCart ? 'Игра уже в корзине' : 'Добавить в корзину')"
+              :title="!authStore.isLoggedIn ? 'Войдите, чтобы добавить в корзину' : (isInCart ? 'Игра уже в корзине' : 'Добавить в корзину')"
               :class="{ 'in-cart': isInCart }"
             >
               {{ isInCart ? 'В корзине' : 'В корзину' }}
             </button>
-            <RouterLink class="details-btn" :to="{ name: 'game', params: { id: game.id } }" title="Подробнее">
+            <RouterLink class="details-btn" :to="{ name: 'game', params: { id: game.id } }" title="Подробнее" @click.stop> <!-- <<< Добавляем .stop -->
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.4 2.2a2.3 2.3 0 013.2 0l7.3 8.3c.6.6.7 1.5.3 2.2l-5 8.3c-.6.9-1.8 1-2.7.3l-7.3-8.3c-.6-.6-.7-1.5-.3-2.2l5-8.3z"></path><path d="M9.2 12.3a3 3 0 11-2.8 4.3"></path></svg>
             </RouterLink>
           </div>
@@ -51,7 +55,7 @@
 import { defineProps, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useCartStore } from '../stores/cart';
-import { useAuthStore } from '../stores/auth'; // <<< 1. Импортируем хранилище авторизации
+import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({
   game: {
@@ -61,7 +65,7 @@ const props = defineProps({
 });
 
 const cartStore = useCartStore();
-const authStore = useAuthStore(); // <<< 2. Создаем экземпляр хранилища
+const authStore = useAuthStore();
 
 const isInCart = computed(() => cartStore.getItemById(props.game.id));
 
@@ -74,7 +78,6 @@ const getGameDataForCart = (gameData) => ({
 });
 
 const handleAddToCart = () => {
-  // Дополнительная проверка, на случай если клик все же пройдет
   if (!authStore.isLoggedIn) return;
   cartStore.addItem(getGameDataForCart(props.game));
 };
@@ -92,10 +95,30 @@ const imageUrl = computed(() => resolveImageUrl(props.game.image));
 </script>
 
 <style scoped>
-/* ... (остальные стили без изменений) ... */
 .game-card { height: 100%; }
-.game-card-inner { display: flex; flex-direction: column; height: 100%; border-radius: 12px; overflow: hidden; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.25s ease-in-out; }
+.game-card-inner { 
+  position: relative; /* <<< Важно для позиционирования ссылки-обертки */
+  display: flex; flex-direction: column; height: 100%; border-radius: 12px; overflow: hidden; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.25s ease-in-out; 
+}
 .game-card-inner:hover { transform: translateY(-6px); border-color: #3b82f6; box-shadow: 0 18px 40px rgba(0,0,0,0.6), 0 0 25px rgba(59, 130, 246, 0.4); }
+
+/* --- Стили для ссылки-обертки --- */
+.card-main-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1; /* Находится над контентом, но под кнопками */
+  text-indent: -9999px; /* Скрываем текст ссылки */
+}
+
+.game-actions, .external-link-icon, .details-btn {
+  position: relative; /* Поднимаем кнопки над ссылкой-оберткой */
+  z-index: 2;
+}
+/* --------------------------------- */
+
 .game-card-top { position: relative; height: 180px; background: #000; overflow: hidden; }
 .game-card-top img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease-in-out; }
 .game-card-inner:hover .game-card-top img { transform: scale(1.07); }
@@ -125,19 +148,15 @@ const imageUrl = computed(() => resolveImageUrl(props.game.image));
   color: #fff; font-weight: 600; transition: all 0.2s ease; 
 }
 .game-buy-btn:hover:not(:disabled) { filter: brightness(1.15); transform: scale(1.05); }
-
-/* <<< ИЗМЕНЕНИЯ СТИЛЕЙ ЗДЕСЬ */
 .game-buy-btn:disabled {
-  background: #4b5563; /* Серый цвет для неактивной кнопки */
+  background: #4b5563;
   cursor: not-allowed;
   filter: none;
   transform: none;
 }
-
 .game-buy-btn.in-cart {
-  background: #22c55e; /* Зеленый, только если игра уже в корзине */
+  background: #22c55e;
 }
-
 .details-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); background: rgba(255, 255, 255, 0.05); display: grid; place-items: center; color: #9ca3af; transition: all 0.2s ease; }
 .details-btn:hover { border-color: #60a5fa; color: #fff; background: rgba(255, 255, 255, 0.1); }
 </style>

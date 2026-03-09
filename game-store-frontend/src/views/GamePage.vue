@@ -1,10 +1,10 @@
-
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import api from '../api/axios';
 import { useCartStore } from '../stores/cart';
+import { useAuthStore } from '../stores/auth'; // <<< 1. Импорт хранилища авторизации
 
 const route = useRoute();
 const gameId = computed(() => route.params.id);
@@ -14,6 +14,7 @@ const loading = ref(true);
 const error = ref('');
 
 const cartStore = useCartStore();
+const authStore = useAuthStore(); // <<< 2. Создание экземпляра
 
 const getGameDataForCart = (gameData) => ({
     id: gameData.id,
@@ -26,7 +27,7 @@ const getGameDataForCart = (gameData) => ({
 const isInCart = computed(() => game.value && cartStore.getItemById(game.value.id));
 
 const addToCart = () => {
-  if (game.value) {
+  if (game.value && authStore.isLoggedIn) { // Доп. проверка
     cartStore.addItem(getGameDataForCart(game.value));
   }
 };
@@ -157,8 +158,12 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
           <div class="action-buttons">
             <button 
               @click="addToCart" 
-              class="add-to-cart-btn">
-              Добавить в корзину
+              class="add-to-cart-btn"
+              :class="{ 'in-cart': isInCart }"
+              :disabled="!authStore.isLoggedIn || isInCart"
+              :title="!authStore.isLoggedIn ? 'Войдите, чтобы добавить в корзину' : (isInCart ? 'Игра уже в корзине' : 'Добавить в корзину')"
+            >
+              {{ isInCart ? 'В корзине' : 'Добавить в корзину' }}
             </button>
             <a :href="stopGameUrl" target="_blank" rel="noopener noreferrer" class="external-link-btn">
               Обзоры на StopGame
@@ -168,7 +173,8 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
         </div>
       </header>
 
-      <!-- ******** MAIN CONTENT GRID ******** -->
+      <!-- ... остальная часть шаблона без изменений ... -->
+       <!-- ******** MAIN CONTENT GRID ******** -->
       <div class="content-grid">
         <!-- Left Column -->
         <div class="main-content-col">
@@ -227,6 +233,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 </template>
 
 <style scoped>
+/* ... стили без изменений ... */
 .page-wrapper { 
   position: relative;
   max-width: 1200px; 
@@ -314,14 +321,22 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
   background-color: #3b82f6;
   color: white;
 }
-.add-to-cart-btn:hover:not(:disabled) { background-color: #2563eb; transform: translateY(-2px); }
-.add-to-cart-btn:disabled,
-.add-to-cart-btn.in-cart {
-  background-color: #22c55e;
+
+.add-to-cart-btn:hover:not(:disabled) { 
+  background-color: #2563eb; 
+  transform: translateY(-2px); 
+}
+
+.add-to-cart-btn:disabled {
   cursor: not-allowed;
   transform: none;
+  background-color: #4b5563; /* <<< Серый цвет для неактивной */
+  filter: brightness(1.0);
 }
-.add-to-cart-btn:disabled:hover { filter: brightness(1.0); }
+
+.add-to-cart-btn.in-cart {
+  background-color: #22c55e; /* <<< Зеленый, если уже в корзине */
+}
 
 .external-link-btn {
   background-color: #4b5563;
