@@ -11,41 +11,49 @@
         </div>
 
         <div v-else class="carousel-track">
-          <div
+          <router-link
             v-for="(card, idx) in visibleCards"
             :key="card.game.id + '-' + idx"
-            class="game-card"
-            :class="{ active: idx === centerSlot }"
+            :to="{ name: 'game', params: { id: card.game.id } }"
+            class="game-card-link"
+            :class="{ 'active-link': idx === centerSlot }"
           >
-            <div class="card-content">
-              <img
-                :src="resolveImageUrl(card.game.image)"
-                :alt="card.game.title"
-                class="game-image"
-              />
-            <div class="game-info">
-              <h3>{{ card.game.title }}</h3>
-              <p>{{ Number(card.game.price).toFixed(0) }} ₽</p>
+            <div
+              class="game-card"
+              :class="{ active: idx === centerSlot }"
+            >
+              <div class="card-content">
+                <img
+                  :src="resolveImageUrl(card.game.image)"
+                  :alt="card.game.title"
+                  class="game-image"
+                />
+              <div class="game-info">
+                <h3>{{ card.game.title }}</h3>
+                <p>{{ Number(card.game.price).toFixed(0) }} ₽</p>
+              </div>
+              </div>
             </div>
-            </div>
-          </div>
+          </router-link>
         </div>
       </div>
 
       <div class="winner-spotlight" v-if="winnerGame">
-        <div class="game-card active winner">
-          <div class="card-content">
-            <img
-              :src="resolveImageUrl(winnerGame.image)"
-              :alt="winnerGame.title"
-              class="game-image"
-            />
-            <div class="game-info">
-              <h3>{{ winnerGame.title }}</h3>
-              <p>{{ Number(winnerGame.price).toFixed(0) }} ₽</p>
+        <router-link :to="{ name: 'game', params: { id: winnerGame.id } }" class="game-card-link">
+            <div class="game-card active winner">
+            <div class="card-content">
+                <img
+                :src="resolveImageUrl(winnerGame.image)"
+                :alt="winnerGame.title"
+                class="game-image"
+                />
+                <div class="game-info">
+                <h3>{{ winnerGame.title }}</h3>
+                <p>{{ Number(winnerGame.price).toFixed(0) }} ₽</p>
+                </div>
             </div>
-          </div>
-        </div>
+            </div>
+        </router-link>
       </div>
 
       <div class="carousel-controls">
@@ -62,7 +70,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue'; // <<< 1. Импортируем хуки
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue';
+import { RouterLink } from 'vue-router';
 import axios from '@/api/axios';
 
 const games = ref([]);
@@ -76,12 +85,10 @@ const centerSlot = Math.floor(VISIBLE / 2);
 let autoTimer = null;
 let spinTimer = null;
 
-// --- Логика загрузки данных ---
 const loadGames = async () => {
   try {
     const { data } = await axios.get('/games');
     if (data && data.length) {
-        // Простое сравнение, чтобы не обновлять, если данные те же
         if (JSON.stringify(games.value) !== JSON.stringify(data)) {
             games.value = data;
         }
@@ -90,7 +97,6 @@ const loadGames = async () => {
     console.error('Ошибка при загрузке игр:', e);
   }
 };
-
 
 const resolveImageUrl = (imagePath) => {
   if (!imagePath) return '/img/noimage.png';
@@ -115,13 +121,12 @@ const visibleCards = computed(() => {
   return cards;
 });
 
-// Плавный пассивный шаг
 const startAutoScroll = () => {
   if (autoTimer || !games.value.length) return;
   autoTimer = setInterval(() => {
     if (isSpinning.value) return;
     centerIndex.value += 1;
-  }, 3000); // каждые 3 секунды мягкий переход
+  }, 3000);
 };
 
 const stopAutoScroll = () => {
@@ -148,7 +153,7 @@ const startRoulette = () => {
     extraRounds * len + ((targetReal - currentReal + len) % len);
 
   const steps = delta;
-  const totalDurationMs = 5000; // ~5 секунд
+  const totalDurationMs = 5000;
   const intervalMs = totalDurationMs / steps;
 
   let moved = 0;
@@ -174,13 +179,11 @@ const startRoulette = () => {
         startAutoScroll();
       }, 4000);
     }
-  }, Math.max(18, intervalMs)); // чуть медленнее, плавнее
+  }, Math.max(18, intervalMs));
 };
 
-// --- Хуки жизненного цикла ---
-
 onMounted(async () => {
-  await loadGames(); // <<< 2. Загружаем игры при первом монтировании
+  await loadGames();
   startAutoScroll();
 });
 
@@ -189,20 +192,30 @@ onUnmounted(() => {
   if (spinTimer) clearInterval(spinTimer);
 });
 
-// <<< 3. Управление при (де)активации компонента
 onActivated(async () => {
-  await loadGames(); // Перезагружаем данные при возвращении на страницу
-  startAutoScroll(); // и перезапускаем скролл
+  await loadGames();
+  startAutoScroll();
 });
 
 onDeactivated(() => {
-  stopAutoScroll(); // Останавливаем скролл при уходе со страницы
+  stopAutoScroll();
 });
 
 </script>
 
 <style scoped>
-/* Стили остаются без изменений */
+.game-card-link {
+  display: block;
+  text-decoration: none;
+  border-radius: 18px;
+  transition: transform 0.45s cubic-bezier(0.3, 0.7, 0.2, 1); 
+  will-change: transform;
+}
+
+.game-card-link.active-link {
+    cursor: default;
+}
+
 .carousel-wrapper {
   position: relative;
   width: 100%;
@@ -242,27 +255,34 @@ onDeactivated(() => {
   transition: transform 0.45s cubic-bezier(0.3, 0.7, 0.2, 1);
 }
 
-/* Карточки */
 .game-card {
   width: 260px;
   flex-shrink: 0;
   border-radius: 18px;
   background-color: #0f172a;
-  transform: scale(0.8);
   opacity: 0.3;
   filter: blur(2.2px);
   transition:
-    transform 0.45s cubic-bezier(0.3, 0.7, 0.2, 1),
     opacity 0.45s cubic-bezier(0.3, 0.7, 0.2, 1),
     filter 0.45s cubic-bezier(0.3, 0.7, 0.2, 1),
     box-shadow 0.45s cubic-bezier(0.3, 0.7, 0.2, 1);
 }
 
+.game-card-link {
+    transform: scale(0.8);
+}
+.game-card-link.active-link .game-card {
+    transform: none; 
+}
+
 .game-card.active {
-  transform: scale(1.06);
   opacity: 1;
   filter: blur(0);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+}
+
+.game-card-link.active-link {
+    transform: scale(1.06);
 }
 
 .card-content {
@@ -298,7 +318,6 @@ onDeactivated(() => {
   font-weight: 500;
 }
 
-/* Оверлей и победитель */
 .overlay {
   position: fixed;
   inset: 0;
@@ -318,13 +337,15 @@ onDeactivated(() => {
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 20;
-  pointer-events: none;
 }
 
 .game-card.winner {
-  transform: scale(1.12);
   filter: blur(0);
   opacity: 1;
+}
+
+.winner-spotlight .game-card-link {
+    transform: scale(1.12);
 }
 
 .game-card.winner .card-content {
@@ -334,7 +355,6 @@ onDeactivated(() => {
     0 0 50px 20px rgba(251, 191, 36, 0.6);
 }
 
-/* Кнопка */
 .carousel-controls {
   position: relative;
   z-index: 5;

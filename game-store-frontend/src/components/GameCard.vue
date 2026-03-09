@@ -2,7 +2,6 @@
   <div class="game-card">
     <div class="game-card-inner">
 
-      <!-- Ссылка-обертка для навигации -->
       <RouterLink class="card-main-link" :to="{ name: 'game', params: { id: game.id } }" :aria-label="game.title"></RouterLink>
 
       <div class="game-card-top">
@@ -34,14 +33,14 @@
             <button 
               class="game-buy-btn" 
               type="button" 
-              @click.stop="handleAddToCart" <!-- <<< Добавляем .stop -->
+              @click.stop="handleAddToCart"
               :disabled="!authStore.isLoggedIn || isInCart"
               :title="!authStore.isLoggedIn ? 'Войдите, чтобы добавить в корзину' : (isInCart ? 'Игра уже в корзине' : 'Добавить в корзину')"
               :class="{ 'in-cart': isInCart }"
             >
               {{ isInCart ? 'В корзине' : 'В корзину' }}
             </button>
-            <RouterLink class="details-btn" :to="{ name: 'game', params: { id: game.id } }" title="Подробнее" @click.stop> <!-- <<< Добавляем .stop -->
+            <RouterLink class="details-btn" :to="{ name: 'game', params: { id: game.id } }" title="Подробнее" @click.stop>
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.4 2.2a2.3 2.3 0 013.2 0l7.3 8.3c.6.6.7 1.5.3 2.2l-5 8.3c-.6.9-1.8 1-2.7.3l-7.3-8.3c-.6-.6-.7-1.5-.3-2.2l5-8.3z"></path><path d="M9.2 12.3a3 3 0 11-2.8 4.3"></path></svg>
             </RouterLink>
           </div>
@@ -97,27 +96,25 @@ const imageUrl = computed(() => resolveImageUrl(props.game.image));
 <style scoped>
 .game-card { height: 100%; }
 .game-card-inner { 
-  position: relative; /* <<< Важно для позиционирования ссылки-обертки */
+  position: relative;
   display: flex; flex-direction: column; height: 100%; border-radius: 12px; overflow: hidden; background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); transition: all 0.25s ease-in-out; 
 }
 .game-card-inner:hover { transform: translateY(-6px); border-color: #3b82f6; box-shadow: 0 18px 40px rgba(0,0,0,0.6), 0 0 25px rgba(59, 130, 246, 0.4); }
 
-/* --- Стили для ссылки-обертки --- */
 .card-main-link {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 1; /* Находится над контентом, но под кнопками */
-  text-indent: -9999px; /* Скрываем текст ссылки */
+  z-index: 1; 
+  text-indent: -9999px; 
 }
 
 .game-actions, .external-link-icon, .details-btn {
-  position: relative; /* Поднимаем кнопки над ссылкой-оберткой */
+  position: relative; 
   z-index: 2;
 }
-/* --------------------------------- */
 
 .game-card-top { position: relative; height: 180px; background: #000; overflow: hidden; }
 .game-card-top img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease-in-out; }
