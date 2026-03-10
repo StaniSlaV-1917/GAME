@@ -104,37 +104,39 @@ const formatDate = (dateString) => {
   color: #bdc1c6;
 }
 
-.full-text >>> h2, .full-text >>> h3 {
+.full-text :deep(h2),
+.full-text :deep(h3) {
   font-size: 1.5rem;
   font-weight: 700;
   color: #e5e7eb;
   margin: 2em 0 1em;
 }
 
-.full-text >>> p {
+.full-text :deep(p) {
   margin-bottom: 1.5em;
 }
 
-.full-text >>> ul, .full-text >>> ol {
+.full-text :deep(ul),
+.full-text :deep(ol) {
   padding-left: 25px;
   margin-bottom: 1.5em;
 }
 
-.full-text >>> li {
+.full-text :deep(li) {
   margin-bottom: 0.75em;
 }
 
-.full-text >>> a {
+.full-text :deep(a) {
   color: #60a5fa;
   text-decoration: none;
   transition: color .2s;
 }
 
-.full-text >>> a:hover {
+.full-text :deep(a:hover) {
   color: #3b82f6;
 }
 
-.full-text >>> blockquote {
+.full-text :deep(blockquote) {
   border-left: 3px solid #3b82f6;
   padding-left: 20px;
   margin: 1.5em 0;
