@@ -18,4 +18,3 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GAME_45428688 }}'
           channelId: live
           projectId: game-45428688
-          target: game-store-frontend
