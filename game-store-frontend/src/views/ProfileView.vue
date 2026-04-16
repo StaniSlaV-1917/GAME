@@ -1,10 +1,30 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import api from '../api/axios';
 import { useAuthStore } from '../stores/auth';
 
 const authStore = useAuthStore();
 const user = computed(() => authStore.user);
+
+// SEO
+useHead(computed(() => {
+  const title = user.value 
+    ? `Профиль ${user.value.fullname} - GameStore` 
+    : 'Профиль пользователя - GameStore';
+  const description = 'Управляйте вашими данными, просматривайте историю заказов и отслеживайте купленные ключи в личном кабинете GameStore.';
+
+  return {
+    title,
+    meta: [
+      { name: 'description', content: description },
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: description },
+      { property: 'og:image', content: 'https://gamestore.zyro.com/images/logo.svg' },
+      { property: 'og:url', content: window.location.href }
+    ]
+  };
+}));
 
 const orders = ref([]);
 const userReviews = ref([]);

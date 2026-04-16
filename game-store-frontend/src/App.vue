@@ -44,6 +44,7 @@ onMounted(() => {
           <RouterLink to="/">Главная</RouterLink>
           <RouterLink to="/news">Новости</RouterLink>
           <RouterLink to="/catalog">Каталог</RouterLink>
+          <RouterLink to="/about">О магазине</RouterLink>
           <RouterLink v-if="user?.is_admin" to="/admin" class="admin-link">Админка</RouterLink>
         </nav>
 
@@ -78,6 +79,9 @@ onMounted(() => {
           <div class="footer-col footer-about">
             <h3 class="footer-col-title">О магазине</h3>
             <p>GameStore — онлайн-магазин цифровых ключей. Мы заботимся о том, чтобы ваши покупки были безопасными, а поддержка — доступной и понятной.</p>
+            <div class="footer-links" style="margin-top: 12px;">
+                <RouterLink to="/about">Подробнее о нас</RouterLink>
+            </div>
           </div>
 
           <div class="footer-col footer-popular-games">
@@ -96,6 +100,7 @@ onMounted(() => {
                 <RouterLink to="/">Главная</RouterLink>
                 <RouterLink to="/news">Новости</RouterLink>
                 <RouterLink to="/catalog">Каталог</RouterLink>
+                <RouterLink to="/about">О магазине</RouterLink>
                 <RouterLink to="/cart">Корзина</RouterLink>
              </div>
           </div>

@@ -1,7 +1,20 @@
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
+import { useHead } from '@vueuse/head';
 import { useAuthStore } from '../stores/auth';
+
+// SEO 
+useHead({
+  title: 'Вход в аккаунт - GameStore',
+  meta: [
+    { name: 'description', content: 'Войдите в ваш аккаунт GameStore, чтобы получить доступ к покупкам, избранному и персональным предложениям. Быстрый и безопасный вход.' },
+    { property: 'og:title', content: 'Вход в аккаунт - GameStore' },
+    { property: 'og:description', content: 'Войдите в ваш аккаунт GameStore, чтобы получить доступ к покупкам, избранному и персональным предложениям. Быстрый и безопасный вход.' },
+    { property: 'og:image', content: 'https://gamestore.zyro.com/images/logo.svg' },
+    { property: 'og:url', content: window.location.href }
+  ]
+});
 
 const router = useRouter();
 const authStore = useAuthStore();

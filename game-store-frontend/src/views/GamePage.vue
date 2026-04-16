@@ -4,17 +4,22 @@ import { useRoute } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import api from '../api/axios';
 import { useCartStore } from '../stores/cart';
-import { useAuthStore } from '../stores/auth'; // <<< 1. Импорт хранилища авторизации
+import { useAuthStore } from '../stores/auth';
+
+import ReviewList from '../components/ReviewList.vue';
+import ReviewForm from '../components/ReviewForm.vue';
 
 const route = useRoute();
 const gameId = computed(() => route.params.id);
 const game = ref(null);
 const similarGames = ref([]);
+const reviews = ref([]);
 const loading = ref(true);
+const loadingReviews = ref(false);
 const error = ref('');
 
 const cartStore = useCartStore();
-const authStore = useAuthStore(); // <<< 2. Создание экземпляра
+const authStore = useAuthStore();
 
 const getGameDataForCart = (gameData) => ({
     id: gameData.id,
@@ -23,11 +28,9 @@ const getGameDataForCart = (gameData) => ({
     image: gameData.image,
     platform: gameData.platform,
 });
-
 const isInCart = computed(() => game.value && cartStore.getItemById(game.value.id));
-
 const addToCart = () => {
-  if (game.value && authStore.isLoggedIn) { // Доп. проверка
+  if (game.value && authStore.isLoggedIn) {
     cartStore.addItem(getGameDataForCart(game.value));
   }
 };
@@ -52,6 +55,7 @@ const loadGame = async (id) => {
     const { data } = await api.get(`/games/${id}`);
     game.value = data;
     loadSimilarGames(data.genre, data.id);
+    loadReviews(id);
   } catch (e) {
     error.value = 'Игра не найдена или произошла ошибка.';
     console.error('Ошибка загрузки игры:', e);
@@ -67,6 +71,18 @@ const loadSimilarGames = async (genre, currentGameId) => {
     similarGames.value = data.filter(g => g.id !== currentGameId).slice(0, 3);
   } catch (e) {
     console.error('Ошибка загрузки похожих игр:', e);
+  }
+};
+
+const loadReviews = async (id) => {
+  loadingReviews.value = true;
+  try {
+    const { data } = await api.get(`/games/${id}/reviews`);
+    reviews.value = data;
+  } catch (e) {
+    console.error('Ошибка загрузки отзывов:', e);
+  } finally {
+    loadingReviews.value = false;
   }
 };
 
@@ -146,7 +162,13 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
       <!-- ******** HEADER (BUY BLOCK) ******** -->
       <header class="game-header">
         <div class="header-cover-container">
-          <img :src="coverImageSrc" :alt="`Обложка ${game.title}`" class="header-cover-image">
+          <img 
+            :src="coverImageSrc" 
+            :alt="`Обложка ${game.title}`" 
+            class="header-cover-image" 
+            width="300" 
+            height="450"
+          >
         </div>
         <div class="header-info-container">
           <h1 class="game-title">{{ game.title }}</h1>
@@ -173,8 +195,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
         </div>
       </header>
 
-      <!-- ... остальная часть шаблона без изменений ... -->
-       <!-- ******** MAIN CONTENT GRID ******** -->
+      <!-- ******** MAIN CONTENT GRID ******** -->
       <div class="content-grid">
         <!-- Left Column -->
         <div class="main-content-col">
@@ -189,10 +210,33 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
             <h2 class="section-title">Скриншоты</h2>
             <div class="screenshots-grid">
               <a v-for="image in game.images" :key="image.id" :href="`http://localhost:8000${image.path}`" target="_blank">
-                <img :src="`http://localhost:8000${image.path}`" :alt="`Скриншот ${game.title}`" class="screenshot-img" />
+                <img 
+                  :src="`http://localhost:8000${image.path}`" 
+                  :alt="`Скриншот ${game.title} #${image.id}`" 
+                  class="screenshot-img" 
+                  loading="lazy" 
+                  width="1280" 
+                  height="720"
+                />
               </a>
             </div>
           </section>
+
+          <!-- ******** REVIEWS SECTION ******** -->
+          <section class="content-section reviews-section">
+            <h2 class="section-title">Отзывы</h2>
+            <review-form 
+              v-if="authStore.isLoggedIn"
+              :game-id="gameId" 
+              @review-submitted="() => loadReviews(gameId)" 
+            />
+            <div v-else class="notification is-info is-light">
+              Чтобы оставить отзыв, пожалуйста, <router-link to="/login">войдите в свой аккаунт</router-link>.
+            </div>
+            <div v-if="loadingReviews" class="status-message">Загрузка отзывов...</div>
+            <review-list v-else :reviews="reviews" />
+          </section>
+
         </div>
 
         <!-- Right Sidebar -->
@@ -209,7 +253,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
           <section class="content-section">
             <h2 class="section-title">Об игре {{ game.title }}</h2>
             <div v-if="game.description" v-html="game.description" class="description-content"></div>
-            <p v-else>В онлайн-магазине <strong>GameStore</strong> вы можете <strong>купить ключ {{ game.title }}</strong> для платформы {{ game.platform }} по самой выгодной цене. Это знаменитая игра в жанре <em>{{ game.genre }}</em>, выпущенная в {{ game.release_year }} году, которая уже успела завоевать сердца тысяч геймеров.</p>
+            <p v-else>В онлайн-магазине <strong>GameStore</strong> вы можете <strong>купить ключ {{ game.title }}</strong> для платформы {{ game.platform }} по самой выгодной цене...</p>
           </section>
         </aside>
       </div>
@@ -219,7 +263,14 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
         <h2 class="section-title">Похожие игры</h2>
         <div class="similar-games-grid">
            <router-link v-for="simGame in similarGames" :key="simGame.id" :to="`/games/${simGame.id}`" class="similar-game-card">
-                <img :src="resolveImageUrl(simGame.image)" :alt="simGame.title" class="similar-game-img" />
+                <img 
+                  :src="resolveImageUrl(simGame.image)" 
+                  :alt="simGame.title" 
+                  class="similar-game-img" 
+                  loading="lazy" 
+                  width="200" 
+                  height="250"
+                />
                 <div class="similar-game-info">
                   <div class="similar-game-title">{{ simGame.title }}</div>
                   <div class="similar-game-price">{{ Number(simGame.price).toFixed(0) }} ₽</div>
@@ -233,7 +284,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 </template>
 
 <style scoped>
-/* ... стили без изменений ... */
+/* ... styles ... */
 .page-wrapper { 
   position: relative;
   max-width: 1200px; 
@@ -286,7 +337,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 }
 
 .game-header { display: grid; grid-template-columns: 300px 1fr; gap: 32px; padding: 24px; border-radius: 12px; margin-bottom: 32px; align-items: center; }
-.header-cover-image { width: 100%; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+.header-cover-image { width: 100%; height: auto; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 .header-info-container { display: flex; flex-direction: column; }
 .game-title { font-size: 3rem; font-weight: 800; line-height: 1.1; margin: 0 0 16px; text-shadow: 0 0 20px rgba(0,0,0,0.7); }
 .price-block { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
@@ -362,7 +413,7 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .video-container { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 8px; overflow: hidden; }
 .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .screenshots-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.screenshot-img { width: 100%; border-radius: 8px; transition: transform 0.2s ease; }
+.screenshot-img { width: 100%; height: auto; border-radius: 8px; transition: transform 0.2s ease; }
 .screenshot-img:hover { transform: scale(1.05); }
 
 .description-content, .content-section > p {
@@ -377,10 +428,20 @@ watch(gameId, (newId) => { if (newId) loadGame(newId); });
 .similar-games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
 .similar-game-card { text-decoration: none; background: #1f2937; border-radius: 8px; overflow: hidden; transition: transform 0.2s ease, box-shadow 0.2s ease; }
 .similar-game-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.25); }
-.similar-game-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; }
+.similar-game-img { width: 100%; height: auto; object-fit: cover; aspect-ratio: 4/5; }
 .similar-game-info { padding: 12px; }
 .similar-game-title { font-weight: 600; color: #fff; margin-bottom: 4px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
 .similar-game-price { color: #4ade80; font-weight: 700; }
+
+.reviews-section .notification {
+  margin-top: 24px;
+  background-color: #1f2937;
+  color: #9ca3af;
+}
+.reviews-section .notification a { 
+  color: #60a5fa; 
+  font-weight: 600;
+}
 
 @media (max-width: 992px) {
   .content-grid { grid-template-columns: 1fr; }

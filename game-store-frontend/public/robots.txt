@@ -1,0 +1,4 @@
+User-agent: *
+Disallow:
+
+Sitemap: https://gamestore-frontend.web.app/sitemap.xml

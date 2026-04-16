@@ -41,7 +41,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { useHead } from '@vueuse/head';
 import api from '../api/axios';
 import GameCard from '../components/GameCard.vue';
 
@@ -52,6 +53,20 @@ const error = ref('');
 
 const selectedGenre = ref('all');
 const sortBy = ref('release_date_desc');
+
+// SEO с помощью useHead
+useHead(computed(() => {
+  const genreText = selectedGenre.value === 'all' ? 'Все игры' : `${selectedGenre.value} игры`;
+  return {
+    title: `${genreText} - Купить в каталоге GameStore`,
+    meta: [
+      {
+        name: 'description',
+        content: `Ознакомьтесь с каталогом игр в GameStore. Покупайте лицензионные ключи для ПК по выгодным ценам. Сортируйте ${genreText.toLowerCase()} по цене, рейтингу и дате выхода.`
+      }
+    ]
+  };
+}));
 
 // Загрузка списка доступных жанров
 const fetchGenres = async () => {

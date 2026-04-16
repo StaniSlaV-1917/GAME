@@ -5,7 +5,13 @@
       <RouterLink class="card-main-link" :to="{ name: 'game', params: { id: game.id } }" :aria-label="game.title"></RouterLink>
 
       <div class="game-card-top">
-        <img :src="imageUrl" :alt="game.title"/>
+        <img 
+          :src="imageUrl" 
+          :alt="game.title" 
+          width="270" 
+          height="180" 
+          loading="lazy"
+        />
         <div class="game-badges">
           <span v-if="game.is_featured" class="badge badge-featured">Хит</span>
           <span v-if="game.is_new" class="badge badge-new">Новинка</span>

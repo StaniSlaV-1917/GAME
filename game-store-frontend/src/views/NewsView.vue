@@ -11,7 +11,14 @@
     <div v-if="newsItems.length" class="news-grid">
       <article v-for="item in newsItems" :key="item.id" class="news-card">
         <RouterLink :to="'/news/' + item.id" class="card-link-wrapper">
-          <img :src="item.image || 'https://via.placeholder.com/400x200'" :alt="item.title" class="news-image" />
+          <img 
+            :src="item.image || 'https://via.placeholder.com/400x200'" 
+            :alt="item.title" 
+            class="news-image" 
+            width="400" 
+            height="200"
+            loading="lazy"
+          />
         </RouterLink>
         <div class="news-card-content">
             <h2 class="news-title">
@@ -30,7 +37,19 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
+import { useHead } from '@vueuse/head';
 import api from '../api/axios';
+
+// SEO-теги
+useHead({
+  title: 'Новости игровой индустрии - GameStore',
+  meta: [
+    {
+      name: 'description',
+      content: 'Читайте последние новости из мира игр. Свежие анонсы, обзоры, события и обновления игровой индустрии в блоге интернет-магазина GameStore.'
+    }
+  ]
+});
 
 const newsItems = ref([]);
 const loading = ref(true);

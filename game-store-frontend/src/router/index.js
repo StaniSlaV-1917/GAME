@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth'; // <<< ИМПОРТИРУЕМ Х�
 
 import HomeView from '../views/HomeView.vue';
 import CatalogView from '../views/CatalogView.vue';
+import AboutView from '../views/About.vue'; // <<< ИМПОРТ НОВОГО КОМПОНЕНТА
 import CartView from '../views/CartView.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
@@ -30,7 +31,8 @@ const routes = [
     props: true
   },
   { path: '/catalog', name: 'catalog', component: CatalogView },
-  
+  { path: '/about', name: 'about', component: AboutView }, // <<< НОВЫЙ МАРШРУТ
+
   // <<< ИЗМЕНЕНИЕ ЗДЕСЬ
   { 
     path: '/cart', 
