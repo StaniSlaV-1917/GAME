@@ -1,6 +1,6 @@
 <script setup>
 import { useRoute } from 'vue-router';
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { storeToRefs } from 'pinia';
@@ -9,7 +9,7 @@ import api from './api/axios';
 const authStore = useAuthStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
 const router = useRouter();
-const route = useRoute(); // Добавляем useRoute
+const route = useRoute(); // Ключ к исправлению #3
 
 const popularGames = ref([]);
 
@@ -24,10 +24,10 @@ const loadPopularGames = async () => {
 
 const handleLogout = async () => {
   await authStore.logout();
+  // Вместо перезагрузки страницы, просто перенаправляем на логин
   router.push({ name: 'login' });
 };
 
-// Загружаем один раз при монтировании
 onMounted(() => {
   loadPopularGames();
 });
@@ -53,12 +53,12 @@ onMounted(() => {
 
         <div class="user-actions">
           <RouterLink to="/cart" class="action-icon-link">
-             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+             <i class="fa-solid fa-cart-shopping"></i>
           </RouterLink>
 
           <template v-if="isLoggedIn && user">
             <RouterLink to="/profile" class="action-icon-link profile-link">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+              <i class="fa-solid fa-user"></i>
               <span>{{ user.fullname }}</span>
             </RouterLink>
             <button @click="handleLogout" class="logout-btn">Выйти</button>
@@ -74,7 +74,7 @@ onMounted(() => {
 
     <main class="main-content">
       <!-- 
-        КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: 
+        ИСПРАВЛЕНИЕ #3: 
         Добавляем :key="route.fullPath" к RouterView. 
         Это заставляет Vue пересоздавать компонент при каждой смене URL,
         гарантируя, что страница обновится и не "зависнет".
@@ -124,16 +124,11 @@ onMounted(() => {
             </div>
             <div class="footer-socials">
               <h3 class="footer-col-title">Мы в соцсетях</h3>
+              <!-- ИСПРАВЛЕНИЕ #1: Замена <img> на иконки Font Awesome -->
               <div class="social-links">
-                <a href="#" target="_blank" class="social-link social-link-vk">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/VK_Compact_Logo_%282021-present%29.svg/1200px-VK_Compact_Logo_%282021-present%29.svg.png" alt="VK">
-                </a>
-                <a href="#" target="_blank" class="social-link social-link-telegram">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/2048px-Telegram_logo.svg.png" alt="Telegram">
-                </a>
-                <a href="#" target="_blank" class="social-link social-link-youtube">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1280px-YouTube_full-color_icon_%282017%29.svg.png" alt="YouTube">
-                </a>
+                <a href="#" target="_blank" class="social-link"><i class="fa-brands fa-vk"></i></a>
+                <a href="#" target="_blank" class="social-link"><i class="fa-brands fa-telegram"></i></a>
+                <a href="#" target="_blank" class="social-link"><i class="fa-brands fa-youtube"></i></a>
               </div>
             </div>
           </div>
@@ -196,6 +191,7 @@ onMounted(() => {
 .user-actions { margin-left: auto; display: flex; align-items: center; gap: 16px; }
 .action-icon-link { color: #9ca3af; transition: color 0.2s; padding: 6px; display: flex; align-items: center; border-radius: 8px; text-decoration: none; }
 .action-icon-link:hover { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
+.action-icon-link i { font-size: 1.3rem; /* Размер иконок в хедере */ }
 .profile-link span { margin-left: 8px; font-weight: 500; font-size: 0.95rem; }
 
 .logout-btn {
@@ -237,10 +233,14 @@ onMounted(() => {
 .social-link {
   display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.05);
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, color 0.2s;
+  color: #9ca3af; /* Цвет иконки по умолчанию */
+  font-size: 1.4rem; /* Размер иконки */
 }
-.social-link:hover { background-color: rgba(255, 255, 255, 0.15); }
-.social-link img { width: 24px; height: 24px; opacity: 0.8; }
+.social-link:hover {
+   background-color: rgba(255, 255, 255, 0.15);
+   color: #fff; /* Белый цвет иконки при наведении */
+}
 
 .footer-bottom-bar {
   background: rgba(0, 0, 0, 0.2);
