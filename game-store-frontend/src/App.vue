@@ -48,6 +48,7 @@ onMounted(() => {
           <RouterLink to="/news">Новости</RouterLink>
           <RouterLink to="/catalog">Каталог</RouterLink>
           <RouterLink to="/about">О магазине</RouterLink>
+          <RouterLink to="/soviet" class="soviet-link">☭ СССР</RouterLink>
           <RouterLink v-if="user?.is_admin" to="/admin" class="admin-link">Админка</RouterLink>
         </nav>
 
@@ -190,6 +191,9 @@ onMounted(() => {
 /* Яркий акцент для активной ссылки */
 .main-nav a.router-link-exact-active { color: #fff; background: linear-gradient(90deg, #3b82f6, #6366f1); }
 .main-nav a.admin-link.router-link-exact-active { background: linear-gradient(90deg, #c026d3, #a21caf); }
+.main-nav a.soviet-link { color: #cc4444; }
+.main-nav a.soviet-link:hover { color: #ff6666; background-color: rgba(204, 0, 0, 0.15); }
+.main-nav a.soviet-link.router-link-exact-active { color: #fff; background: linear-gradient(90deg, #8b0000, #cc0000); }
 
 /* Кнопки пользователя */
 .user-actions { margin-left: auto; display: flex; align-items: center; gap: 16px; }
