@@ -17,43 +17,90 @@ const removingItemId = ref(null);
 const loadCart = async () => {
   loading.value = true;
   globalError.value = '';
+  // Если в локальном хранилище нет товаров, не нужно делать запрос к серверу
+  if (cartStore.items.length === 0) {
+    cart.value = { items: [] };
+    loading.value = false;
+    return;
+  }
   try {
     const game_ids = cartStore.items.map(item => item.id);
     const { data } = await api.post('/cart/sync', { game_ids });
-    cart.value = data;
+    
+    // Совмещаем данные с сервера (цена, название) с локальными данными (количество)
+    const syncedItems = data.items.map(serverItem => {
+        const localItem = cartStore.items.find(li => li.id === serverItem.id);
+        return {
+            ...serverItem,
+            quantity: localItem ? localItem.quantity : 1,
+        };
+    });
+
+    cart.value = { ...data, items: syncedItems };
+
   } catch (e) {
     globalError.value = 'Ошибка загрузки корзины.';
-    cart.value = null; // Очистка старых данных
+    cart.value = null;
   } finally {
     loading.value = false;
   }
 };
 
-const updateQuantity = async (itemId, newQuantity) => {
+const updateQuantity = (itemId, newQuantity) => {
   if (newQuantity < 1) return;
-  const item = cart.value.items.find(i => i.id === itemId);
-  if (item) {
-    item.quantity = newQuantity;
-    cartStore.items.find(i => i.id === itemId).quantity = newQuantity;
+  
+  // Обновляем количество в центральном хранилище Pinia
+  const localItem = cartStore.items.find(i => i.id === itemId);
+  if (localItem) {
+    localItem.quantity = newQuantity;
+  }
+
+  // Обновляем количество в локальном состоянии компонента для мгновенного отклика UI
+  const cartItem = cart.value.items.find(i => i.id === itemId);
+  if (cartItem) {
+    cartItem.quantity = newQuantity;
   }
 };
 
-const removeItem = async (itemId) => {
+const removeItem = (itemId) => {
+  // Удаляем из центрального хранилища Pinia
   cartStore.removeItem(itemId);
-  loadCart(); // Перезагружаем корзину с сервера
+
+  // Удаляем из локального состояния компонента для мгновенного отклика UI
+  if (cart.value && cart.value.items) {
+    cart.value.items = cart.value.items.filter(i => i.id !== itemId);
+  }
 };
 
+// КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ
 const makeOrder = async () => {
-  successMessage.value = '';
-  globalError.value = '';
+  if (!cartItems.value || cartItems.value.length === 0) {
+      globalError.value = "Ваша корзина пуста.";
+      return;
+  }
+
   loading.value = true;
+  globalError.value = '';
+  successMessage.value = '';
+  
   try {
-    const { data } = await api.post('/orders');
+    // Готовим данные с актуальным составом корзины для отправки
+    const orderPayload = {
+        items: cartItems.value.map(item => ({
+            game_id: item.id,
+            quantity: item.quantity,
+        })),
+    };
+
+    // Отправляем данные на сервер
+    const { data } = await api.post('/orders', orderPayload);
+    
     successMessage.value = data.message || 'Ваш заказ успешно оформлен!';
     cartStore.clearCart();
-    cart.value = null; 
+    cart.value = null;
+
   } catch (e) {
-    globalError.value = e.response?.data?.message || 'Ошибка при оформлении заказа. Возможно, вы не авторизованы.';
+    globalError.value = e.response?.data?.message || 'Ошибка при оформлении заказа. Проверьте, авторизованы ли вы.';
   } finally {
     loading.value = false;
   }
