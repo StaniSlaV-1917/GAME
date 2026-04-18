@@ -53,7 +53,7 @@ onMounted(() => {
 
         <div class="user-actions">
           <RouterLink to="/cart" class="action-icon-link">
-             <i class="fa-solid fa-cart-shopping"></i>
+             <i class="fa-solid fa-shopping-cart"></i>
           </RouterLink>
 
           <template v-if="isLoggedIn && user">
@@ -230,7 +230,7 @@ onMounted(() => {
 
 .footer-socials { margin-top: 32px; }
 .social-links { display: flex; gap: 16px; }
-.social-link {
+.social-.social-link {
   display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%;
   background-color: rgba(255, 255, 255, 0.05);
   transition: background-color 0.2s, color 0.2s;
