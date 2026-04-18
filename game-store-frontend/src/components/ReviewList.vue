@@ -4,8 +4,8 @@
       <div v-for="review in reviews" :key="review.id" class="review-card">
         <div class="review-header">
           <div class="author-info">
-            <div class="author-avatar">{{ review.user?.name?.charAt(0) || '?' }}</div>
-            <span class="author-name">{{ review.user?.name || 'Анонимный пользователь' }}</span>
+            <div class="author-avatar">{{ review.user?.fullname?.charAt(0) || '?' }}</div>
+            <span class="author-name">{{ review.user?.fullname || 'Анонимный пользователь' }}</span>
           </div>
           <div class="rating-display">
             <span v-for="star in 5" :key="star" class="star" :class="{ 'filled': star <= review.rating }">&#9733;</span>
