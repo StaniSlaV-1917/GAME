@@ -128,8 +128,9 @@ useHead({
     {
       name: 'description',
       content: 'Узнайте больше о GameStore: нашей истории, миссии и команде. Мы - ваш надежный партнер в мире цифровых игровых ключей с гарантией качества и поддержкой 24/7.'
-    },
-    // Add Font Awesome for icons
+    }
+  ],
+  link: [
     {
       rel: 'stylesheet',
       href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css'

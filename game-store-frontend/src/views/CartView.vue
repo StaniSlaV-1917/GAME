@@ -3,9 +3,12 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../api/axios';
 import { useCartStore } from '../stores/cart';
+import { useAuthStore } from '../stores/auth'; // 1. Импортируем хранилище аутентификации
 
 const router = useRouter();
 const cartStore = useCartStore();
+const authStore = useAuthStore(); // 2. Создаем экземпляр хранилища
+
 const loading = ref(true);
 const globalError = ref('');
 const successMessage = ref('');
@@ -17,7 +20,6 @@ const removingItemId = ref(null);
 const loadCart = async () => {
   loading.value = true;
   globalError.value = '';
-  // Если в локальном хранилище нет товаров, не нужно делать запрос к серверу
   if (cartStore.items.length === 0) {
     cart.value = { items: [] };
     loading.value = false;
@@ -26,18 +28,11 @@ const loadCart = async () => {
   try {
     const game_ids = cartStore.items.map(item => item.id);
     const { data } = await api.post('/cart/sync', { game_ids });
-    
-    // Совмещаем данные с сервера (цена, название) с локальными данными (количество)
     const syncedItems = data.items.map(serverItem => {
         const localItem = cartStore.items.find(li => li.id === serverItem.id);
-        return {
-            ...serverItem,
-            quantity: localItem ? localItem.quantity : 1,
-        };
+        return { ...serverItem, quantity: localItem ? localItem.quantity : 1 };
     });
-
     cart.value = { ...data, items: syncedItems };
-
   } catch (e) {
     globalError.value = 'Ошибка загрузки корзины.';
     cart.value = null;
@@ -48,32 +43,28 @@ const loadCart = async () => {
 
 const updateQuantity = (itemId, newQuantity) => {
   if (newQuantity < 1) return;
-  
-  // Обновляем количество в центральном хранилище Pinia
   const localItem = cartStore.items.find(i => i.id === itemId);
-  if (localItem) {
-    localItem.quantity = newQuantity;
-  }
-
-  // Обновляем количество в локальном состоянии компонента для мгновенного отклика UI
+  if (localItem) localItem.quantity = newQuantity;
   const cartItem = cart.value.items.find(i => i.id === itemId);
-  if (cartItem) {
-    cartItem.quantity = newQuantity;
-  }
+  if (cartItem) cartItem.quantity = newQuantity;
 };
 
 const removeItem = (itemId) => {
-  // Удаляем из центрального хранилища Pinia
   cartStore.removeItem(itemId);
-
-  // Удаляем из локального состояния компонента для мгновенного отклика UI
   if (cart.value && cart.value.items) {
     cart.value.items = cart.value.items.filter(i => i.id !== itemId);
   }
 };
 
-// КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ
+// КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ ЛОГИКИ ЗАКАЗА
 const makeOrder = async () => {
+  // 3. Проверяем, авторизован ли пользователь
+  if (!authStore.isLoggedIn) {
+    // Если нет - перенаправляем на страницу входа
+    router.push('/login');
+    return; // Останавливаем выполнение функции
+  }
+
   if (!cartItems.value || cartItems.value.length === 0) {
       globalError.value = "Ваша корзина пуста.";
       return;
@@ -84,23 +75,15 @@ const makeOrder = async () => {
   successMessage.value = '';
   
   try {
-    // Готовим данные с актуальным составом корзины для отправки
     const orderPayload = {
-        items: cartItems.value.map(item => ({
-            game_id: item.id,
-            quantity: item.quantity,
-        })),
+        items: cartItems.value.map(item => ({ game_id: item.id, quantity: item.quantity })),
     };
-
-    // Отправляем данные на сервер
     const { data } = await api.post('/orders', orderPayload);
-    
     successMessage.value = data.message || 'Ваш заказ успешно оформлен!';
     cartStore.clearCart();
     cart.value = null;
-
   } catch (e) {
-    globalError.value = e.response?.data?.message || 'Ошибка при оформлении заказа. Проверьте, авторизованы ли вы.';
+    globalError.value = e.response?.data?.message || 'Ошибка при оформлении заказа.';
   } finally {
     loading.value = false;
   }

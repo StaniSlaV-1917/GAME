@@ -1,5 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { ref, onMounted, watch } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { storeToRefs } from 'pinia';
@@ -8,6 +9,7 @@ import api from './api/axios';
 const authStore = useAuthStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
 const router = useRouter();
+const route = useRoute(); // Добавляем useRoute
 
 const popularGames = ref([]);
 
@@ -25,6 +27,7 @@ const handleLogout = async () => {
   router.push({ name: 'login' });
 };
 
+// Загружаем один раз при монтировании
 onMounted(() => {
   loadPopularGames();
 });
@@ -70,7 +73,13 @@ onMounted(() => {
     </header>
 
     <main class="main-content">
-      <RouterView />
+      <!-- 
+        КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: 
+        Добавляем :key="route.fullPath" к RouterView. 
+        Это заставляет Vue пересоздавать компонент при каждой смене URL,
+        гарантируя, что страница обновится и не "зависнет".
+      -->
+      <RouterView :key="route.fullPath" />
     </main>
 
     <footer class="main-footer">
