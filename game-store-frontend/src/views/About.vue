@@ -1,16 +1,3 @@
-<script setup>
-import { useHead } from '@vueuse/head';
-
-// Добавляем ссылку на Font Awesome для иконок
-useHead({
-  link: [
-    {
-      rel: 'stylesheet',
-      href: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-    },
-  ],
-});
-</script>
 
 <template>
   <div class="about-us-container">
@@ -27,17 +14,17 @@ useHead({
 
       <div class="values-grid">
         <div class="value-card">
-          <i class="fas fa-shield-alt"></i>
+          <i class="fa-solid fa-shield-halved"></i>
           <h3>Безопасность</h3>
           <p>Все транзакции защищены, а ключи поставляются только от проверенных дистрибьюторов.</p>
         </div>
         <div class="value-card">
-          <i class="fas fa-rocket"></i>
+          <i class="fa-solid fa-bolt-lightning"></i>
           <h3>Скорость</h3>
           <p>Получайте купленные ключи мгновенно после оплаты, без задержек и ожидания.</p>
         </div>
         <div class="value-card">
-          <i class="fas fa-headset"></i>
+          <i class="fa-solid fa-life-ring"></i>
           <h3>Поддержка</h3>
           <p>Наша служба поддержки всегда готова помочь с любыми вопросами 24/7.</p>
         </div>
