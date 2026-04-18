@@ -2,18 +2,11 @@ import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 
 export const useCartStore = defineStore('cart', () => {
-  // ШАГ 1: При загрузке пытаемся достать корзину из "записной книжки" (localStorage). 
-  // Если там пусто, создаем пустую корзину.
   const items = ref(JSON.parse(localStorage.getItem('gameStoreCart') || '[]'));
 
-  // ШАГ 2: Устанавливаем "наблюдателя", который следит за любыми изменениями в корзине.
-  // Как только что-то меняется (добавление, удаление), он тут же сохраняет новую версию 
-  // в localStorage. Опция { deep: true } заставляет его следить даже за изменением количества.
   watch(items, (newCartState) => {
     localStorage.setItem('gameStoreCart', JSON.stringify(newCartState));
   }, { deep: true });
-
-  // --- Остальная логика корзины ---
 
   const itemCount = computed(() =>
     items.value.reduce((total, item) => total + item.quantity, 0)
@@ -23,8 +16,13 @@ export const useCartStore = defineStore('cart', () => {
     items.value.reduce((total, item) => total + (item.price * item.quantity), 0)
   );
 
+  // ВОЗВРАЩАЮ УДАЛЕННУЮ ФУНКЦИЮ
+  function getItemById(itemId) {
+    return items.value.find(item => item.id === itemId);
+  }
+
   function addItem(itemToAdd) {
-    const existingItem = items.value.find(item => item.id === itemToAdd.id);
+    const existingItem = getItemById(itemToAdd.id);
     if (existingItem) {
       existingItem.quantity += 1;
     } else {
@@ -40,7 +38,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   function updateItemQuantity(itemId, quantity) {
-    const item = items.value.find(item => item.id === itemId);
+    const item = getItemById(itemId);
     if (item) {
         if (quantity > 0) {
             item.quantity = quantity;
@@ -58,6 +56,7 @@ export const useCartStore = defineStore('cart', () => {
     items,
     itemCount,
     totalPrice,
+    getItemById, // <-- И ДОБАВЛЯЮ ЕЕ В СПИСОК ВОЗВРАЩАЕМОГО
     addItem,
     removeItem,
     updateItemQuantity,
