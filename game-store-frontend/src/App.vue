@@ -53,7 +53,7 @@ onMounted(() => {
 
         <div class="user-actions">
           <RouterLink to="/cart" class="action-icon-link">
-             <i class="fa-solid fa-cart-shopping"></i>
+             <span class="emoji">🛒</span>
           </RouterLink>
 
           <template v-if="isLoggedIn && user">
@@ -142,6 +142,10 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.emoji {
+  font-size: 1.3rem;
+}
+
 /* --- ОБНОВЛЕННЫЙ ГЛОБАЛЬНЫЙ СТИЛЬ --- */
 #app-wrapper {
   display: flex;

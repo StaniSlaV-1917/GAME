@@ -14,17 +14,17 @@
 
       <div class="values-grid">
         <div class="value-card">
-          <i class="fa-solid fa-shield-halved"></i>
+          <span class="emoji">🛡️</span>
           <h3>Безопасность</h3>
           <p>Все транзакции защищены, а ключи поставляются только от проверенных дистрибьюторов.</p>
         </div>
         <div class="value-card">
-          <i class="fa-solid fa-bolt-lightning"></i>
+          <span class="emoji">⚡</span>
           <h3>Скорость</h3>
           <p>Получайте купленные ключи мгновенно после оплаты, без задержек и ожидания.</p>
         </div>
         <div class="value-card">
-          <i class="fa-solid fa-life-ring"></i>
+          <span class="emoji">👨‍💻</span>
           <h3>Поддержка</h3>
           <p>Наша служба поддержки всегда готова помочь с любыми вопросами 24/7.</p>
         </div>
@@ -113,10 +113,10 @@
     box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
 
-.value-card i {
+.value-card .emoji {
   font-size: 2.5rem;
-  color: #3b82f6;
   margin-bottom: 16px;
+  display: inline-block;
 }
 
 .value-card h3 {
