@@ -111,17 +111,80 @@ const close = () => {
 </script>
 
 <style scoped>
-/* Стили упрощены и адаптированы для новостей */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background-color: #2a3a50; padding: 25px; border-radius: 10px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
-.modal-title { margin: 0 0 20px; color: #fff; font-size: 1.6rem; }
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.18s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-content {
+  background: rgba(10,15,30,0.97);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 32px;
+  width: 90%; max-width: 640px; max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+  animation: slideUp 0.22s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.modal-title {
+  margin: 0 0 28px; font-size: 1.5rem; font-weight: 800;
+  padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: linear-gradient(135deg, #fff, #94a3b8);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
 .form-group { margin-bottom: 20px; }
-.form-group label { display: block; margin-bottom: 8px; color: #c0d0e0; }
-.form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #4a5a70; border-radius: 5px; background-color: #1e2a3a; color: #e0e0e0; }
-.image-preview { margin-top: 15px; }
-.image-preview p { margin-bottom: 10px; color: #c0d0e0; }
-.image-preview img { max-width: 100%; max-height: 200px; border-radius: 5px; }
-.form-actions { display: flex; justify-content: flex-end; gap: 15px; margin-top: 25px; padding-top: 20px; border-top: 1px solid #4a5a70; }
-.btn-save { background-color: #3b82f6; color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; }
-.btn-cancel { background-color: #4b5563; color: #e5e7eb; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; }
+.form-group label {
+  display: block; margin-bottom: 7px;
+  color: #94a3b8; font-size: 0.8rem; font-weight: 700;
+  letter-spacing: 0.5px; text-transform: uppercase;
+}
+.form-group input,
+.form-group textarea {
+  width: 100%; padding: 11px 14px;
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+  background: rgba(255,255,255,0.04); color: #e5e7eb;
+  font-size: 0.95rem; outline: none; box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.form-group textarea { resize: vertical; min-height: 200px; font-family: inherit; line-height: 1.6; }
+.form-group input::placeholder, .form-group textarea::placeholder { color: #4b5563; }
+.form-group input:focus, .form-group textarea:focus {
+  border-color: #8b5cf6;
+  background: rgba(139,92,246,0.06);
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.18);
+}
+.form-group input[type="file"] { color: #9ca3af; cursor: pointer; }
+
+.image-preview { margin-top: 14px; }
+.image-preview p { margin: 0 0 10px; color: #9ca3af; font-size: 0.82rem; }
+.image-preview img { max-width: 100%; max-height: 200px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+
+.form-actions {
+  display: flex; justify-content: flex-end; gap: 12px;
+  margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.07);
+}
+.btn-save {
+  padding: 12px 28px; border-radius: 10px; border: none;
+  font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff; box-shadow: 0 4px 16px rgba(139,92,246,0.35);
+  transition: all 0.2s;
+}
+.btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(139,92,246,0.5); }
+.btn-cancel {
+  padding: 12px 24px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05); color: #9ca3af;
+  font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.btn-cancel:hover { border-color: rgba(255,255,255,0.25); color: #e5e7eb; background: rgba(255,255,255,0.08); }
 </style>

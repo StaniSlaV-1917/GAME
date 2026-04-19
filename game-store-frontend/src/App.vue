@@ -202,7 +202,10 @@ onUnmounted(() => {
 
           <template v-if="isLoggedIn && user">
             <RouterLink to="/profile" class="profile-btn">
-              <div class="avatar">{{ user.fullname?.[0]?.toUpperCase() ?? '?' }}</div>
+              <div class="avatar">
+                <img v-if="user.avatar" :src="`/avatars/${encodeURIComponent(user.avatar)}`" class="avatar-img" :alt="user.fullname" />
+                <span v-else>{{ user.fullname?.[0]?.toUpperCase() ?? '?' }}</span>
+              </div>
               <span class="profile-name">{{ user.fullname || 'Профиль' }}</span>
             </RouterLink>
             <button @click="handleLogout" class="logout-btn">
@@ -565,7 +568,14 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
   animation: avatarPop 0.3s ease;
+}
+.avatar-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 .profile-name { font-size: 0.88rem; font-weight: 500; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 

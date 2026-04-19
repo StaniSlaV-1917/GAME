@@ -4,7 +4,10 @@
       <div v-for="review in reviews" :key="review.id" class="review-card">
         <div class="review-header">
           <div class="author-info">
-            <div class="author-avatar">{{ review.user?.fullname?.charAt(0) || '?' }}</div>
+            <div class="author-avatar">
+              <img v-if="review.user?.avatar" :src="`/avatars/${encodeURIComponent(review.user.avatar)}`" :alt="review.user.fullname" class="avatar-img" />
+              <span v-else>{{ review.user?.fullname?.charAt(0) || '?' }}</span>
+            </div>
             <span class="author-name">{{ review.user?.fullname || 'Анонимный пользователь' }}</span>
           </div>
           <div class="rating-display">
@@ -79,13 +82,22 @@ defineProps({
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: #3b82f6; /* Blue accent */
+  background-color: #3b82f6;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   font-size: 1.1rem;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 .author-name {

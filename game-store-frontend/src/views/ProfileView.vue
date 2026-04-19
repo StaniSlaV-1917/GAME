@@ -27,6 +27,36 @@ const loading   = ref({ orders: false, reviews: false });
 const error     = ref({ orders: '', reviews: '', profile: '', password: '' });
 const message   = ref({ profile: '', password: '' });
 
+const avatarPickerOpen = ref(false);
+const savingAvatar = ref(false);
+
+const avatarList = [
+  'Abomination.png','Archer.png','Archmage.png','Banshee.png','BlackDragon.png',
+  'BloodMage.png','BlueDragon.png','CryptFiend.png','CryptLord.png','DarkRanger.png',
+  'Destroyer.png','Druidofthe Claw.png','DruidoftheTalon.png','Dryad.png','FarSeer.png',
+  'Footman.png','Ghoul.png','GrandTurtle.png','GreenDragonSmall.png','Grunt.png',
+  'Huntress.png','IllidanEvil.png','Jaina.png','Kenarius.png','Knight.png',
+  'LichKelThuzad.png','Maiev.png','Malfurion.png','Mediv.png','NagaMyrmidon.png',
+  'NagaSeaWitch.png','NagaSiren.png','Peon.png','Priestessofthe Moon.png','RedDragon.png',
+  'Rexxar.png','Rifleman.png','Roshan.png','Shaman.png','Sorceress.png',
+  'SpellBreaker.png','SpiritWalker.png','Tauren.png','Thrall.png','TrollHeadhunter.png',
+  'Varimatas.png','archimond.png','doomguard.png','felguard.png','golem.png','pitlord.png',
+];
+
+const selectAvatar = async (filename) => {
+  if (savingAvatar.value) return;
+  savingAvatar.value = true;
+  try {
+    await api.put('/auth/profile', { avatar: filename });
+    await authStore.fetchUser();
+    avatarPickerOpen.value = false;
+  } catch (e) {
+    console.error(e);
+  } finally {
+    savingAvatar.value = false;
+  }
+};
+
 const tabs = [
   { id: 'overview',  label: 'Обзор',     icon: '◈' },
   { id: 'orders',    label: 'Заказы',    icon: '📦' },
@@ -116,9 +146,16 @@ onMounted(loadInitialData);
 
         <div class="hero-inner">
           <!-- Avatar -->
-          <div class="avatar-wrap">
+          <div class="avatar-wrap" @click="avatarPickerOpen = true" title="Сменить аватар">
             <div class="avatar-ring"></div>
-            <div class="avatar">{{ user.fullname?.[0]?.toUpperCase() ?? '?' }}</div>
+            <div class="avatar">
+              <img v-if="user.avatar" :src="`/avatars/${encodeURIComponent(user.avatar)}`" :alt="user.fullname" class="avatar-img" />
+              <span v-else>{{ user.fullname?.[0]?.toUpperCase() ?? '?' }}</span>
+            </div>
+            <div class="avatar-edit-overlay">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <span>Сменить</span>
+            </div>
           </div>
 
           <!-- User meta -->
@@ -385,6 +422,41 @@ onMounted(loadInitialData);
         </Transition>
       </div>
     </template>
+
+    <!-- ===== AVATAR PICKER ===== -->
+    <Teleport to="body">
+      <Transition name="ap-fade">
+        <div v-if="avatarPickerOpen" class="ap-backdrop" @click.self="avatarPickerOpen = false">
+          <div class="ap-modal">
+            <div class="ap-header">
+              <div class="ap-title-wrap">
+                <span class="ap-title-icon">🎮</span>
+                <div>
+                  <h3 class="ap-title">Выберите аватар</h3>
+                  <p class="ap-sub">Герои Warcraft III · {{ avatarList.length }} вариантов</p>
+                </div>
+              </div>
+              <button class="ap-close" @click="avatarPickerOpen = false">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="ap-grid">
+              <button
+                v-for="av in avatarList"
+                :key="av"
+                class="ap-item"
+                :class="{ selected: user.avatar === av, saving: savingAvatar }"
+                @click="selectAvatar(av)"
+                :title="av.replace('.png', '')"
+              >
+                <img :src="`/avatars/${encodeURIComponent(av)}`" :alt="av.replace('.png', '')" loading="lazy" />
+                <div class="ap-item-check">✓</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -477,6 +549,7 @@ onMounted(loadInitialData);
   flex-shrink: 0;
   width: 100px;
   height: 100px;
+  cursor: pointer;
 }
 .avatar-ring {
   position: absolute;
@@ -502,7 +575,28 @@ onMounted(loadInitialData);
   justify-content: center;
   animation: avatarGlow 3s ease-in-out infinite;
   box-shadow: 0 0 30px rgba(99,102,241,0.4);
+  overflow: hidden;
 }
+.avatar-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+.avatar-edit-overlay {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(2px);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 4px;
+  color: #fff; font-size: 0.7rem; font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.22s;
+  pointer-events: none;
+}
+.avatar-wrap:hover .avatar-edit-overlay { opacity: 1; }
 
 /* Hero meta */
 .hero-meta { flex: 1; min-width: 200px; }
@@ -858,6 +952,103 @@ onMounted(loadInitialData);
 .empty-icon { font-size: 3rem; }
 .empty-state h3 { font-size: 1.2rem; color: #fff; margin: 0; }
 .empty-state p  { color: #4b5563; margin: 0; font-size: 0.9rem; }
+
+/* ===== AVATAR PICKER ===== */
+.ap-fade-enter-active, .ap-fade-leave-active { transition: opacity 0.2s ease; }
+.ap-fade-enter-from, .ap-fade-leave-to { opacity: 0; }
+
+.ap-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.ap-modal {
+  background: rgba(10,15,30,0.98);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  width: 100%; max-width: 680px;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.7);
+  animation: slideUp 0.22s ease;
+}
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+
+.ap-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+.ap-title-wrap { display: flex; align-items: center; gap: 12px; }
+.ap-title-icon { font-size: 1.5rem; }
+.ap-title { font-size: 1.1rem; font-weight: 800; color: #fff; margin: 0 0 2px; }
+.ap-sub { font-size: 0.78rem; color: #4b5563; margin: 0; }
+.ap-close {
+  width: 34px; height: 34px; border-radius: 8px; border: none;
+  background: rgba(255,255,255,0.05); color: #6b7280;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s; flex-shrink: 0;
+}
+.ap-close:hover { background: rgba(255,255,255,0.1); color: #e5e7eb; }
+
+.ap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 12px;
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+.ap-grid::-webkit-scrollbar { width: 4px; }
+.ap-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+
+.ap-item {
+  position: relative;
+  height: 88px;
+  border-radius: 12px;
+  border: 2px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.03);
+  overflow: hidden;
+  cursor: pointer;
+  padding: 6px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+.ap-item:hover {
+  border-color: rgba(99,102,241,0.5);
+  transform: scale(1.06);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+.ap-item.selected {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.3);
+}
+.ap-item.saving { pointer-events: none; opacity: 0.7; }
+.ap-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 6px;
+  transition: transform 0.18s;
+}
+.ap-item:hover img { transform: scale(1.1); }
+.ap-item-check {
+  position: absolute; inset: 0;
+  background: rgba(99,102,241,0.75);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 1.5rem; font-weight: 800;
+  opacity: 0; transition: opacity 0.15s;
+  border-radius: 10px;
+}
+.ap-item.selected .ap-item-check { opacity: 1; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {

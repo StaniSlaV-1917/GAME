@@ -40,8 +40,21 @@ Route::prefix('auth')->group(function () {
 // --- Публичный маршрут для синхронизации корзины --- //
 Route::post('/cart/sync', [CartController::class, 'sync']);
 
+// --- Публичный маршрут для сотрудников (About page) --- //
+Route::get('/employees', [EmployeeController::class, 'index']);
+
 // --- Админка (защищено) --- //
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/stats', function () {
+        return response()->json([
+            'users'   => \App\Models\User::count(),
+            'games'   => \App\Models\Game::count(),
+            'orders'  => \App\Models\Order::count(),
+            'reviews' => \App\Models\Review::count(),
+            'revenue' => (int) \App\Models\Order::sum('total'),
+        ]);
+    });
+
     Route::get('/users', [AdminUserController::class, 'index']);
     Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
     Route::put('/users/{id}', [AdminUserController::class, 'update']);          // обновить ФИО/email/телефон

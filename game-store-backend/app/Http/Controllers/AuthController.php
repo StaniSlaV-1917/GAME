@@ -25,7 +25,8 @@ class AuthController extends Controller
             'email'    => $user->email,
             'phone'    => $user->phone,
             'is_admin' => $user->role === 'admin',
-            'reg_date' => $user->reg_date, // ← вместо created_at
+            'reg_date' => $user->reg_date,
+            'avatar'   => $user->avatar,
         ];
     }
 
@@ -190,6 +191,7 @@ class AuthController extends Controller
             'fullname' => 'sometimes|required|string|max:255',
             'email'    => 'sometimes|required|email',
             'phone'    => 'sometimes|required|regex:/^7[0-9]{10}$/',
+            'avatar'   => 'sometimes|nullable|string|max:150',
         ]);
 
         if (!empty($data['email'])) {
@@ -212,6 +214,10 @@ class AuthController extends Controller
 
         if (!empty($data['fullname'])) {
             $user->fullname = $data['fullname'];
+        }
+
+        if (array_key_exists('avatar', $data)) {
+            $user->avatar = $data['avatar'];
         }
 
         $user->save();
