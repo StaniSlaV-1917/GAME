@@ -1,12 +1,16 @@
 <script setup>
 import { useRoute } from 'vue-router';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import { useThemeStore } from './stores/theme';
 import { storeToRefs } from 'pinia';
 import api from './api/axios';
+import ParticlesBackground from './components/ParticlesBackground.vue';
+import { resolveMediaUrl } from './utils/media';
 
 const authStore = useAuthStore();
+const themeStore = useThemeStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
 const router = useRouter();
 const route = useRoute();
@@ -14,6 +18,67 @@ const route = useRoute();
 const popularGames = ref([]);
 const scrolled = ref(false);
 const mobileMenuOpen = ref(false);
+
+// ── Global search ──
+const searchOpen = ref(false);
+const searchQuery = ref('');
+const searchResults = ref([]);
+const searchLoading = ref(false);
+const searchInputRef = ref(null);
+let allGamesCache = null;
+let searchTimer = null;
+
+const openSearch = async () => {
+  searchOpen.value = true;
+  await new Promise(r => setTimeout(r, 50));
+  searchInputRef.value?.focus();
+};
+
+const closeSearch = () => {
+  searchOpen.value = false;
+  searchQuery.value = '';
+  searchResults.value = [];
+};
+
+const doSearch = async (q) => {
+  clearTimeout(searchTimer);
+  if (!q.trim()) { searchResults.value = []; return; }
+  searchTimer = setTimeout(async () => {
+    searchLoading.value = true;
+    try {
+      if (!allGamesCache) {
+        const { data } = await api.get('/games');
+        allGamesCache = data;
+      }
+      const lower = q.toLowerCase();
+      searchResults.value = allGamesCache
+        .filter(g => g.title?.toLowerCase().includes(lower) || g.genre?.toLowerCase().includes(lower))
+        .slice(0, 7);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      searchLoading.value = false;
+    }
+  }, 280);
+};
+
+watch(searchQuery, (q) => doSearch(q));
+
+const goToGame = (id) => {
+  closeSearch();
+  router.push({ name: 'game', params: { id } });
+};
+
+// ── Custom cursor ──
+const cursorDot = ref(null);
+const cursorRing = ref(null);
+const isTouch = ref(false);
+
+const moveCursor = (e) => {
+  const x = e.clientX, y = e.clientY;
+  if (cursorDot.value)  cursorDot.value.style.transform  = `translate(${x}px,${y}px)`;
+  if (cursorRing.value) cursorRing.value.style.transform = `translate(${x}px,${y}px)`;
+};
 
 const loadPopularGames = async () => {
   try {
@@ -37,14 +102,31 @@ const onScroll = () => {
 onMounted(() => {
   loadPopularGames();
   window.addEventListener('scroll', onScroll, { passive: true });
+  isTouch.value = window.matchMedia('(pointer: coarse)').matches;
+  if (isTouch.value) {
+    document.documentElement.classList.add('touch-device');
+  } else {
+    window.addEventListener('mousemove', moveCursor, { passive: true });
+  }
 });
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll);
+  window.removeEventListener('mousemove', moveCursor);
+  clearTimeout(searchTimer);
 });
 </script>
 
 <template>
-  <div id="app-wrapper">
+  <div id="app-wrapper" :class="{ 'theme-light': !themeStore.isDark }">
+
+    <!-- Custom cursor (desktop only) -->
+    <template v-if="!isTouch">
+      <div class="cursor-dot"  ref="cursorDot"></div>
+      <div class="cursor-ring" ref="cursorRing"></div>
+    </template>
+
+    <!-- Ambient particles -->
+    <ParticlesBackground />
 
     <!-- ===== HEADER ===== -->
     <header class="main-header" :class="{ scrolled }">
@@ -71,8 +153,58 @@ onUnmounted(() => {
           <RouterLink v-if="user?.is_admin" to="/admin" class="admin-link">Админка</RouterLink>
         </nav>
 
+        <!-- Global search -->
+        <div class="search-wrap" :class="{ open: searchOpen }">
+          <Transition name="search-expand">
+            <div v-if="searchOpen" class="search-bar-wrap">
+              <input
+                ref="searchInputRef"
+                v-model="searchQuery"
+                class="search-input"
+                placeholder="Поиск игр..."
+                @keydown.escape="closeSearch"
+              />
+              <button class="search-close-btn" @click="closeSearch" title="Закрыть">✕</button>
+
+              <!-- Dropdown results -->
+              <Transition name="dropdown">
+                <div v-if="searchQuery && (searchResults.length || searchLoading)" class="search-dropdown">
+                  <div v-if="searchLoading" class="search-loading">
+                    <span class="search-spinner"></span> Поиск...
+                  </div>
+                  <template v-else>
+                    <div
+                      v-for="g in searchResults" :key="g.id"
+                      class="search-result-item"
+                      @click="goToGame(g.id)"
+                    >
+                      <img :src="resolveMediaUrl(g.image)" :alt="g.title" class="sr-img" />
+                      <div class="sr-info">
+                        <span class="sr-title">{{ g.title }}</span>
+                        <span class="sr-genre">{{ g.genre }}</span>
+                      </div>
+                      <span class="sr-price">{{ Number(g.price).toFixed(0) }} ₽</span>
+                    </div>
+                    <div v-if="!searchResults.length" class="search-empty">Ничего не найдено</div>
+                  </template>
+                </div>
+              </Transition>
+            </div>
+          </Transition>
+
+          <button v-if="!searchOpen" class="action-btn search-btn" @click="openSearch" title="Поиск">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+        </div>
+
         <!-- User actions -->
         <div class="user-actions">
+          <!-- Theme toggle -->
+          <button class="action-btn theme-btn" @click="themeStore.toggle()" :title="themeStore.isDark ? 'Светлая тема' : 'Тёмная тема'">
+            <span v-if="themeStore.isDark">☀️</span>
+            <span v-else>🌙</span>
+          </button>
+
           <RouterLink to="/cart" class="action-btn cart-btn" title="Корзина">
             <span class="cart-icon">🛒</span>
           </RouterLink>
@@ -766,4 +898,194 @@ onUnmounted(() => {
   .header-content { padding: 0 16px; }
   .logo-text { display: none; }
 }
+
+/* ===================================================
+   CUSTOM CURSOR
+=================================================== */
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 99999;
+  border-radius: 50%;
+  will-change: transform;
+}
+.cursor-dot {
+  width: 7px; height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  background: #60a5fa;
+  box-shadow: 0 0 10px rgba(96,165,250,0.9), 0 0 20px rgba(96,165,250,0.5);
+  transition: transform 0.04s linear;
+}
+.cursor-ring {
+  width: 34px; height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1.5px solid rgba(96,165,250,0.55);
+  transition: transform 0.18s ease-out;
+  mix-blend-mode: screen;
+}
+
+/* ===================================================
+   GLOBAL SEARCH
+=================================================== */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-btn { font-size: 1rem; }
+
+.search-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.search-input {
+  width: 240px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(99,102,241,0.45);
+  background: rgba(15,23,42,0.85);
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.search-input::placeholder { color: #4b5563; }
+.search-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.2);
+}
+
+.search-close-btn {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+.search-close-btn:hover { color: #e5e7eb; }
+
+/* Dropdown */
+.search-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 340px;
+  background: rgba(10, 15, 30, 0.97);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(99,102,241,0.35);
+  border-radius: 14px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+  overflow: hidden;
+  z-index: 500;
+}
+.search-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  color: #6b7280;
+  font-size: 0.88rem;
+}
+.search-spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid rgba(99,102,241,0.3);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background: rgba(99,102,241,0.12); }
+.sr-img {
+  width: 44px; height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #0a0f1e;
+}
+.sr-info { flex: 1; min-width: 0; }
+.sr-title { display: block; font-size: 0.88rem; font-weight: 600; color: #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-genre { display: block; font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+.sr-price { font-size: 0.88rem; font-weight: 700; color: #4ade80; white-space: nowrap; flex-shrink: 0; }
+.search-empty { padding: 16px; text-align: center; color: #4b5563; font-size: 0.88rem; }
+
+/* Transitions */
+.search-expand-enter-active, .search-expand-leave-active { transition: all 0.22s ease; }
+.search-expand-enter-from, .search-expand-leave-to { opacity: 0; transform: scaleX(0.85); transform-origin: right; }
+
+.dropdown-enter-active, .dropdown-leave-active { transition: all 0.18s ease; }
+.dropdown-enter-from, .dropdown-leave-to { opacity: 0; transform: translateY(-6px); }
+
+/* ===================================================
+   LIGHT THEME OVERRIDES  (non-scoped rules below in separate <style>)
+=================================================== */
 </style>
+
+<!-- Global non-scoped styles: cursor hide + light theme -->
+<style>
+/* Hide system cursor when custom cursor is active */
+html:not(.touch-device) * { cursor: none !important; }
+
+/* ── Light theme ── */
+[data-theme="light"] body,
+[data-theme="light"] html {
+  background: #eef2ff;
+}
+[data-theme="light"] #app-wrapper {
+  background: #eef2ff;
+  background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.07), transparent);
+  color: #1e293b;
+}
+[data-theme="light"] .main-header {
+  background: rgba(238,242,255,0.78) !important;
+  border-bottom: 1px solid rgba(99,102,241,0.18) !important;
+}
+[data-theme="light"] .main-header.scrolled {
+  background: rgba(238,242,255,0.95) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+}
+[data-theme="light"] .main-nav a { color: #374151; }
+[data-theme="light"] .main-nav a:hover { color: #111827; background: rgba(0,0,0,0.05); }
+[data-theme="light"] .logo-text { color: #111827; }
+[data-theme="light"] .logout-btn { color: #374151; border-color: rgba(0,0,0,0.12); background: rgba(0,0,0,0.04); }
+[data-theme="light"] .action-btn { color: #374151; border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.04); }
+[data-theme="light"] .action-btn:hover { background: rgba(0,0,0,0.08); color: #111827; }
+[data-theme="light"] .search-input { background: rgba(255,255,255,0.9); color: #1e293b; border-color: rgba(99,102,241,0.35); }
+[data-theme="light"] .search-input::placeholder { color: #94a3b8; }
+[data-theme="light"] .search-dropdown { background: rgba(248,249,255,0.98); border-color: rgba(99,102,241,0.25); box-shadow: 0 16px 48px rgba(0,0,0,0.15); }
+[data-theme="light"] .sr-title { color: #1e293b; }
+[data-theme="light"] .main-footer { background: rgba(238,242,255,0.96) !important; }
+[data-theme="light"] .footer-links a { color: #64748b; }
+[data-theme="light"] .footer-links a:hover { color: #3b82f6; }
+[data-theme="light"] .footer-col-title { color: #1e293b; }
+[data-theme="light"] .footer-tagline { color: #64748b; }
+[data-theme="light"] .footer-copy, [data-theme="light"] .footer-made { color: #94a3b8; }
+/* Cards need !important since they're in scoped styles */
+[data-theme="light"] .game-card-inner { background: rgba(255,255,255,0.92) !important; border-color: rgba(0,0,0,0.08) !important; box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important; }
+[data-theme="light"] .game-card-inner:hover { box-shadow: 0 16px 40px rgba(0,0,0,0.15), 0 0 24px rgba(59,130,246,0.18) !important; }
+[data-theme="light"] .card-title { color: #0f172a !important; }
+[data-theme="light"] .card-genre { color: #64748b !important; }
+[data-theme="light"] .card-bottom { border-top-color: rgba(0,0,0,0.08) !important; }
+</style>
+
+

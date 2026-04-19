@@ -1,6 +1,11 @@
 <template>
   <div class="game-card" :style="{ '--delay': `calc(var(--i, 0) * 65ms)` }">
-    <div class="game-card-inner">
+    <div
+      class="game-card-inner"
+      ref="cardInnerRef"
+      @mousemove="handleMouseMove"
+      @mouseleave="handleMouseLeave"
+    >
 
       <RouterLink class="card-main-link" :to="{ name: 'game', params: { id: game.id } }" :aria-label="game.title"></RouterLink>
 
@@ -65,7 +70,7 @@
 </template>
 
 <script setup>
-import { defineProps, computed } from 'vue';
+import { defineProps, computed, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
@@ -83,6 +88,32 @@ const handleAddToCart = () => {
 };
 
 const imageUrl = computed(() => resolveMediaUrl(props.game.image));
+
+// ── 3-D tilt ──
+const cardInnerRef = ref(null);
+
+const handleMouseMove = (e) => {
+  const el = cardInnerRef.value;
+  if (!el) return;
+  const r = el.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width  - 0.5;   // -0.5 … 0.5
+  const y = (e.clientY - r.top)  / r.height - 0.5;
+  el.style.setProperty('--rx', `${-y * 11}deg`);
+  el.style.setProperty('--ry', `${x * 11}deg`);
+  el.style.setProperty('--ty', '-8px');
+  el.style.setProperty('--sc', '1.02');
+  el.style.setProperty('--tr', '0.08s linear');
+};
+
+const handleMouseLeave = () => {
+  const el = cardInnerRef.value;
+  if (!el) return;
+  el.style.setProperty('--rx', '0deg');
+  el.style.setProperty('--ry', '0deg');
+  el.style.setProperty('--ty', '0px');
+  el.style.setProperty('--sc', '1');
+  el.style.setProperty('--tr', '0.55s cubic-bezier(.22,.68,0,1.2)');
+};
 </script>
 
 <style scoped>
@@ -95,10 +126,13 @@ const imageUrl = computed(() => resolveMediaUrl(props.game.image));
   backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255,255,255,0.08);
   box-shadow: 0 8px 28px rgba(0,0,0,0.45);
-  transition: transform 0.28s cubic-bezier(.22,.68,0,1.2), border-color 0.28s, box-shadow 0.28s;
+  /* 3-D tilt via CSS vars (set by JS on mousemove/mouseleave) */
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--ty, 0px)) scale(var(--sc, 1));
+  transition: transform var(--tr, 0.28s cubic-bezier(.22,.68,0,1.2)), border-color 0.28s, box-shadow 0.28s;
+  will-change: transform;
+  transform-style: preserve-3d;
 }
 .game-card-inner:hover {
-  transform: translateY(-8px) scale(1.01);
   border-color: rgba(59,130,246,0.55);
   box-shadow: 0 20px 48px rgba(0,0,0,0.6), 0 0 32px rgba(59,130,246,0.25);
 }

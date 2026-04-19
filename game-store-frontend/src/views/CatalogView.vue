@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { useHead } from '@vueuse/head';
 import api from '../api/axios';
 import GameCard from '../components/GameCard.vue';
@@ -12,6 +12,15 @@ const searchQuery = ref('');
 const selectedGenre = ref('all');
 const sortBy = ref('release_date_desc');
 let revealObs = null;
+
+// ── Infinite scroll / progressive loading ──
+const PAGE_SIZE = 12;
+const displayCount = ref(PAGE_SIZE);
+const sentinelRef = ref(null);
+let sentinelObs = null;
+
+const visibleGames = computed(() => filteredGames.value.slice(0, displayCount.value));
+const hasMore = computed(() => displayCount.value < filteredGames.value.length);
 
 useHead(computed(() => {
   const g = selectedGenre.value === 'all' ? 'Все игры' : `${selectedGenre.value} игры`;
@@ -70,10 +79,27 @@ const fetchGames = async () => {
   } finally { loading.value = false; }
 };
 
-const applyFilters = () => fetchGames();
+const applyFilters = () => { displayCount.value = PAGE_SIZE; fetchGames(); };
 
-onMounted(() => { fetchGenres(); fetchGames(); setupReveal(); });
-onUnmounted(() => revealObs?.disconnect());
+// Reset displayCount when search/genre changes
+watch([searchQuery, selectedGenre], () => { displayCount.value = PAGE_SIZE; });
+
+const setupSentinel = () => {
+  nextTick(() => {
+    sentinelObs?.disconnect();
+    if (!sentinelRef.value) return;
+    sentinelObs = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore.value) {
+        displayCount.value += PAGE_SIZE;
+        nextTick(setupReveal);
+      }
+    }, { rootMargin: '200px' });
+    sentinelObs.observe(sentinelRef.value);
+  });
+};
+
+onMounted(() => { fetchGenres(); fetchGames(); setupReveal(); setupSentinel(); });
+onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
 </script>
 
 <template>
@@ -158,7 +184,7 @@ onUnmounted(() => revealObs?.disconnect());
       <!-- Games Grid -->
       <TransitionGroup v-else name="grid" tag="div" class="games-grid">
         <GameCard
-          v-for="(game, i) in filteredGames"
+          v-for="(game, i) in visibleGames"
           :key="game.id"
           :game="game"
           class="reveal"
@@ -166,8 +192,18 @@ onUnmounted(() => revealObs?.disconnect());
         />
       </TransitionGroup>
 
+      <!-- Infinite scroll sentinel + load-more indicator -->
+      <div ref="sentinelRef" class="sentinel">
+        <Transition name="fade">
+          <div v-if="hasMore && !loading" class="load-more-hint">
+            <span class="lm-spinner"></span>
+            Загружаем ещё...
+          </div>
+        </Transition>
+      </div>
+
       <div v-if="!loading && filteredGames.length" class="results-bar">
-        Найдено: <strong>{{ filteredGames.length }}</strong> {{ pluralGame(filteredGames.length) }}
+        Показано <strong>{{ visibleGames.length }}</strong> из <strong>{{ filteredGames.length }}</strong> {{ pluralGame(filteredGames.length) }}
       </div>
     </div>
   </div>
@@ -305,8 +341,23 @@ onUnmounted(() => revealObs?.disconnect());
 .grid-enter-from { opacity: 0; transform: translateY(20px) scale(0.97); }
 .grid-leave-to { opacity: 0; transform: scale(0.95); }
 
+/* ─── Infinite scroll sentinel ─── */
+.sentinel { height: 60px; display: flex; align-items: center; justify-content: center; }
+.load-more-hint {
+  display: flex; align-items: center; gap: 8px;
+  color: #6b7280; font-size: 0.88rem;
+}
+.lm-spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid rgba(99,102,241,0.3); border-top-color: #6366f1;
+  border-radius: 50%; animation: lmspin 0.7s linear infinite;
+}
+@keyframes lmspin { to { transform: rotate(360deg); } }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
 /* ─── Results Bar ─── */
-.results-bar { margin-top: 32px; text-align: center; color: #6b7280; font-size: 0.9rem; }
+.results-bar { margin-top: 16px; text-align: center; color: #6b7280; font-size: 0.9rem; }
 .results-bar strong { color: #9ca3af; }
 
 /* ─── Responsive ─── */

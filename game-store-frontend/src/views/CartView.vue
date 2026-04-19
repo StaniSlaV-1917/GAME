@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import api from '../api/axios';
 import { useCartStore } from '../stores/cart';
@@ -83,7 +83,29 @@ const cartCount = computed(() =>
   cartItems.value.reduce((t, i) => t + i.quantity, 0)
 );
 
+// ── Animated price counter ──
+const displayTotal = ref(0);
+let animFrame = null;
+
+const animateTotal = (target) => {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  const start = displayTotal.value;
+  const diff = target - start;
+  const duration = 500;
+  const startTime = performance.now();
+  const step = (now) => {
+    const t = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3);
+    displayTotal.value = Math.round(start + diff * eased);
+    if (t < 1) animFrame = requestAnimationFrame(step);
+  };
+  animFrame = requestAnimationFrame(step);
+};
+
+watch(cartTotal, (val) => animateTotal(val), { immediate: true });
+
 onMounted(loadCart);
+onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 </script>
 
 <template>
@@ -191,7 +213,7 @@ onMounted(loadCart);
           <div class="summary-rows">
             <div class="sum-row">
               <span>Товары ({{ cartCount }})</span>
-              <span>{{ Number(cartTotal).toFixed(0) }} ₽</span>
+              <span>{{ displayTotal }} ₽</span>
             </div>
             <div class="sum-row">
               <span>Доставка</span>
@@ -203,7 +225,7 @@ onMounted(loadCart);
 
           <div class="sum-row total-row">
             <span>К оплате</span>
-            <span class="total-price">{{ Number(cartTotal).toFixed(0) }} ₽</span>
+            <span class="total-price">{{ displayTotal }} ₽</span>
           </div>
 
           <button
