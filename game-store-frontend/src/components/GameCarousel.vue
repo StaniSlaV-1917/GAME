@@ -112,7 +112,7 @@
         <div class="winner-card">
           <div class="winner-badge">🏆 ПОБЕДИТЕЛЬ!</div>
           <div class="winner-img-wrap">
-            <img :src="resolveImageUrl(winnerGame.image)" :alt="winnerGame.title" class="winner-img" />
+            <img :src="resolveImageUrl(winnerGame.image)" :alt="winnerGame.title" class="winner-img" loading="lazy" />
             <div class="winner-glow-ring r1"></div>
             <div class="winner-glow-ring r2"></div>
           </div>

@@ -26,7 +26,14 @@ useHead(computed(() => {
   const g = selectedGenre.value === 'all' ? 'Все игры' : `${selectedGenre.value} игры`;
   return {
     title: `${g} — Каталог GameStore`,
-    meta: [{ name: 'description', content: `Каталог игр GameStore. Покупайте лицензионные ключи по выгодным ценам.` }],
+    meta: [
+      { name: 'description', content: `Каталог игр GameStore. Покупайте лицензионные ключи по выгодным ценам.` },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:title', content: `${g} — Каталог GameStore` },
+      { property: 'og:description', content: 'Каталог лицензионных ключей для игр. Steam, Epic Games, GOG по выгодным ценам.' },
+      { property: 'og:image', content: '/images.png' },
+      { name: 'robots', content: 'index, follow' },
+    ],
   };
 }));
 
@@ -113,7 +120,7 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
       </div>
       <div class="grid-overlay"></div>
       <div class="hero-inner">
-        <div class="hero-badge reveal">🎮 Каталог игр</div>
+        <div class="hero-badge reveal">Каталог игр</div>
         <h1 class="hero-title reveal">Найди свою <span class="grad-text">идеальную игру</span></h1>
         <p class="hero-sub reveal">Лицензионные ключи для ПК, PlayStation и Xbox — мгновенная доставка</p>
 

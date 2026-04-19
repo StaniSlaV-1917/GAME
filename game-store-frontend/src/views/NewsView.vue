@@ -9,7 +9,7 @@
       </div>
       <div class="grid-overlay"></div>
       <div class="hero-inner">
-        <div class="hero-badge reveal">📰 Новости</div>
+        <div class="hero-badge reveal">Новости</div>
         <h1 class="hero-title reveal">Игровые <span class="grad-text">новости</span></h1>
         <p class="hero-sub reveal">Самые свежие анонсы, обзоры и события из мира игр. Будьте в курсе вместе с GameStore.</p>
       </div>
@@ -108,7 +108,14 @@ import { resolveMediaUrl } from '../utils/media';
 
 useHead({
   title: 'Новости игровой индустрии — GameStore',
-  meta: [{ name: 'description', content: 'Читайте последние новости из мира игр. Свежие анонсы, обзоры и события в блоге GameStore.' }]
+  meta: [
+    { name: 'description', content: 'Читайте последние новости из мира игр. Свежие анонсы, обзоры и события в блоге GameStore.' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:title', content: 'Новости игровой индустрии — GameStore' },
+    { property: 'og:description', content: 'Читайте последние новости из мира игр. Свежие анонсы, обзоры и события в блоге GameStore.' },
+    { property: 'og:image', content: '/images.png' },
+    { name: 'robots', content: 'index, follow' },
+  ],
 });
 
 const newsItems = ref([]);

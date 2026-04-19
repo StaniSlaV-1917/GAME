@@ -17,7 +17,7 @@
       <div class="hero-grid-overlay"></div>
 
       <div class="hero-content">
-        <div class="hero-badge">🎮 Новинки уже в каталоге</div>
+        <div class="hero-badge">Новинки уже в каталоге</div>
         <h1 class="hero-title">
           Новые горизонты<br>
           <span class="hero-title-accent">в мире игр</span>
@@ -139,7 +139,14 @@ import GameCarousel from '../components/GameCarousel.vue';
 
 useHead({
   title: 'GameStore — Купить ключи для игр',
-  meta: [{ name: 'description', content: 'Магазин лицензионных ключей для игр. Steam, Epic Games, GOG и другие платформы по выгодным ценам.' }]
+  meta: [
+    { name: 'description', content: 'Магазин лицензионных ключей для игр. Steam, Epic Games, GOG и другие платформы по выгодным ценам.' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:title', content: 'GameStore — Купить ключи для игр' },
+    { property: 'og:description', content: 'Магазин лицензионных ключей для игр. Steam, Epic Games, GOG и другие платформы по выгодным ценам.' },
+    { property: 'og:image', content: '/images.png' },
+    { name: 'robots', content: 'index, follow' },
+  ],
 });
 
 const platforms = ref([

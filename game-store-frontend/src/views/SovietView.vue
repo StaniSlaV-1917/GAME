@@ -5,8 +5,13 @@ import { useHead } from '@vueuse/head';
 useHead({
   title: 'СССР — Игры советской эпохи | GameStore',
   meta: [
-    { name: 'description', content: 'Экспериментальная страница: лучшие игры про Советский Союз. Атмосфера, история, идеология. Серп и молот в мире геймдева.' }
-  ]
+    { name: 'description', content: 'Экспериментальная страница: лучшие игры про Советский Союз. Атмосфера, история, идеология. Серп и молот в мире геймдева.' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:title', content: 'СССР — Игры советской эпохи | GameStore' },
+    { property: 'og:description', content: 'Лучшие игры про Советский Союз. Атмосфера, история, идеология.' },
+    { property: 'og:image', content: '/images.png' },
+    { name: 'robots', content: 'index, follow' },
+  ],
 });
 
 const isAnthemPlaying = ref(false);

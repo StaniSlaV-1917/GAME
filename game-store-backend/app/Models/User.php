@@ -12,11 +12,7 @@ class User extends Authenticatable
 
     protected $table = 'users';
 
-    protected $casts = [
-    'fullname' => 'encrypted',
-    'email'    => 'encrypted',
-    'phone'    => 'encrypted',
-    ];
+    protected $casts = [];
 
     protected $fillable = [
         'fullname',
@@ -36,7 +32,7 @@ class User extends Authenticatable
         'phone_hash',
     ];
 
-    public $timestamps = false; 
+    public $timestamps = false;
 
     public function orders()
     {
@@ -47,6 +43,12 @@ class User extends Authenticatable
     {
         return $this->hasOne(Employee::class);
     }
+
+    public function reviews()
+    {
+        return $this->hasMany(\App\Models\Review::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -56,9 +58,4 @@ class User extends Authenticatable
     {
         return $this->role === 'manager';
     }
-    public function reviews()
-    {
-        return $this->hasMany(\App\Models\Review::class);
-    }
-
 }

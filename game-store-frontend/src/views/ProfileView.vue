@@ -9,8 +9,11 @@ const authStore = useAuthStore();
 const user = computed(() => authStore.user);
 
 useHead(computed(() => ({
-  title: user.value ? `${user.value.fullname} — GameStore` : 'Профиль — GameStore',
-  meta: [{ name: 'description', content: 'Личный кабинет GameStore. Заказы, отзывы, настройки аккаунта.' }]
+  title: user.value ? `${user.value.fullname || 'Пользователь'} — GameStore` : 'Профиль — GameStore',
+  meta: [
+    { name: 'description', content: 'Личный кабинет GameStore. Заказы, отзывы, настройки аккаунта.' },
+    { name: 'robots', content: 'noindex, nofollow' },
+  ],
 })));
 
 const orders      = ref([]);
@@ -121,7 +124,7 @@ onMounted(loadInitialData);
           <!-- User meta -->
           <div class="hero-meta">
             <div class="hero-name-row">
-              <h1 class="hero-name">{{ user.fullname }}</h1>
+              <h1 class="hero-name">{{ user.fullname || 'Пользователь' }}</h1>
               <span class="role-badge" :class="user.is_admin ? 'admin' : 'user'">
                 {{ user.is_admin ? '⚡ Администратор' : '🎮 Игрок' }}
               </span>

@@ -1,4 +1,7 @@
 User-agent: *
-Disallow:
+Disallow: /admin/
+Disallow: /profile
+Disallow: /cart
+Allow: /
 
 Sitemap: https://gamestore-frontend.web.app/sitemap.xml

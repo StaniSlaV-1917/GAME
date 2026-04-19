@@ -60,8 +60,12 @@ const loadGame = async (id) => {
 
 const loadSimilarGames = async (genre, currentId) => {
   if (!genre) return;
-  try { const { data } = await api.get(`/games?genre=${genre}&limit=4`); similarGames.value = data.filter(g => g.id !== currentId).slice(0, 4); }
-  catch (e) { console.error(e); }
+  try {
+    const { data } = await api.get(`/games?genre=${genre}&limit=4`);
+    similarGames.value = data.filter(g => g.id !== currentId).slice(0, 4);
+    // секция появляется в DOM только после загрузки — перезапускаем observer
+    setTimeout(setupReveal, 100);
+  } catch (e) { console.error(e); }
 };
 
 const loadReviews = async (id) => {
@@ -92,10 +96,18 @@ useHead(computed(() => {
   if (!game.value) return { title: 'Загрузка...' };
   const title = `Купить ${game.value.title} — GameStore`;
   const desc = `Купите ${game.value.title} для ${game.value.platform}. Мгновенная доставка ключа, низкие цены.`;
+  const img = resolveMediaUrl(game.value.image);
   return {
     title,
-    meta: [{ name: 'description', content: desc }],
-    script: [{ type: 'application/ld+json', children: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Product', name: game.value.title, image: resolveMediaUrl(game.value.image), offers: { '@type': 'Offer', priceCurrency: 'RUB', price: game.value.price, availability: 'https://schema.org/InStock' } }) }]
+    meta: [
+      { name: 'description', content: desc },
+      { property: 'og:type', content: 'product' },
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: desc },
+      { property: 'og:image', content: img },
+      { name: 'robots', content: 'index, follow' },
+    ],
+    script: [{ type: 'application/ld+json', children: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Product', name: game.value.title, image: img, offers: { '@type': 'Offer', priceCurrency: 'RUB', price: game.value.price, availability: 'https://schema.org/InStock' } }) }]
   };
 }));
 
@@ -258,20 +270,29 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 
       <!-- SIMILAR GAMES -->
       <section v-if="similarGames.length" class="similar-section reveal">
-        <h2 class="sec-title-lg"><span class="sec-accent">🎲</span> Похожие игры</h2>
+        <div class="sec-header">
+          <h2 class="sec-title-lg">Похожие игры</h2>
+          <RouterLink to="/catalog" class="see-all-link">Весь каталог →</RouterLink>
+        </div>
         <div class="similar-grid">
           <RouterLink
             v-for="sg in similarGames" :key="sg.id"
             :to="`/games/${sg.id}`"
             class="sim-card"
           >
-            <div class="sim-img-wrap">
-              <img :src="resolveImageUrl(sg.image)" :alt="sg.title" class="sim-img" loading="lazy" width="200" height="280" />
+            <div class="sim-img-wrap" :style="{ '--simthumb': `url(${resolveImageUrl(sg.image)})` }">
+              <div class="sim-blur-bg"></div>
+              <img :src="resolveImageUrl(sg.image)" :alt="sg.title" class="sim-img" loading="lazy" />
               <div class="sim-gradient"></div>
+              <span v-if="sg.discount_percent" class="sim-badge">-{{ sg.discount_percent }}%</span>
             </div>
             <div class="sim-info">
               <div class="sim-title">{{ sg.title }}</div>
-              <div class="sim-price">{{ Number(sg.price).toFixed(0) }} ₽</div>
+              <div class="sim-genre">{{ sg.genre }}</div>
+              <div class="sim-bottom">
+                <span class="sim-price">{{ Number(sg.price).toFixed(0) }} ₽</span>
+                <span v-if="sg.rating" class="sim-rating">★ {{ Number(sg.rating).toFixed(1) }}</span>
+              </div>
             </div>
           </RouterLink>
         </div>
@@ -481,23 +502,62 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 .desc-body :deep(p:last-child) { margin: 0; }
 
 /* ─── Similar Games ─── */
-.similar-section { margin-top: 32px; }
-.sec-title-lg { font-size: 1.5rem; font-weight: 700; color: #fff; margin: 0 0 24px; display: flex; align-items: center; gap: 12px; }
-.similar-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 18px; }
+.similar-section { margin-top: 40px; }
+.sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.sec-title-lg { font-size: 1.4rem; font-weight: 700; color: #f1f5f9; margin: 0; }
+.see-all-link { font-size: 0.88rem; color: #60a5fa; text-decoration: none; opacity: 0.8; transition: opacity 0.2s; }
+.see-all-link:hover { opacity: 1; }
+.similar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 16px;
+}
 
 .sim-card {
-  text-decoration: none; border-radius: 12px; overflow: hidden;
-  background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.08);
-  transition: all 0.25s ease;
+  text-decoration: none; border-radius: 14px; overflow: hidden;
+  background: rgba(15,23,42,0.75); border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  transition: transform 0.25s ease, border-color 0.25s, box-shadow 0.25s;
+  display: flex; flex-direction: column;
 }
-.sim-card:hover { transform: translateY(-6px); border-color: rgba(59,130,246,0.4); box-shadow: 0 14px 32px rgba(0,0,0,0.5); }
-.sim-img-wrap { position: relative; aspect-ratio: 3/4; overflow: hidden; }
-.sim-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
-.sim-card:hover .sim-img { transform: scale(1.06); }
-.sim-gradient { position: absolute; bottom: 0; left: 0; right: 0; height: 60%; background: linear-gradient(to top, rgba(15,23,42,0.9), transparent); }
-.sim-info { padding: 12px; }
-.sim-title { font-size: 0.9rem; font-weight: 600; color: #f1f5f9; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sim-price { color: #4ade80; font-weight: 700; font-size: 0.95rem; }
+.sim-card:hover {
+  transform: translateY(-7px) scale(1.01);
+  border-color: rgba(59,130,246,0.45);
+  box-shadow: 0 16px 36px rgba(0,0,0,0.5), 0 0 24px rgba(59,130,246,0.18);
+}
+.sim-img-wrap {
+  position: relative; aspect-ratio: 3/4; overflow: hidden; background: #0a0f1e;
+}
+.sim-blur-bg {
+  position: absolute; inset: -8px; z-index: 0;
+  background-image: var(--simthumb); background-size: cover; background-position: center;
+  filter: blur(12px) brightness(0.45) saturate(1.2);
+  transform: scale(1.05);
+}
+.sim-img {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  object-fit: contain; object-position: center;
+  transition: transform 0.35s ease;
+}
+.sim-card:hover .sim-img { transform: scale(1.05); }
+.sim-gradient {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 55%;
+  background: linear-gradient(to top, rgba(10,15,30,0.92), transparent);
+  z-index: 2;
+}
+.sim-badge {
+  position: absolute; top: 8px; left: 8px; z-index: 3;
+  background: rgba(239,68,68,0.88); color: #fff;
+  font-size: 0.68rem; font-weight: 700; padding: 3px 8px; border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+.sim-info { padding: 11px 12px 13px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.sim-title { font-size: 0.88rem; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sim-genre { font-size: 0.74rem; color: #64748b; }
+.sim-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
+.sim-price { color: #4ade80; font-weight: 700; font-size: 0.92rem; }
+.sim-rating { font-size: 0.78rem; color: #fbbf24; font-weight: 600; }
 
 /* ─── Responsive ─── */
 @media (max-width: 1024px) { .content-grid { grid-template-columns: 1fr; } .sidebar-col { position: static; } }

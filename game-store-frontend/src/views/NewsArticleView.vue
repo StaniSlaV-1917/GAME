@@ -13,10 +13,22 @@ const readProgress = ref(0);
 const articleId = computed(() => route.params.id);
 let revealObs = null;
 
-useHead(computed(() => ({
-  title: article.value ? `${article.value.title} — GameStore` : 'Загрузка...',
-  meta: [{ name: 'description', content: article.value?.title || '' }]
-})));
+useHead(computed(() => {
+  const title = article.value ? `${article.value.title} — GameStore` : 'Загрузка...';
+  const desc = article.value?.excerpt || article.value?.title || 'Новости игровой индустрии — GameStore';
+  const img = article.value?.image ? resolveMediaUrl(article.value.image) : '/images.png';
+  return {
+    title,
+    meta: [
+      { name: 'description', content: desc },
+      { property: 'og:type', content: 'article' },
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: desc },
+      { property: 'og:image', content: img },
+      { name: 'robots', content: 'index, follow' },
+    ],
+  };
+}));
 
 const onScroll = () => {
   const el = document.documentElement;

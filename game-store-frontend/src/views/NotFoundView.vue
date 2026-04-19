@@ -1,6 +1,15 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useHead } from '@vueuse/head';
+
+useHead({
+  title: '404 — Страница не найдена | GameStore',
+  meta: [
+    { name: 'description', content: 'Запрошенная страница не найдена. Вернитесь на главную страницу GameStore.' },
+    { name: 'robots', content: 'noindex, follow' },
+  ],
+});
 
 const router = useRouter();
 

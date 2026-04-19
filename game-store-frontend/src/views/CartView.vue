@@ -1,10 +1,19 @@
 <script setup>
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
+import { useHead } from '@vueuse/head';
 import api from '../api/axios';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { resolveMediaUrl } from '../utils/media';
+
+useHead({
+  title: 'Корзина — GameStore',
+  meta: [
+    { name: 'description', content: 'Ваша корзина покупок в GameStore. Проверьте выбранные игры и оформите заказ.' },
+    { name: 'robots', content: 'noindex, nofollow' },
+  ],
+});
 
 const router = useRouter();
 const cartStore = useCartStore();
@@ -174,6 +183,7 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
                 <img
                   :src="resolveMediaUrl(item.image)"
                   :alt="item.title" class="item-img"
+                  loading="lazy"
                 />
                 <div class="item-img-overlay"></div>
               </RouterLink>
@@ -237,9 +247,9 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
           </button>
 
           <div class="summary-guarantees">
-            <div class="sg-item">🔒 Безопасная оплата</div>
-            <div class="sg-item">⚡ Ключ на e-mail сразу</div>
-            <div class="sg-item">🎯 Лицензия навсегда</div>
+            <div class="sg-item">Безопасная оплата</div>
+            <div class="sg-item">Ключ на e-mail сразу</div>
+            <div class="sg-item">Лицензия навсегда</div>
           </div>
         </aside>
       </div>

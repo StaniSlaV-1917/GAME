@@ -101,6 +101,7 @@ const onScroll = () => {
 
 onMounted(() => {
   loadPopularGames();
+  authStore.fetchUser();
   window.addEventListener('scroll', onScroll, { passive: true });
   isTouch.value = window.matchMedia('(pointer: coarse)').matches;
   if (isTouch.value) {
@@ -138,7 +139,7 @@ onUnmounted(() => {
         <!-- Logo -->
         <RouterLink to="/" class="logo-link" @click="mobileMenuOpen = false">
           <div class="logo-icon-wrap">
-            <img alt="GameStore logo" class="logo-img" src="/images.png" />
+            <img alt="GameStore logo" class="logo-img" src="/images.png" width="40" height="40" />
           </div>
           <span class="logo-text">Game<span class="logo-accent">Store</span></span>
         </RouterLink>
@@ -178,7 +179,7 @@ onUnmounted(() => {
                       class="search-result-item"
                       @click="goToGame(g.id)"
                     >
-                      <img :src="resolveMediaUrl(g.image)" :alt="g.title" class="sr-img" />
+                      <img :src="resolveMediaUrl(g.image)" :alt="g.title" class="sr-img" loading="lazy" width="44" height="44" />
                       <div class="sr-info">
                         <span class="sr-title">{{ g.title }}</span>
                         <span class="sr-genre">{{ g.genre }}</span>
@@ -212,7 +213,7 @@ onUnmounted(() => {
           <template v-if="isLoggedIn && user">
             <RouterLink to="/profile" class="profile-btn">
               <div class="avatar">{{ user.fullname?.[0]?.toUpperCase() ?? '?' }}</div>
-              <span class="profile-name">{{ user.fullname }}</span>
+              <span class="profile-name">{{ user.fullname || 'Профиль' }}</span>
             </RouterLink>
             <button @click="handleLogout" class="logout-btn">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -236,17 +237,17 @@ onUnmounted(() => {
       <Transition name="mobile-menu">
         <div class="mobile-menu" v-if="mobileMenuOpen">
           <nav class="mobile-nav">
-            <RouterLink to="/" @click="mobileMenuOpen = false">🏠 Главная</RouterLink>
-            <RouterLink to="/news" @click="mobileMenuOpen = false">📰 Новости</RouterLink>
-            <RouterLink to="/catalog" @click="mobileMenuOpen = false">🎮 Каталог</RouterLink>
-            <RouterLink to="/about" @click="mobileMenuOpen = false">ℹ️ О магазине</RouterLink>
+            <RouterLink to="/" @click="mobileMenuOpen = false">Главная</RouterLink>
+            <RouterLink to="/news" @click="mobileMenuOpen = false">Новости</RouterLink>
+            <RouterLink to="/catalog" @click="mobileMenuOpen = false">Каталог</RouterLink>
+            <RouterLink to="/about" @click="mobileMenuOpen = false">О магазине</RouterLink>
             <RouterLink to="/soviet" @click="mobileMenuOpen = false">☭ СССР</RouterLink>
-            <RouterLink to="/cart" @click="mobileMenuOpen = false">🛒 Корзина</RouterLink>
-            <RouterLink v-if="user?.is_admin" to="/admin" @click="mobileMenuOpen = false">⚙️ Админка</RouterLink>
+            <RouterLink to="/cart" @click="mobileMenuOpen = false">Корзина</RouterLink>
+            <RouterLink v-if="user?.is_admin" to="/admin" @click="mobileMenuOpen = false">Админка</RouterLink>
           </nav>
           <div class="mobile-auth">
             <template v-if="isLoggedIn && user">
-              <RouterLink to="/profile" class="auth-btn solid" @click="mobileMenuOpen = false">{{ user.fullname }}</RouterLink>
+              <RouterLink to="/profile" class="auth-btn solid" @click="mobileMenuOpen = false">{{ user.fullname || 'Профиль' }}</RouterLink>
               <button @click="handleLogout" class="auth-btn ghost">Выйти</button>
             </template>
             <template v-else>
@@ -280,7 +281,7 @@ onUnmounted(() => {
           <!-- Brand column -->
           <div class="footer-col brand-col">
             <RouterLink to="/" class="footer-logo">
-              <img src="/images.png" alt="logo" class="footer-logo-img" />
+              <img src="/images.png" alt="GameStore logo" class="footer-logo-img" width="34" height="34" loading="lazy" />
               <span class="footer-logo-text">Game<span class="footer-logo-accent">Store</span></span>
             </RouterLink>
             <p class="footer-tagline">Лицензионные ключи для игр по лучшим ценам. Мгновенная доставка, гарантия качества.</p>
@@ -1041,51 +1042,10 @@ onUnmounted(() => {
 =================================================== */
 </style>
 
-<!-- Global non-scoped styles: cursor hide + light theme -->
+<!-- Global non-scoped styles -->
 <style>
 /* Hide system cursor when custom cursor is active */
 html:not(.touch-device) * { cursor: none !important; }
-
-/* ── Light theme ── */
-[data-theme="light"] body,
-[data-theme="light"] html {
-  background: #eef2ff;
-}
-[data-theme="light"] #app-wrapper {
-  background: #eef2ff;
-  background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(99,102,241,0.07), transparent);
-  color: #1e293b;
-}
-[data-theme="light"] .main-header {
-  background: rgba(238,242,255,0.78) !important;
-  border-bottom: 1px solid rgba(99,102,241,0.18) !important;
-}
-[data-theme="light"] .main-header.scrolled {
-  background: rgba(238,242,255,0.95) !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
-}
-[data-theme="light"] .main-nav a { color: #374151; }
-[data-theme="light"] .main-nav a:hover { color: #111827; background: rgba(0,0,0,0.05); }
-[data-theme="light"] .logo-text { color: #111827; }
-[data-theme="light"] .logout-btn { color: #374151; border-color: rgba(0,0,0,0.12); background: rgba(0,0,0,0.04); }
-[data-theme="light"] .action-btn { color: #374151; border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.04); }
-[data-theme="light"] .action-btn:hover { background: rgba(0,0,0,0.08); color: #111827; }
-[data-theme="light"] .search-input { background: rgba(255,255,255,0.9); color: #1e293b; border-color: rgba(99,102,241,0.35); }
-[data-theme="light"] .search-input::placeholder { color: #94a3b8; }
-[data-theme="light"] .search-dropdown { background: rgba(248,249,255,0.98); border-color: rgba(99,102,241,0.25); box-shadow: 0 16px 48px rgba(0,0,0,0.15); }
-[data-theme="light"] .sr-title { color: #1e293b; }
-[data-theme="light"] .main-footer { background: rgba(238,242,255,0.96) !important; }
-[data-theme="light"] .footer-links a { color: #64748b; }
-[data-theme="light"] .footer-links a:hover { color: #3b82f6; }
-[data-theme="light"] .footer-col-title { color: #1e293b; }
-[data-theme="light"] .footer-tagline { color: #64748b; }
-[data-theme="light"] .footer-copy, [data-theme="light"] .footer-made { color: #94a3b8; }
-/* Cards need !important since they're in scoped styles */
-[data-theme="light"] .game-card-inner { background: rgba(255,255,255,0.92) !important; border-color: rgba(0,0,0,0.08) !important; box-shadow: 0 4px 16px rgba(0,0,0,0.1) !important; }
-[data-theme="light"] .game-card-inner:hover { box-shadow: 0 16px 40px rgba(0,0,0,0.15), 0 0 24px rgba(59,130,246,0.18) !important; }
-[data-theme="light"] .card-title { color: #0f172a !important; }
-[data-theme="light"] .card-genre { color: #64748b !important; }
-[data-theme="light"] .card-bottom { border-top-color: rgba(0,0,0,0.08) !important; }
 </style>
 
 

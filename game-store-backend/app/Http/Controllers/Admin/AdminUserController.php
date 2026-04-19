@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AdminUserController extends Controller
 {
-    // Список пользователей
     public function index()
     {
         $users = User::select('id', 'fullname', 'email', 'phone', 'role', 'reg_date')
@@ -18,7 +18,6 @@ class AdminUserController extends Controller
         return response()->json($users);
     }
 
-    // Обновление ФИО/email/телефона (manager + admin)
     public function update(Request $request, int $id)
     {
         $data = $request->validate([
@@ -28,29 +27,30 @@ class AdminUserController extends Controller
         ]);
 
         $user = User::findOrFail($id);
-        $user->fill($data);
+        if (array_key_exists('fullname', $data)) $user->fullname = $data['fullname'];
+        if (array_key_exists('email', $data))    $user->email    = $data['email'];
+        if (array_key_exists('phone', $data))    $user->phone    = $data['phone'];
         $user->save();
 
         return response()->json([
             'message' => 'Пользователь обновлён',
-            'user'    => $user,
+            'user'    => $user->only(['id', 'fullname', 'email', 'phone', 'role', 'reg_date']),
         ]);
     }
 
-    // Смена роли (только admin, роут под /admin/users/{id}/role)
     public function updateRole(Request $request, int $id)
     {
         $data = $request->validate([
             'role' => 'required|in:user,manager,admin',
         ]);
 
+        DB::table('users')->where('id', $id)->update(['role' => $data['role']]);
+
         $user = User::findOrFail($id);
-        $user->role = $data['role'];
-        $user->save();
 
         return response()->json([
             'message' => 'Роль пользователя обновлена',
-            'user'    => $user,
+            'user'    => $user->only(['id', 'fullname', 'email', 'phone', 'role', 'reg_date']),
         ]);
     }
 }

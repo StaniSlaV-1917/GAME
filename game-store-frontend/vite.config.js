@@ -3,7 +3,6 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
@@ -17,6 +16,18 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     open: 'http://games:5173',
-    allowedHosts: ['games'], // <- сюда добавляем
+    allowedHosts: ['games'],
+  },
+  build: {
+    minify: 'esbuild',
+    assetsInlineLimit: 4096,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vue-vendor': ['vue', 'vue-router', 'pinia'],
+          'ui-vendor': ['@vueuse/head'],
+        },
+      },
+    },
   },
 })

@@ -1,4 +1,19 @@
 
+<script setup>
+import { useHead } from '@vueuse/head';
+useHead({
+  title: 'О магазине — GameStore',
+  meta: [
+    { name: 'description', content: 'GameStore — интернет-магазин лицензионных ключей для игр. Узнайте о нашей миссии, ценностях и гарантиях.' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:title', content: 'О магазине — GameStore' },
+    { property: 'og:description', content: 'GameStore — интернет-магазин лицензионных ключей для игр. Узнайте о нашей миссии, ценностях и гарантиях.' },
+    { property: 'og:image', content: '/images.png' },
+    { name: 'robots', content: 'index, follow' },
+  ],
+});
+</script>
+
 <template>
   <div class="about-us-container">
     <div class="hero-section">
