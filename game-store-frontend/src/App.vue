@@ -15,7 +15,6 @@ const { user, isLoggedIn } = storeToRefs(authStore);
 const router = useRouter();
 const route = useRoute();
 
-const popularGames = ref([]);
 const scrolled = ref(false);
 const mobileMenuOpen = ref(false);
 
@@ -80,14 +79,6 @@ const moveCursor = (e) => {
   if (cursorRing.value) cursorRing.value.style.transform = `translate(${x}px,${y}px)`;
 };
 
-const loadPopularGames = async () => {
-  try {
-    const { data } = await api.get('/games?is_hit=true&limit=4');
-    popularGames.value = data;
-  } catch (error) {
-    console.error('Не удалось загрузить популярные игры:', error);
-  }
-};
 
 const handleLogout = async () => {
   await authStore.logout();
@@ -100,7 +91,6 @@ const onScroll = () => {
 };
 
 onMounted(() => {
-  loadPopularGames();
   authStore.fetchUser();
   window.addEventListener('scroll', onScroll, { passive: true });
   isTouch.value = window.matchMedia('(pointer: coarse)').matches;
@@ -298,18 +288,20 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Popular games -->
+          <!-- Genres -->
           <div class="footer-col">
             <h4 class="footer-col-title">
               <span class="col-title-dot"></span>
-              Популярные игры
+              Жанры
             </h4>
-            <div class="footer-links" v-if="popularGames.length">
-              <RouterLink v-for="game in popularGames" :key="game.id" :to="`/games/${game.id}`">
-                {{ game.title }}
-              </RouterLink>
+            <div class="footer-links">
+              <RouterLink to="/catalog?genre=Action">Action</RouterLink>
+              <RouterLink to="/catalog?genre=RPG">RPG</RouterLink>
+              <RouterLink to="/catalog?genre=Strategy">Стратегии</RouterLink>
+              <RouterLink to="/catalog?genre=Adventure">Приключения</RouterLink>
+              <RouterLink to="/catalog?genre=Sports">Спорт</RouterLink>
+              <RouterLink to="/catalog?genre=Horror">Хоррор</RouterLink>
             </div>
-            <p v-else class="footer-loading">Загрузка...</p>
           </div>
 
           <!-- Navigation -->
@@ -359,7 +351,7 @@ onUnmounted(() => {
         <!-- Bottom bar -->
         <div class="footer-bottom">
           <p class="footer-copy">© {{ new Date().getFullYear() }} GameStore. Все права защищены.</p>
-          <p class="footer-made">Сделано с 🎮 для геймеров</p>
+          <p class="footer-made">Сделано для геймеров</p>
         </div>
       </div>
     </footer>

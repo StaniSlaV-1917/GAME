@@ -159,8 +159,7 @@ onUnmounted(() => {
               <span>Все новости</span>
             </RouterLink>
             <RouterLink to="/catalog" class="sidebar-catalog-link">
-              <span>🎮</span>
-              <span>Перейти в каталог</span>
+              <span>← Перейти в каталог</span>
             </RouterLink>
           </div>
 

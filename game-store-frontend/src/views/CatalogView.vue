@@ -130,11 +130,7 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
           <button v-if="searchQuery" class="srch-clear" @click="searchQuery = ''">✕</button>
         </div>
 
-        <div v-if="!loading" class="hero-stats reveal">
-          <div class="stat-pill">🎯 {{ games.length }} {{ pluralGame(games.length) }}</div>
-          <div class="stat-pill">⚡ Мгновенная доставка</div>
-          <div class="stat-pill">🔑 Лицензия навсегда</div>
-        </div>
+
       </div>
     </section>
 

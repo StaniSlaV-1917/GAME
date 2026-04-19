@@ -57,8 +57,13 @@
     <!-- ===== PLATFORMS TICKER ===== -->
     <div class="platforms-strip">
       <div class="platforms-track">
-        <span v-for="p in [...platforms, ...platforms]" :key="p.id + Math.random()" class="platform-item">
-          {{ p.icon }} {{ p.name }}
+        <span
+          v-for="(p, idx) in [...platforms, ...platforms]"
+          :key="`${p.id}-${idx}`"
+          class="platform-item"
+        >
+          <SvgIcon :icon="p.icon" :size="22" class="platform-icon" />
+          <span class="platform-name">{{ p.name }}</span>
         </span>
       </div>
     </div>
@@ -136,6 +141,7 @@
 import { ref } from 'vue';
 import { useHead } from '@vueuse/head';
 import GameCarousel from '../components/GameCarousel.vue';
+import SvgIcon from '@/components/SvgIcon.vue';
 
 useHead({
   title: 'GameStore — Купить ключи для игр',
@@ -150,14 +156,14 @@ useHead({
 });
 
 const platforms = ref([
-  { id: 1, icon: '🎮', name: 'Steam' },
-  { id: 2, icon: '🎯', name: 'Epic Games' },
-  { id: 3, icon: '🌟', name: 'GOG' },
-  { id: 4, icon: '🎲', name: 'Origin' },
-  { id: 5, icon: '⚡', name: 'Ubisoft Connect' },
-  { id: 6, icon: '🏆', name: 'Battle.net' },
-  { id: 7, icon: '🕹️', name: 'Xbox' },
-  { id: 8, icon: '🎪', name: 'PlayStation' },
+  { id: 1, icon: 'steam',               name: 'Steam' },
+  { id: 2, icon: 'epic-games',          name: 'Epic Games' },
+  { id: 3, icon: 'gog-com-svgrepo-com', name: 'GOG' },
+  { id: 4, icon: 'origin-1',            name: 'Origin' },
+  { id: 5, icon: 'ubisoft-logo',        name: 'Ubisoft Connect' },
+  { id: 6, icon: 'battle-net',          name: 'Battle.net' },
+  { id: 7, icon: 'xbox-9',              name: 'Xbox' },
+  { id: 8, icon: 'playstation-4',       name: 'PlayStation' },
 ]);
 
 const features = ref([
@@ -168,10 +174,10 @@ const features = ref([
 ]);
 
 const steps = ref([
-  { icon: '🔍', title: 'Найдите игру', desc: 'Используйте поиск или каталог для выбора нужной игры' },
-  { icon: '🛒', title: 'Добавьте в корзину', desc: 'Оформите заказ за несколько кликов' },
-  { icon: '💳', title: 'Оплатите', desc: 'Выберите удобный способ оплаты' },
-  { icon: '🎮', title: 'Играйте!', desc: 'Ключ мгновенно придёт на вашу почту' },
+  { icon: '', title: 'Найдите игру', desc: 'Используйте поиск или каталог для выбора нужной игры' },
+  { icon: '', title: 'Добавьте в корзину', desc: 'Оформите заказ за несколько кликов' },
+  { icon: '', title: 'Оплатите', desc: 'Выберите удобный способ оплаты' },
+  { icon: '', title: 'Играйте!', desc: 'Ключ мгновенно придёт на вашу почту' },
 ]);
 
 const faqItems = ref([
@@ -363,25 +369,52 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
   border-bottom: 1px solid rgba(255,255,255,0.06);
   background: rgba(15,23,42,0.7);
   backdrop-filter: blur(8px);
-  padding: 14px 0;
+  padding: 13px 0;
+  /* fade edges */
+  mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
 }
 .platforms-track {
   display: flex;
-  gap: 0;
+  align-items: center;
   width: max-content;
-  animation: tickerScroll 20s linear infinite;
+  animation: tickerScroll 28s linear infinite;
 }
 .platform-item {
-  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+  padding: 0 28px;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  cursor: default;
+  transition: opacity 0.25s;
+}
+.platform-item:last-child { border-right: none; }
+
+/*
+  mix-blend-mode: screen делает тёмные/чёрные пиксели SVG прозрачными
+  на тёмном фоне — работает для ВСЕХ SVG включая те, у кого чёрный фон (battle-net).
+  opacity 0.55 — приглушённый вид по умолчанию.
+*/
+.platform-icon {
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  transition: opacity 0.3s;
+  flex-shrink: 0;
+}
+.platform-item:hover .platform-icon {
+  opacity: 1;
+}
+
+.platform-name {
+  font-size: 0.88rem;
   font-weight: 600;
   color: #6b7280;
-  white-space: nowrap;
-  padding: 0 36px;
-  border-right: 1px solid rgba(255,255,255,0.06);
-  transition: color 0.2s;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
+  transition: color 0.25s;
 }
-.platform-item:hover { color: #d1d5db; }
+.platform-item:hover .platform-name { color: #e2e8f0; }
 
 /* ===== CAROUSEL SECTION ===== */
 .game-carousel-section {
