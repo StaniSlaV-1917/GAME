@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import api from '../api/axios';
+import { resolveMediaUrl } from '../utils/media';
 
 const route = useRoute();
 const article = ref(null);
@@ -85,7 +86,7 @@ onUnmounted(() => {
       <header class="article-hero">
         <div class="hero-img-wrap">
           <img
-            :src="article.image || 'https://via.placeholder.com/1400x600'"
+            :src="resolveMediaUrl(article.image)"
             :alt="article.title"
             class="hero-img"
           />

@@ -4,6 +4,7 @@ import { useRouter, RouterLink } from 'vue-router';
 import api from '../api/axios';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
+import { resolveMediaUrl } from '../utils/media';
 
 const router = useRouter();
 const cartStore = useCartStore();
@@ -149,7 +150,7 @@ onMounted(loadCart);
               <!-- Image -->
               <RouterLink :to="`/games/${item.id}`" class="item-img-link">
                 <img
-                  :src="item.image ? `/img/${item.image}` : '/img/noimage.png'"
+                  :src="resolveMediaUrl(item.image)"
                   :alt="item.title" class="item-img"
                 />
                 <div class="item-img-overlay"></div>

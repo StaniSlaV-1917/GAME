@@ -87,7 +87,7 @@
            <input id="image" v-model="form.image" type="text" placeholder="/images/image.jpg">
            <div v-if="isEditing && form.image" class="image-preview-container">
             <p>Текущая обложка:</p>
-            <img :src="`http://localhost:8000${form.image}`" alt="Текущая обложка" class="image-preview" />
+            <img :src="resolveMediaUrl(form.image)" alt="Текущая обложка" class="image-preview" />
           </div>
         </div>
 
@@ -97,7 +97,7 @@
         <h3 class="subsection-title">Галерея изображений</h3>
         <div v-if="isEditing && form.images && form.images.length" class="gallery-grid">
           <div v-for="image in form.images" :key="image.id" class="gallery-item">
-            <img :src="`http://localhost:8000${image.path}`" :alt="`Gallery image ${image.id}`"/>
+            <img :src="resolveMediaUrl(image.path)" :alt="`Gallery image ${image.id}`"/>
             <button type="button" @click="requestImageDelete(image)" class="btn-delete-img">Удалить</button>
           </div>
         </div>
@@ -126,6 +126,7 @@
 
 <script setup>
 import { ref, watch } from 'vue';
+import { resolveMediaUrl } from '../utils/media';
 
 const props = defineProps({ game: Object, isEditing: Boolean });
 const emit = defineEmits(['close', 'save', 'delete-image']);

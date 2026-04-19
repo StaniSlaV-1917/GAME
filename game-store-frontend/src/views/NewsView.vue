@@ -44,7 +44,7 @@
         <RouterLink :to="'/news/' + newsItems[0].id" class="featured-card reveal">
           <div class="featured-img-wrap">
             <img
-              :src="newsItems[0].image || 'https://via.placeholder.com/1200x500'"
+              :src="resolveMediaUrl(newsItems[0].image)"
               :alt="newsItems[0].title"
               class="featured-img" loading="lazy"
             />
@@ -70,7 +70,7 @@
           >
             <RouterLink :to="'/news/' + item.id" class="card-img-link">
               <img
-                :src="item.image || 'https://via.placeholder.com/400x220'"
+                :src="resolveMediaUrl(item.image)"
                 :alt="item.title" class="card-img" loading="lazy"
                 width="400" height="220"
               />
@@ -104,6 +104,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import api from '../api/axios';
+import { resolveMediaUrl } from '../utils/media';
 
 useHead({
   title: 'Новости игровой индустрии — GameStore',

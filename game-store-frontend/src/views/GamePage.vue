@@ -7,6 +7,7 @@ import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import ReviewList from '../components/ReviewList.vue';
 import ReviewForm from '../components/ReviewForm.vue';
+import { resolveMediaUrl } from '../utils/media';
 
 const route = useRoute();
 const gameId = computed(() => route.params.id);
@@ -43,12 +44,7 @@ const setupReveal = () => {
   setTimeout(() => { document.querySelectorAll('.gp-root .reveal').forEach(el => revealObs.observe(el)); }, 200);
 };
 
-const resolveImageUrl = (imagePath, absolute = false) => {
-  if (!imagePath) { const p = '/img/noimage.png'; return absolute ? `${window.location.origin}${p}` : p; }
-  if (imagePath.includes('/')) { const u = `http://localhost:8000${imagePath}`; return absolute ? u : u; }
-  const lp = `/img/${imagePath}`;
-  return absolute ? `${window.location.origin}${lp}` : lp;
-};
+const resolveImageUrl = (imagePath) => resolveMediaUrl(imagePath);
 
 const loadGame = async (id) => {
   loading.value = true; error.value = ''; game.value = null;
@@ -80,7 +76,7 @@ const stopGameUrl = computed(() => {
   return '#';
 });
 
-const coverImageSrc = computed(() => resolveImageUrl(game.value?.image));
+const coverImageSrc = computed(() => resolveMediaUrl(game.value?.image));
 const backgroundImageUrl = computed(() => game.value ? `url(${coverImageSrc.value})` : 'none');
 
 const youtubeEmbedUrl = computed(() => {
@@ -99,7 +95,7 @@ useHead(computed(() => {
   return {
     title,
     meta: [{ name: 'description', content: desc }],
-    script: [{ type: 'application/ld+json', children: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Product', name: game.value.title, image: resolveImageUrl(game.value.image, true), offers: { '@type': 'Offer', priceCurrency: 'RUB', price: game.value.price, availability: 'https://schema.org/InStock' } }) }]
+    script: [{ type: 'application/ld+json', children: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Product', name: game.value.title, image: resolveMediaUrl(game.value.image), offers: { '@type': 'Offer', priceCurrency: 'RUB', price: game.value.price, availability: 'https://schema.org/InStock' } }) }]
   };
 }));
 
@@ -136,10 +132,18 @@ watch(gameId, (id) => { if (id) loadGame(id); });
     <!-- ─── GAME CONTENT ─── -->
     <div v-else-if="game" class="gp-inner">
 
+      <!-- local top-area backdrop (semi-transparent cover art behind buy block) -->
+      <div
+        class="local-backdrop"
+        :style="{ backgroundImage: backgroundImageUrl }"
+      ></div>
+
       <!-- BUY BLOCK -->
       <header class="buy-block reveal">
-        <div class="cover-wrap">
-          <img :src="coverImageSrc" :alt="`Обложка ${game.title}`" class="cover-img" width="300" height="420" />
+        <div class="cover-wrap" :style="{ '--thumb': `url(${coverImageSrc})` }">
+          <!-- Blurred backdrop so landscape images don't leave ugly gaps -->
+          <div class="cover-blur-bg"></div>
+          <img :src="coverImageSrc" :alt="`Обложка ${game.title}`" class="cover-img" />
           <div class="cover-glow"></div>
         </div>
         <div class="buy-info">
@@ -209,8 +213,8 @@ watch(gameId, (id) => { if (id) loadGame(id); });
           <section v-if="game.images && game.images.length" class="content-card reveal">
             <h2 class="sec-title"><span class="sec-accent">🖼</span> Скриншоты</h2>
             <div class="screenshots-grid">
-              <a v-for="img in game.images" :key="img.id" :href="`http://localhost:8000${img.path}`" target="_blank" class="ss-link">
-                <img :src="`http://localhost:8000${img.path}`" :alt="`Скриншот ${game.title}`" class="ss-img" loading="lazy" width="640" height="360" />
+              <a v-for="img in game.images" :key="img.id" :href="resolveImageUrl(img.path)" target="_blank" class="ss-link">
+                <img :src="resolveImageUrl(img.path)" :alt="`Скриншот ${game.title}`" class="ss-img" loading="lazy" width="640" height="360" />
                 <div class="ss-overlay">🔍</div>
               </a>
             </div>
@@ -297,11 +301,11 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 .hero-backdrop {
   position: fixed; inset: 0; z-index: -1;
   background-size: cover; background-position: center;
-  filter: blur(28px) brightness(0.3) saturate(1.2);
-  opacity: 0; transform: scale(1.05);
-  transition: opacity 0.9s ease;
+  filter: blur(40px) brightness(0.22) saturate(1.4);
+  opacity: 0; transform: scale(1.08);
+  transition: opacity 1s ease, transform 1s ease;
 }
-.gp-root.loaded .hero-backdrop { opacity: 1; }
+.gp-root.loaded .hero-backdrop { opacity: 1; transform: scale(1.04); }
 
 /* ─── Status ─── */
 .status-box {
@@ -321,19 +325,63 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ─── Inner ─── */
-.gp-inner { max-width: 1220px; margin: 0 auto; padding: 30px 24px 80px; }
+.gp-inner { max-width: 1220px; margin: 0 auto; padding: 30px 24px 80px; position: relative; }
+
+/* Local backdrop — cover art fills top zone behind buy-block */
+.local-backdrop {
+  position: absolute;
+  top: -30px; left: -60px; right: -60px;
+  height: 520px;
+  background-size: cover; background-position: center top;
+  filter: blur(60px) brightness(0.28) saturate(1.5);
+  border-radius: 0 0 60px 60px;
+  pointer-events: none; z-index: 0;
+}
+.buy-block, .content-grid, .similar-section { position: relative; z-index: 1; }
 
 /* ─── Buy Block ─── */
 .buy-block {
-  display: grid; grid-template-columns: 280px 1fr; gap: 36px;
+  display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 36px;
   background: rgba(15,23,42,0.7); backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
   padding: 28px; margin-bottom: 36px; align-items: start;
 }
 
-.cover-wrap { position: relative; }
-.cover-img { width: 100%; border-radius: 12px; display: block; box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
-.cover-glow { position: absolute; inset: -10px; border-radius: 18px; filter: blur(20px); background: radial-gradient(circle, rgba(59,130,246,0.3), transparent 70%); z-index: -1; }
+/* Cover: fixed-ratio box, blurred bg fills gaps for landscape art */
+.cover-wrap {
+  position: relative;
+  width: 100%;
+  /* Tall enough for portrait, comfortable for landscape */
+  aspect-ratio: 3 / 4;
+  max-height: 420px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #0a0f1e;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.55);
+  flex-shrink: 0;
+}
+/* Blurred duplicate — fills letterbox gaps for wide images */
+.cover-blur-bg {
+  position: absolute; inset: -8px; z-index: 0;
+  background-image: var(--thumb);
+  background-size: cover; background-position: center;
+  filter: blur(18px) brightness(0.5) saturate(1.3);
+  transform: scale(1.05);
+}
+/* Actual cover — shown at full size, never cropped */
+.cover-img {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  object-fit: contain; object-position: center;
+  display: block;
+}
+.cover-glow {
+  position: absolute; inset: -10px; z-index: 0;
+  border-radius: 18px;
+  filter: blur(24px);
+  background: radial-gradient(circle, rgba(59,130,246,0.25), transparent 70%);
+  pointer-events: none;
+}
 
 .buy-info { display: flex; flex-direction: column; gap: 18px; }
 

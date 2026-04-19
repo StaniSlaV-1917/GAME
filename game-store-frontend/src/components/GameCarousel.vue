@@ -131,6 +131,7 @@
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } from 'vue';
 import { RouterLink } from 'vue-router';
 import axios from '@/api/axios';
+import { resolveMediaUrl as resolveImageUrl } from '../utils/media';
 
 const games = ref([]);
 const centerIndex = ref(0);
@@ -143,12 +144,6 @@ const centerSlot = Math.floor(VISIBLE / 2);
 
 let autoTimer = null;
 let spinTimer = null;
-
-const resolveImageUrl = (imagePath) => {
-  if (!imagePath) return '/img/noimage.png';
-  if (imagePath.includes('/')) return `http://localhost:8000${imagePath}`;
-  return `/img/${imagePath}`;
-};
 
 const visibleCards = computed(() => {
   const len = games.value.length;

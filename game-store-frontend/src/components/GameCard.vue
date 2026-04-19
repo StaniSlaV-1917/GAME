@@ -4,8 +4,8 @@
 
       <RouterLink class="card-main-link" :to="{ name: 'game', params: { id: game.id } }" :aria-label="game.title"></RouterLink>
 
-      <!-- Image -->
-      <div class="card-img-wrap">
+      <!-- Image: blurred bg of same image + contain so nothing is cropped -->
+      <div class="card-img-wrap" :style="{ '--thumb': `url(${imageUrl})` }">
         <img :src="imageUrl" :alt="game.title" width="270" height="180" loading="lazy" class="card-img" />
         <div class="img-gradient"></div>
 
@@ -69,6 +69,7 @@ import { defineProps, computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
+import { resolveMediaUrl } from '../utils/media';
 
 const props = defineProps({ game: { type: Object, required: true } });
 
@@ -81,13 +82,7 @@ const handleAddToCart = () => {
   cartStore.addItem({ id: props.game.id, title: props.game.title, price: props.game.price, image: props.game.image, platform: props.game.platform });
 };
 
-const resolveImageUrl = (p) => {
-  if (!p) return '/img/noimage.png';
-  if (p.includes('/')) return `http://localhost:8000${p}`;
-  return `/img/${p}`;
-};
-
-const imageUrl = computed(() => resolveImageUrl(props.game.image));
+const imageUrl = computed(() => resolveMediaUrl(props.game.image));
 </script>
 
 <style scoped>
@@ -112,9 +107,26 @@ const imageUrl = computed(() => resolveImageUrl(props.game.image));
 .card-actions, .ext-link, .details-btn { position: relative; z-index: 2; }
 
 /* ─── Image ─── */
-.card-img-wrap { position: relative; height: 180px; overflow: hidden; background: #0a0f1e; }
-.card-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; display: block; }
-.game-card-inner:hover .card-img { transform: scale(1.08); }
+.card-img-wrap {
+  position: relative; height: 200px; overflow: hidden; background: #0a0f1e;
+  /* Blurred duplicate of cover as background — fills letterbox gaps */
+}
+.card-img-wrap::before {
+  content: '';
+  position: absolute; inset: -10px;
+  background-image: var(--thumb); background-size: cover; background-position: center;
+  filter: blur(14px) brightness(0.45) saturate(1.2);
+  transform: scale(1.05);
+  z-index: 0;
+}
+/* The actual cover: contain so full art is shown, no cropping */
+.card-img {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  object-fit: contain; object-position: center;
+  transition: transform 0.35s ease; display: block;
+}
+.game-card-inner:hover .card-img { transform: scale(1.05); }
 .img-gradient {
   position: absolute; inset: 0;
   background: linear-gradient(to top, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.1) 60%);
