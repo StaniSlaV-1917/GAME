@@ -12,17 +12,17 @@ const roleInfo = {
     label: 'Менеджер',
     color: '#3b82f6',
     help: 'Поможет с заказами, вопросами по активации ключей и возвратами.',
-    icon: '🎧',
+    icon: '',
   },
   admin: {
     label: 'Администратор',
     color: '#8b5cf6',
     help: 'Управляет каталогом игр, новостями и настройками магазина.',
-    icon: '⚙️',
+    icon: '',
   },
 };
 
-const getRoleInfo = (role) => roleInfo[role] || { label: role || 'Сотрудник', color: '#6b7280', help: 'Специалист нашей команды.', icon: '👤' };
+const getRoleInfo = (role) => roleInfo[role] || { label: role || 'Сотрудник', color: '#6b7280', help: 'Специалист нашей команды.', icon: '' };
 const getInitials = (name) => name ? name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?';
 
 useHead({
@@ -46,37 +46,37 @@ const stats = [
 
 const values = [
   {
-    icon: '🛡️',
+    icon: '',
     title: 'Безопасность',
     desc: 'Все транзакции защищены SSL-шифрованием. Ключи поставляются только от проверенных официальных дистрибьюторов.',
     color: '#3b82f6',
   },
   {
-    icon: '⚡',
+    icon: '',
     title: 'Мгновенная доставка',
     desc: 'Ключ приходит на e-mail сразу после оплаты — без ожидания, без задержек, в любое время суток.',
     color: '#f59e0b',
   },
   {
-    icon: '💬',
+    icon: '',
     title: 'Поддержка 24/7',
     desc: 'Наша команда всегда на связи. Любой вопрос — от активации ключа до возврата — решается быстро.',
     color: '#22c55e',
   },
   {
-    icon: '🎯',
+    icon: '',
     title: 'Честные цены',
     desc: 'Мониторим рынок ежедневно и предлагаем лучшие цены без скрытых комиссий и наценок.',
     color: '#8b5cf6',
   },
   {
-    icon: '🏆',
+    icon: '',
     title: 'Лицензионные ключи',
     desc: 'Только официальные лицензии. Каждый ключ проверяется перед продажей и гарантированно активируется.',
     color: '#f43f5e',
   },
   {
-    icon: '🌐',
+    icon: '',
     title: 'Все платформы',
     desc: 'Steam, Epic Games, GOG, Origin, Ubisoft Connect, Xbox, PlayStation — один магазин для всех платформ.',
     color: '#06b6d4',
@@ -169,17 +169,17 @@ onUnmounted(() => revealObs?.disconnect());
         </div>
         <div class="mission-visual">
           <div class="mv-card">
-            <div class="mv-icon">🎮</div>
+            <div class="mv-icon"></div>
             <div class="mv-stat">500+</div>
             <div class="mv-label">игр в каталоге</div>
           </div>
           <div class="mv-card accent">
-            <div class="mv-icon">⚡</div>
+            <div class="mv-icon"></div>
             <div class="mv-stat">~2 сек</div>
             <div class="mv-label">среднее время доставки</div>
           </div>
           <div class="mv-card">
-            <div class="mv-icon">⭐</div>
+            <div class="mv-icon"></div>
             <div class="mv-stat">4.9</div>
             <div class="mv-label">средний рейтинг</div>
           </div>

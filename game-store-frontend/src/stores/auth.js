@@ -93,10 +93,44 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('user');
   }
 
+  async function sendPasswordResetCode(email) {
+    try {
+      await api.post('/auth/forgot-password', { email });
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, 'Не удалось отправить код. Проверьте email и попробуйте снова.'));
+    }
+  }
+
+  async function resetPassword(payload) {
+    try {
+      await api.post('/auth/reset-password', payload);
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, 'Не удалось сбросить пароль. Проверьте код и попробуйте снова.'));
+    }
+  }
+
+  async function requestEmailChange(newEmail) {
+    try {
+      await api.post('/auth/email-change/request', { email: newEmail });
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, 'Не удалось отправить код. Попробуйте снова.'));
+    }
+  }
+
+  async function confirmEmailChange(code) {
+    try {
+      const { data } = await api.post('/auth/email-change/confirm', { code });
+      if (data.user) setUser(data.user);
+      return data;
+    } catch (error) {
+      throw new Error(extractErrorMessage(error, 'Неверный код. Попробуйте снова.'));
+    }
+  }
+
   // Первичная настройка при загрузке
   if (token.value) {
     setToken(token.value);
   }
 
-  return { user, token, isLoggedIn, login, register, logout, fetchUser, setToken, setUser, sendLoginCode, loginWithCode };
+  return { user, token, isLoggedIn, login, register, logout, fetchUser, setToken, setUser, sendLoginCode, loginWithCode, sendPasswordResetCode, resetPassword, requestEmailChange, confirmEmailChange };
 });

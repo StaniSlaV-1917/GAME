@@ -5,7 +5,7 @@ import { useAuthStore } from '../stores/auth';
 import api from '../api/axios';
 
 const authStore = useAuthStore();
-const stats = ref({ users: 0, games: 0, orders: 0, reviews: 0, revenue: 0 });
+const stats = ref({ users: 0, games: 0, orders: 0, reviews: 0, revenue: 0, support_new: 0, support_total: 0 });
 const statsLoaded = ref(false);
 
 const animateCount = (target, key) => {
@@ -77,6 +77,15 @@ const cards = [
     glow: 'rgba(244,63,94,0.25)',
     icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`,
   },
+  {
+    to: '/admin/support',
+    title: 'Поддержка',
+    desc: 'Обращения пользователей из чата — меняйте статусы и оставляйте заметки.',
+    color: '#06b6d4',
+    glow: 'rgba(6,182,212,0.25)',
+    badge: 'support_new',
+    icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg>`,
+  },
 ];
 
 const statCards = [
@@ -135,7 +144,10 @@ const statCards = [
           <span class="nc-icon" v-html="c.icon"></span>
         </div>
         <div class="nc-body">
-          <h2 class="nc-title">{{ c.title }}</h2>
+          <div class="nc-title-row">
+            <h2 class="nc-title">{{ c.title }}</h2>
+            <span v-if="c.badge && stats[c.badge] > 0" class="nc-badge">{{ stats[c.badge] }} новых</span>
+          </div>
           <p class="nc-desc">{{ c.desc }}</p>
         </div>
         <div class="nc-arrow">
@@ -319,7 +331,22 @@ const statCards = [
 .nc-icon { display: flex; align-items: center; justify-content: center; }
 
 .nc-body { flex: 1; min-width: 0; }
-.nc-title { font-size: 1rem; font-weight: 700; color: #f1f5f9; margin: 0 0 4px; }
+.nc-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.nc-title { font-size: 1rem; font-weight: 700; color: #f1f5f9; margin: 0; }
+.nc-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(239,68,68,0.2);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.35);
+  animation: pulse-badge 2s ease infinite;
+}
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
 .nc-desc { font-size: 0.8rem; color: #6b7280; line-height: 1.5; margin: 0; }
 
 .nc-arrow {

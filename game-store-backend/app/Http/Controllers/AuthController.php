@@ -8,26 +8,86 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use App\Mail\EmailChangeMail;
 use App\Mail\LoginCodeMail;
+use App\Mail\LoginNotificationMail;
+use App\Mail\PasswordResetMail;
 
 class AuthController extends Controller
 {
     /**
      * Формирует стандартизированный ответ с данными пользователя.
      */
-    private function fullUserResponse(User $user)
+    private function fullUserResponse(User $user): array
     {
         return [
-            'id'       => $user->id,
-            'fullname' => $user->fullname,
-            'email'    => $user->email,
-            'phone'    => $user->phone,
-            'is_admin' => $user->role === 'admin',
-            'reg_date' => $user->reg_date,
-            'avatar'   => $user->avatar,
+            'id'                   => $user->id,
+            'fullname'             => $user->fullname,
+            'email'                => $user->email,
+            'phone'                => $user->phone,
+            'is_admin'             => $user->role === 'admin',
+            'reg_date'             => $user->reg_date,
+            'avatar'               => $user->avatar,
+            'notify_login'         => (bool) $user->notify_login,
+            'notify_order_created' => (bool) $user->notify_order_created,
+            'notify_order_status'  => (bool) $user->notify_order_status,
         ];
+    }
+
+    /**
+     * Парсит User-Agent и возвращает ['browser' => ..., 'os' => ...]
+     */
+    private function parseUserAgent(string $ua): array
+    {
+        // Browser
+        if (str_contains($ua, 'YaBrowser'))        $browser = 'Яндекс.Браузер';
+        elseif (str_contains($ua, 'Edg/'))         $browser = 'Microsoft Edge';
+        elseif (str_contains($ua, 'OPR/') || str_contains($ua, 'Opera')) $browser = 'Opera';
+        elseif (str_contains($ua, 'Chrome/'))      $browser = 'Google Chrome';
+        elseif (str_contains($ua, 'Firefox/'))     $browser = 'Mozilla Firefox';
+        elseif (str_contains($ua, 'Safari/'))      $browser = 'Safari';
+        else                                        $browser = 'Неизвестный браузер';
+
+        // OS
+        if (str_contains($ua, 'Windows NT 10') || str_contains($ua, 'Windows NT 11')) $os = 'Windows 10 / 11';
+        elseif (str_contains($ua, 'Windows NT 6.3'))  $os = 'Windows 8.1';
+        elseif (str_contains($ua, 'Windows NT 6.1'))  $os = 'Windows 7';
+        elseif (str_contains($ua, 'Windows'))         $os = 'Windows';
+        elseif (str_contains($ua, 'iPhone'))           $os = 'iPhone (iOS)';
+        elseif (str_contains($ua, 'iPad'))             $os = 'iPad (iOS)';
+        elseif (str_contains($ua, 'Android'))          $os = 'Android';
+        elseif (str_contains($ua, 'Macintosh') || str_contains($ua, 'Mac OS X')) $os = 'macOS';
+        elseif (str_contains($ua, 'Linux'))            $os = 'Linux';
+        else                                           $os = 'Неизвестная ОС';
+
+        return ['browser' => $browser, 'os' => $os];
+    }
+
+    /**
+     * Отправляет уведомление о входе, если пользователь включил эту опцию.
+     */
+    private function sendLoginNotification(User $user, $request, string $method = 'password'): void
+    {
+        if (! $user->notify_login) return;
+        try {
+            $ua     = $request->userAgent() ?? 'Unknown';
+            $parsed = $this->parseUserAgent($ua);
+            $ip     = $request->ip() ?? '—';
+            $time   = now()->setTimezone('Europe/Moscow')->format('d.m.Y в H:i:s') . ' (МСК)';
+            Mail::to($user->email)->send(new LoginNotificationMail(
+                $user->fullname ?: 'Игрок',
+                $ip,
+                $parsed['browser'],
+                $parsed['os'],
+                $time,
+                $method
+            ));
+        } catch (\Throwable $e) {
+            Log::warning('Login notification mail failed: ' . $e->getMessage());
+        }
     }
 
     // POST /api/auth/register
@@ -94,12 +154,14 @@ class AuthController extends Controller
         // Создаем токен для входа
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        $this->sendLoginNotification($user, $request, 'password');
+
         return response()->json([
             'token' => $token,
             'user'  => $this->fullUserResponse($user),
         ]);
     }
-    
+
     // POST /api/auth/passwordless
     public function sendLoginCode(Request $request)
     {
@@ -107,8 +169,16 @@ class AuthController extends Controller
         $email = $data['email'];
         $code = random_int(100000, 999999);
         Cache::put('login_code:' . $email, $code, now()->addMinutes(10));
-        Mail::to($email)->send(new LoginCodeMail($code));
-        return response()->json(['message' => 'Код отправлен на ваш email.']);
+        Log::info("╔══ КОД ВХОДА ══╗ email={$email}  код={$code}  (действует 10 мин) ╚═══════════════╝");
+        try {
+            Mail::to($email)->send(new LoginCodeMail($code));
+        } catch (\Throwable $e) {
+            Log::error('Login code mail failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Не удалось отправить письмо. Проверьте корректность email или попробуйте позже.'], 500);
+        }
+        $response = ['message' => 'Код отправлен на ваш email.'];
+        if (config('app.debug')) $response['debug_code'] = $code;
+        return response()->json($response);
     }
 
     // POST /api/auth/passwordless/login
@@ -150,9 +220,86 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        $this->sendLoginNotification($user, $request, 'code');
+
         return response()->json([
             'token' => $token,
             'user'  => $this->fullUserResponse($user),
+        ]);
+    }
+
+    // POST /api/auth/forgot-password
+    // Отправляет 6-значный код сброса пароля на почту.
+    // Намеренно не раскрывает, существует ли email (безопасность).
+    public function sendPasswordResetCode(Request $request)
+    {
+        $data = $request->validate(['email' => 'required|email']);
+        $email = $data['email'];
+
+        $emailHash = hash('sha256', $email);
+        $user = User::where('email_hash', $emailHash)->first();
+
+        $debugCode = null;
+        if ($user) {
+            $code = random_int(100000, 999999);
+            Cache::put('password_reset:' . $email, $code, now()->addMinutes(15));
+            Log::info("╔══ КОД СБРОСА ПАРОЛЯ ══╗ email={$email}  код={$code}  (действует 15 мин) ╚═══════════════════╝");
+            try {
+                Mail::to($email)->send(new PasswordResetMail($code, $user->fullname));
+            } catch (\Throwable $e) {
+                Log::error('Password reset mail failed: ' . $e->getMessage());
+            }
+            if (config('app.debug')) $debugCode = $code;
+        }
+
+        // Возвращаем одинаковый ответ независимо от того, найден пользователь или нет
+        $response = ['message' => 'Если такой email зарегистрирован, мы отправим на него код сброса пароля.'];
+        if ($debugCode !== null) $response['debug_code'] = $debugCode;
+        return response()->json($response);
+    }
+
+    // POST /api/auth/reset-password
+    // Принимает email + код + новый пароль, сбрасывает пароль.
+    public function resetPassword(Request $request)
+    {
+        $data = $request->validate([
+            'email'                 => 'required|email',
+            'code'                  => 'required|string',
+            'password'              => 'required|string|min:6',
+            'password_confirmation' => 'required|string',
+        ]);
+
+        if ($data['password'] !== $data['password_confirmation']) {
+            throw ValidationException::withMessages([
+                'password' => ['Пароли не совпадают.'],
+            ]);
+        }
+
+        $email      = $data['email'];
+        $cachedCode = Cache::get('password_reset:' . $email);
+
+        if (! $cachedCode || (string)$cachedCode !== (string)$data['code']) {
+            throw ValidationException::withMessages([
+                'code' => ['Неверный или устаревший код. Запросите новый.'],
+            ]);
+        }
+
+        $emailHash = hash('sha256', $email);
+        $user = User::where('email_hash', $emailHash)->first();
+
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'email' => ['Пользователь не найден.'],
+            ]);
+        }
+
+        $user->password = Hash::make($data['password']);
+        $user->save();
+
+        Cache::forget('password_reset:' . $email);
+
+        return response()->json([
+            'message' => 'Пароль успешно изменён. Войдите с новым паролем.',
         ]);
     }
 
@@ -183,36 +330,32 @@ class AuthController extends Controller
     }
     
     // PUT /api/auth/profile
+    // Обновляет имя, телефон и аватар. Email меняется отдельно через двухшаговый флоу.
     public function updateProfile(Request $request)
     {
         $user = $request->user();
 
         $data = $request->validate([
-            'fullname' => 'sometimes|required|string|max:255',
-            'email'    => 'sometimes|required|email',
-            'phone'    => 'sometimes|required|regex:/^7[0-9]{10}$/',
-            'avatar'   => 'sometimes|nullable|string|max:150',
+            'fullname'             => 'sometimes|required|string|max:255',
+            'phone'                => 'sometimes|nullable|regex:/^7[0-9]{10}$/',
+            'avatar'               => 'sometimes|nullable|string|max:150',
+            'notify_login'         => 'sometimes|boolean',
+            'notify_order_created' => 'sometimes|boolean',
+            'notify_order_status'  => 'sometimes|boolean',
         ]);
-
-        if (!empty($data['email'])) {
-            $emailHash = hash('sha256', $data['email']);
-            if (User::where('email_hash', $emailHash)->where('id', '!=', $user->id)->exists()) {
-                return response()->json(['message' => 'Email уже занят'], 422);
-            }
-            $user->email = $data['email'];
-            $user->email_hash = $emailHash;
-        }
 
         if (!empty($data['phone'])) {
             $phoneHash = hash('sha256', $data['phone']);
             if (User::where('phone_hash', $phoneHash)->where('id', '!=', $user->id)->exists()) {
-                return response()->json(['message' => 'Телефон уже занят'], 422);
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'phone' => ['Этот номер телефона уже используется другим аккаунтом.'],
+                ]);
             }
-            $user->phone = $data['phone'];
+            $user->phone      = $data['phone'];
             $user->phone_hash = $phoneHash;
         }
 
-        if (!empty($data['fullname'])) {
+        if (isset($data['fullname']) && $data['fullname'] !== '') {
             $user->fullname = $data['fullname'];
         }
 
@@ -220,10 +363,98 @@ class AuthController extends Controller
             $user->avatar = $data['avatar'];
         }
 
+        foreach (['notify_login', 'notify_order_created', 'notify_order_status'] as $pref) {
+            if (array_key_exists($pref, $data)) {
+                $user->$pref = (bool) $data[$pref];
+            }
+        }
+
         $user->save();
 
         return response()->json([
             'message' => 'Профиль обновлён',
+            'user'    => $this->fullUserResponse($user),
+        ]);
+    }
+
+    // POST /api/auth/email-change/request
+    // Отправляет код подтверждения на НОВЫЙ email. Не меняет email сразу.
+    public function requestEmailChange(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'email' => 'required|email|max:255',
+        ]);
+
+        $newEmail  = $data['email'];
+        $emailHash = hash('sha256', $newEmail);
+
+        if (User::where('email_hash', $emailHash)->where('id', '!=', $user->id)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => ['Этот email уже используется другим аккаунтом.'],
+            ]);
+        }
+
+        if (strtolower($newEmail) === strtolower($user->email)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => ['Новый email совпадает с текущим.'],
+            ]);
+        }
+
+        $code = random_int(100000, 999999);
+        Cache::put('email_change:' . $user->id, ['code' => $code, 'new_email' => $newEmail], now()->addMinutes(15));
+        Log::info("╔══ КОД СМЕНЫ EMAIL ══╗ userId={$user->id}  новый_email={$newEmail}  код={$code}  (действует 15 мин) ╚══════════════════╝");
+
+        try {
+            Mail::to($newEmail)->send(new EmailChangeMail($code, $user->fullname, $newEmail));
+        } catch (\Throwable $e) {
+            Log::error('Email change mail failed: ' . $e->getMessage());
+            return response()->json(['message' => 'Не удалось отправить письмо на указанный email. Проверьте адрес и попробуйте снова.'], 500);
+        }
+
+        return response()->json([
+            'message' => 'Код подтверждения отправлен на новый email.',
+        ]);
+    }
+
+    // POST /api/auth/email-change/confirm
+    // Проверяет код и обновляет email.
+    public function confirmEmailChange(Request $request)
+    {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'code' => 'required|string',
+        ]);
+
+        $cached = Cache::get('email_change:' . $user->id);
+
+        if (! $cached || (string)$cached['code'] !== (string)$data['code']) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'code' => ['Неверный или устаревший код. Запросите новый.'],
+            ]);
+        }
+
+        $newEmail  = $cached['new_email'];
+        $emailHash = hash('sha256', $newEmail);
+
+        // Повторная проверка на занятость (на случай гонки)
+        if (User::where('email_hash', $emailHash)->where('id', '!=', $user->id)->exists()) {
+            Cache::forget('email_change:' . $user->id);
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => ['Этот email уже используется другим аккаунтом.'],
+            ]);
+        }
+
+        $user->email      = $newEmail;
+        $user->email_hash = $emailHash;
+        $user->save();
+
+        Cache::forget('email_change:' . $user->id);
+
+        return response()->json([
+            'message' => 'Email успешно изменён.',
             'user'    => $this->fullUserResponse($user),
         ]);
     }

@@ -170,7 +170,7 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 
           <!-- Meta pills -->
           <div class="meta-pills">
-            <span class="meta-pill">🎮 {{ game.platform }}</span>
+            <span class="meta-pill">{{ game.platform }}</span>
             <span class="meta-pill">🎭 {{ game.genre }}</span>
             <span v-if="game.release_year" class="meta-pill">📅 {{ game.release_year }}</span>
           </div>
@@ -190,21 +190,21 @@ watch(gameId, (id) => { if (id) loadGame(id); });
               :title="!authStore.isLoggedIn ? 'Войдите, чтобы купить' : isInCart ? 'Уже в корзине' : 'В корзину'"
             >
               <span v-if="isInCart">✓ В корзине</span>
-              <span v-else>🛒 В корзину</span>
+              <span v-else>В корзину</span>
             </button>
             <a :href="stopGameUrl" target="_blank" rel="noopener" class="sg-btn">Обзоры StopGame ↗</a>
           </div>
 
           <!-- Delivery note -->
           <div class="delivery-note">
-            <span>⚡</span> Мгновенная доставка ключа на e-mail после оплаты
+            Мгновенная доставка ключа на e-mail после оплаты
           </div>
 
           <!-- Guarantees -->
           <div class="guarantees">
             <div class="guarantee-item"><span class="gi-icon">🔒</span><span>Безопасная оплата</span></div>
-            <div class="guarantee-item"><span class="gi-icon">🎯</span><span>Лицензионный ключ</span></div>
-            <div class="guarantee-item"><span class="gi-icon">💬</span><span>Поддержка 24/7</span></div>
+            <div class="guarantee-item"><span>Лицензионный ключ</span></div>
+            <div class="guarantee-item"><span>Поддержка 24/7</span></div>
           </div>
         </div>
       </header>
@@ -227,7 +227,7 @@ watch(gameId, (id) => { if (id) loadGame(id); });
             <div class="screenshots-grid">
               <a v-for="img in game.images" :key="img.id" :href="resolveImageUrl(img.path)" target="_blank" class="ss-link">
                 <img :src="resolveImageUrl(img.path)" :alt="`Скриншот ${game.title}`" class="ss-img" loading="lazy" width="640" height="360" />
-                <div class="ss-overlay">🔍</div>
+                <div class="ss-overlay"></div>
               </a>
             </div>
           </section>
@@ -236,7 +236,6 @@ watch(gameId, (id) => { if (id) loadGame(id); });
             <h2 class="sec-title"><span class="sec-accent">★</span> Отзывы <span class="review-count">({{ reviews.length }})</span></h2>
             <ReviewForm v-if="authStore.isLoggedIn" :game-id="gameId" @review-submitted="() => loadReviews(gameId)" />
             <div v-else class="login-notice">
-              <span>💬</span>
               <p>Чтобы оставить отзыв, <RouterLink to="/login" class="notice-link">войдите в аккаунт</RouterLink></p>
             </div>
             <div v-if="loadingReviews" class="reviews-loading">Загружаем отзывы...</div>
@@ -248,7 +247,7 @@ watch(gameId, (id) => { if (id) loadGame(id); });
         <aside class="sidebar-col">
           <!-- Details card -->
           <div class="content-card reveal">
-            <h3 class="sidebar-title">📋 Детали</h3>
+            <h3 class="sidebar-title">Детали</h3>
             <ul class="details-list">
               <li v-if="game.platform"><span class="dl-key">Платформа</span><strong class="dl-val">{{ game.platform }}</strong></li>
               <li v-if="game.genre"><span class="dl-key">Жанр</span><strong class="dl-val">{{ game.genre }}</strong></li>

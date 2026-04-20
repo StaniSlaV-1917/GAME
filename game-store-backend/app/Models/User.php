@@ -12,8 +12,6 @@ class User extends Authenticatable
 
     protected $table = 'users';
 
-    protected $casts = [];
-
     protected $fillable = [
         'fullname',
         'email',
@@ -24,6 +22,15 @@ class User extends Authenticatable
         'avatar',
         'email_hash',
         'phone_hash',
+        'notify_login',
+        'notify_order_created',
+        'notify_order_status',
+    ];
+
+    protected $casts = [
+        'notify_login'         => 'boolean',
+        'notify_order_created' => 'boolean',
+        'notify_order_status'  => 'boolean',
     ];
 
     protected $hidden = [

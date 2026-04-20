@@ -128,7 +128,7 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
     <div class="cart-inner">
       <!-- Header -->
       <div class="cart-header">
-        <h1 class="cart-title">🛒 Корзина</h1>
+        <h1 class="cart-title">Корзина</h1>
         <RouterLink to="/catalog" class="continue-link">← Продолжить покупки</RouterLink>
       </div>
 
@@ -146,7 +146,6 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
       <!-- Success -->
       <Transition name="pop">
         <div v-if="successMessage" class="success-state">
-          <div class="success-icon">🎉</div>
           <h2>Заказ оформлен!</h2>
           <p>{{ successMessage }}</p>
           <div class="success-actions">
@@ -158,7 +157,7 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 
       <!-- Empty -->
       <div v-if="!loading && !successMessage && cartItems.length === 0" class="empty-state">
-        <div class="empty-icon">🛒</div>
+        <div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.25"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
         <h2 class="empty-title">Корзина пуста</h2>
         <p class="empty-sub">Добавьте игры из каталога, чтобы оформить заказ</p>
         <RouterLink to="/catalog" class="empty-cta">Перейти в каталог</RouterLink>
@@ -227,7 +226,7 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
             </div>
             <div class="sum-row">
               <span>Доставка</span>
-              <span class="free-delivery">⚡ Мгновенно</span>
+              <span class="free-delivery">Мгновенно</span>
             </div>
           </div>
 

@@ -4,8 +4,10 @@ import { useHead } from '@vueuse/head';
 import { RouterLink } from 'vue-router';
 import api from '../api/axios';
 import { useAuthStore } from '../stores/auth';
+import { useToast } from '../composables/useToast';
 
 const authStore = useAuthStore();
+const toast = useToast();
 const user = computed(() => authStore.user);
 
 useHead(computed(() => ({
@@ -19,13 +21,18 @@ useHead(computed(() => ({
 const orders      = ref([]);
 const userReviews = ref([]);
 
-const profileForm  = ref({ fullname: '', email: '' });
+const profileForm  = ref({ fullname: '', phone: '' });
+const notifyForm   = ref({ notify_login: true, notify_order_created: true, notify_order_status: true });
+const savingNotify = ref(false);
 const passwordForm = ref({ current_password: '', new_password: '', new_password_confirmation: '' });
+const emailChangeForm = ref({ newEmail: '', code: '' });
+const emailChangeStep = ref('email'); // 'email' | 'code'
+const emailChangeSending = ref(false);
 
 const activeTab = ref('overview');
 const loading   = ref({ orders: false, reviews: false });
-const error     = ref({ orders: '', reviews: '', profile: '', password: '' });
-const message   = ref({ profile: '', password: '' });
+const error     = ref({ orders: '', reviews: '', profile: '', password: '', emailChange: '' });
+const message   = ref({ profile: '', password: '', emailChange: '' });
 
 const avatarPickerOpen = ref(false);
 const savingAvatar = ref(false);
@@ -50,7 +57,9 @@ const selectAvatar = async (filename) => {
     await api.put('/auth/profile', { avatar: filename });
     await authStore.fetchUser();
     avatarPickerOpen.value = false;
+    toast.success('Аватар обновлён!');
   } catch (e) {
+    toast.error('Не удалось сохранить аватар. Попробуйте снова.');
     console.error(e);
   } finally {
     savingAvatar.value = false;
@@ -59,10 +68,22 @@ const selectAvatar = async (filename) => {
 
 const tabs = [
   { id: 'overview',  label: 'Обзор',     icon: '◈' },
-  { id: 'orders',    label: 'Заказы',    icon: '📦' },
+  { id: 'orders',    label: 'Заказы',    icon: '' },
   { id: 'reviews',   label: 'Отзывы',    icon: '★' },
   { id: 'settings',  label: 'Настройки', icon: '⚙' },
 ];
+
+const ORDER_STATUS_MAP = {
+  created:   { icon: '', label: 'Создан' },
+  paid:      { icon: '', label: 'Оплачен' },
+  shipped:   { icon: '', label: 'Отправлен' },
+  completed: { icon: '', label: 'Выполнен' },
+  cancelled: { icon: '', label: 'Отменён' },
+};
+const orderStatusLabel = (status) => {
+  const s = ORDER_STATUS_MAP[status];
+  return s ? `${s.icon} ${s.label}` : status;
+};
 
 const formatDate = (ds) => {
   if (!ds) return '—';
@@ -82,8 +103,11 @@ const totalSpent = computed(() =>
 
 const loadInitialData = async () => {
   if (!user.value) return;
-  profileForm.value.fullname = user.value.fullname || '';
-  profileForm.value.email    = user.value.email    || '';
+  profileForm.value.fullname              = user.value.fullname || '';
+  profileForm.value.phone                 = user.value.phone    || '';
+  notifyForm.value.notify_login           = user.value.notify_login           ?? true;
+  notifyForm.value.notify_order_created   = user.value.notify_order_created   ?? true;
+  notifyForm.value.notify_order_status    = user.value.notify_order_status    ?? true;
   await Promise.all([loadOrders(), loadUserReviews()]);
 };
 
@@ -107,20 +131,93 @@ const saveProfile = async () => {
   error.value.profile = ''; message.value.profile = '';
   try {
     const { data } = await api.put('/auth/profile', profileForm.value);
-    message.value.profile = data.message || 'Профиль обновлён!';
-    await authStore.fetchUser();
+    const msg = data.message || 'Профиль обновлён!';
+    message.value.profile = msg;
+    toast.success(msg);
+    if (data.user) authStore.setUser(data.user);
+    else await authStore.fetchUser();
     setTimeout(() => { message.value.profile = ''; }, 3500);
-  } catch (e) { error.value.profile = e.response?.data?.message || 'Ошибка обновления.'; }
+  } catch (e) {
+    const d = e.response?.data;
+    const msg = (d?.errors ? Object.values(d.errors)[0]?.[0] : null) || d?.message || 'Ошибка обновления профиля.';
+    error.value.profile = msg;
+    toast.error(msg);
+  }
+};
+
+const saveNotifications = async () => {
+  if (savingNotify.value) return;
+  savingNotify.value = true;
+  try {
+    const { data } = await api.put('/auth/profile', notifyForm.value);
+    if (data.user) authStore.setUser(data.user);
+    else await authStore.fetchUser();
+    // обновляем локальную форму из ответа
+    notifyForm.value.notify_login         = data.user?.notify_login         ?? notifyForm.value.notify_login;
+    notifyForm.value.notify_order_created = data.user?.notify_order_created ?? notifyForm.value.notify_order_created;
+    notifyForm.value.notify_order_status  = data.user?.notify_order_status  ?? notifyForm.value.notify_order_status;
+    toast.success('Настройки уведомлений сохранены!');
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Ошибка сохранения настроек.');
+  } finally {
+    savingNotify.value = false;
+  }
+};
+
+const sendEmailChangeCode = async () => {
+  error.value.emailChange = ''; message.value.emailChange = '';
+  const newEmail = emailChangeForm.value.newEmail.trim();
+  if (!newEmail) { toast.warning('Введите новый email.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) { toast.warning('Некорректный формат email.'); return; }
+  emailChangeSending.value = true;
+  try {
+    await authStore.requestEmailChange(newEmail);
+    emailChangeStep.value = 'code';
+    toast.info('Код подтверждения отправлен на ' + newEmail);
+  } catch (e) {
+    const msg = e.message || 'Ошибка отправки кода.';
+    error.value.emailChange = msg;
+    toast.error(msg);
+  } finally {
+    emailChangeSending.value = false;
+  }
+};
+
+const confirmEmailCode = async () => {
+  error.value.emailChange = ''; message.value.emailChange = '';
+  const code = emailChangeForm.value.code.trim();
+  if (!code) { toast.warning('Введите код из письма.'); return; }
+  emailChangeSending.value = true;
+  try {
+    await authStore.confirmEmailChange(code);
+    message.value.emailChange = 'Email успешно изменён!';
+    toast.success('Email успешно изменён!');
+    emailChangeStep.value = 'email';
+    emailChangeForm.value = { newEmail: '', code: '' };
+    setTimeout(() => { message.value.emailChange = ''; }, 3500);
+  } catch (e) {
+    const msg = e.message || 'Неверный код. Попробуйте снова.';
+    error.value.emailChange = msg;
+    toast.error(msg);
+  } finally {
+    emailChangeSending.value = false;
+  }
 };
 
 const changePassword = async () => {
   error.value.password = ''; message.value.password = '';
   try {
-    const { data } = await api.put('/auth/password', passwordForm.value);
-    message.value.password = data.message || 'Пароль изменён!';
+    const { data } = await api.post('/auth/password', passwordForm.value);
+    const msg = data.message || 'Пароль изменён!';
+    message.value.password = msg;
+    toast.success(msg);
     passwordForm.value = { current_password: '', new_password: '', new_password_confirmation: '' };
     setTimeout(() => { message.value.password = ''; }, 3500);
-  } catch (e) { error.value.password = e.response?.data?.message || 'Ошибка смены пароля.'; }
+  } catch (e) {
+    const msg = e.response?.data?.message || 'Ошибка смены пароля.';
+    error.value.password = msg;
+    toast.error(msg);
+  }
 };
 
 onMounted(loadInitialData);
@@ -163,7 +260,7 @@ onMounted(loadInitialData);
             <div class="hero-name-row">
               <h1 class="hero-name">{{ user.fullname || 'Пользователь' }}</h1>
               <span class="role-badge" :class="user.is_admin ? 'admin' : 'user'">
-                {{ user.is_admin ? '⚡ Администратор' : '🎮 Игрок' }}
+                {{ user.is_admin ? ' Администратор' : ' Игрок' }}
               </span>
             </div>
             <p class="hero-email">{{ user.email }}</p>
@@ -219,25 +316,25 @@ onMounted(loadInitialData);
 
             <div class="stats-grid">
               <div class="stat-card" style="--c:#3b82f6">
-                <div class="stat-icon">📦</div>
+                <div class="stat-icon"></div>
                 <p class="stat-num">{{ orders.length }}</p>
                 <p class="stat-label">Всего заказов</p>
                 <div class="stat-glow"></div>
               </div>
               <div class="stat-card" style="--c:#22c55e">
-                <div class="stat-icon">💰</div>
+                <div class="stat-icon"></div>
                 <p class="stat-num">{{ totalSpent }} ₽</p>
                 <p class="stat-label">Общая сумма</p>
                 <div class="stat-glow"></div>
               </div>
               <div class="stat-card" style="--c:#f59e0b">
-                <div class="stat-icon">★</div>
+                <div class="stat-icon"></div>
                 <p class="stat-num">{{ userReviews.length }}</p>
                 <p class="stat-label">Написано отзывов</p>
                 <div class="stat-glow"></div>
               </div>
               <div class="stat-card" style="--c:#a855f7">
-                <div class="stat-icon">📅</div>
+                <div class="stat-icon"></div>
                 <p class="stat-num small">{{ formatDate(user.reg_date) }}</p>
                 <p class="stat-label">Дата регистрации</p>
                 <div class="stat-glow"></div>
@@ -281,7 +378,7 @@ onMounted(loadInitialData);
               <span>⚠️</span> {{ error.orders }}
             </div>
             <div v-else-if="!orders.length" class="empty-state">
-              <div class="empty-icon">📦</div>
+              <div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.25"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
               <h3>Нет заказов</h3>
               <p>Вы ещё ничего не покупали. Самое время начать!</p>
               <RouterLink to="/catalog" class="btn-primary">Перейти в каталог</RouterLink>
@@ -293,13 +390,13 @@ onMounted(loadInitialData);
                     <span class="ofc-hash">#</span>{{ order.id }}
                   </div>
                   <div class="ofc-date">{{ formatDate(order.order_date) }}</div>
-                  <div class="ofc-status">✅ Выполнен</div>
+                  <div class="ofc-status" :class="`status-${order.status}`">{{ orderStatusLabel(order.status) }}</div>
                   <div class="ofc-total">{{ Number(order.total).toFixed(0) }} ₽</div>
                 </div>
                 <div class="ofc-items">
                   <div v-for="item in order.items" :key="item.id" class="ofc-item">
                     <RouterLink :to="`/games/${item.game.id}`" class="ofc-game-name">
-                      🎮 {{ item.game.title }}
+                       {{ item.game.title }}
                     </RouterLink>
                     <span class="ofc-qty">{{ item.quantity }} шт.</span>
                   </div>
@@ -332,7 +429,7 @@ onMounted(loadInitialData);
               <div v-for="review in userReviews" :key="review.id" class="review-card">
                 <div class="review-top">
                   <RouterLink :to="`/games/${review.game.id}`" class="review-game">
-                    🎮 {{ review.game.title }}
+                     {{ review.game.title }}
                   </RouterLink>
                   <div class="review-date">{{ formatDate(review.created_at) }}</div>
                 </div>
@@ -357,13 +454,14 @@ onMounted(loadInitialData);
             </div>
 
             <div class="settings-grid">
-              <!-- Profile form -->
+
+              <!-- Личные данные: имя + телефон -->
               <div class="settings-card">
                 <div class="settings-card-header">
-                  <div class="settings-card-icon">👤</div>
+                  <div class="settings-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                   <div>
                     <h3>Личные данные</h3>
-                    <p>Имя и адрес электронной почты</p>
+                    <p>Имя и номер телефона</p>
                   </div>
                 </div>
                 <form @submit.prevent="saveProfile" class="settings-form">
@@ -372,8 +470,8 @@ onMounted(loadInitialData);
                     <input type="text" v-model="profileForm.fullname" autocomplete="name" placeholder="Ваше имя" />
                   </div>
                   <div class="field">
-                    <label>Email</label>
-                    <input type="email" v-model="profileForm.email" autocomplete="email" placeholder="email@example.com" />
+                    <label>Телефон <span class="field-hint">7XXXXXXXXXX (11 цифр)</span></label>
+                    <input type="tel" v-model="profileForm.phone" autocomplete="tel" placeholder="79001234567" />
                   </div>
                   <div class="form-footer">
                     <button type="submit" class="btn-primary">Сохранить изменения</button>
@@ -385,10 +483,97 @@ onMounted(loadInitialData);
                 </form>
               </div>
 
-              <!-- Password form -->
+              <!-- Смена email с подтверждением -->
               <div class="settings-card">
                 <div class="settings-card-header">
-                  <div class="settings-card-icon">🔐</div>
+                  <div class="settings-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+                  <div>
+                    <h3>Смена email</h3>
+                    <p>Текущий: <strong style="color:#60a5fa">{{ user.email }}</strong></p>
+                  </div>
+                </div>
+                <div class="settings-form">
+                  <Transition name="msg">
+                    <div v-if="message.emailChange" class="msg-banner success">✓ {{ message.emailChange }}</div>
+                    <div v-else-if="error.emailChange" class="msg-banner error">✗ {{ error.emailChange }}</div>
+                  </Transition>
+
+                  <!-- Шаг 1: ввод нового email -->
+                  <template v-if="emailChangeStep === 'email'">
+                    <div class="field">
+                      <label>Новый email</label>
+                      <input type="email" v-model="emailChangeForm.newEmail" autocomplete="email" placeholder="new@example.com" />
+                    </div>
+                    <div class="form-footer">
+                      <button type="button" class="btn-primary" :disabled="emailChangeSending" @click="sendEmailChangeCode">
+                        <span v-if="emailChangeSending" class="btn-spin"></span>
+                        {{ emailChangeSending ? 'Отправка...' : 'Получить код' }}
+                      </button>
+                    </div>
+                  </template>
+
+                  <!-- Шаг 2: код подтверждения -->
+                  <template v-else>
+                    <p class="email-change-hint">Код отправлен на <strong style="color:#60a5fa">{{ emailChangeForm.newEmail }}</strong></p>
+                    <div class="field">
+                      <label>Код из письма</label>
+                      <input type="text" v-model="emailChangeForm.code" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••" maxlength="6" />
+                    </div>
+                    <div class="form-footer">
+                      <button type="button" class="btn-primary" :disabled="emailChangeSending" @click="confirmEmailCode">
+                        <span v-if="emailChangeSending" class="btn-spin"></span>
+                        {{ emailChangeSending ? 'Проверка...' : 'Подтвердить' }}
+                      </button>
+                      <button type="button" class="btn-ghost" @click="emailChangeStep = 'email'; error.emailChange = ''">← Назад</button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Уведомления на email -->
+              <div class="settings-card notify-card">
+                <div class="settings-card-header">
+                  <div class="settings-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+                  <div>
+                    <h3>Email-уведомления</h3>
+                    <p>Выбери, о чём тебе писать на {{ user.email }}</p>
+                  </div>
+                </div>
+                <div class="settings-form">
+                  <label class="notify-toggle">
+                    <input type="checkbox" v-model="notifyForm.notify_login" @change="saveNotifications" />
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <span class="toggle-body">
+                      <span class="toggle-title">Новый вход в аккаунт</span>
+                      <span class="toggle-desc">IP-адрес, браузер и ОС при каждом входе</span>
+                    </span>
+                  </label>
+                  <label class="notify-toggle">
+                    <input type="checkbox" v-model="notifyForm.notify_order_created" @change="saveNotifications" />
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <span class="toggle-body">
+                      <span class="toggle-title">Заказ оформлен</span>
+                      <span class="toggle-desc">Подтверждение при каждой покупке</span>
+                    </span>
+                  </label>
+                  <label class="notify-toggle">
+                    <input type="checkbox" v-model="notifyForm.notify_order_status" @change="saveNotifications" />
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <span class="toggle-body">
+                      <span class="toggle-title">Изменение статуса заказа</span>
+                      <span class="toggle-desc">Оплачен, отправлен, выполнен, отменён</span>
+                    </span>
+                  </label>
+                  <div v-if="savingNotify" class="notify-saving">
+                    <span class="btn-spin"></span> Сохранение...
+                  </div>
+                </div>
+              </div>
+
+              <!-- Смена пароля -->
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <div class="settings-card-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
                   <div>
                     <h3>Смена пароля</h3>
                     <p>Обновите пароль для безопасности аккаунта</p>
@@ -416,6 +601,7 @@ onMounted(loadInitialData);
                   </div>
                 </form>
               </div>
+
             </div>
           </div>
 
@@ -430,7 +616,7 @@ onMounted(loadInitialData);
           <div class="ap-modal">
             <div class="ap-header">
               <div class="ap-title-wrap">
-                <span class="ap-title-icon">🎮</span>
+                <span class="ap-title-icon"></span>
                 <div>
                   <h3 class="ap-title">Выберите аватар</h3>
                   <p class="ap-sub">Герои Warcraft III · {{ avatarList.length }} вариантов</p>
@@ -788,6 +974,11 @@ onMounted(loadInitialData);
 .ofc-hash { color: #374151; margin-right: 1px; }
 .ofc-date { font-size: 0.82rem; color: #4b5563; flex: 1; }
 .ofc-status { font-size: 0.8rem; color: #4ade80; }
+.ofc-status.status-created   { color: #60a5fa; }
+.ofc-status.status-paid      { color: #4ade80; }
+.ofc-status.status-shipped   { color: #a78bfa; }
+.ofc-status.status-completed { color: #4ade80; }
+.ofc-status.status-cancelled { color: #f87171; }
 .ofc-total { font-size: 1.05rem; font-weight: 700; color: #4ade80; margin-left: auto; }
 .ofc-items { padding: 12px 20px; display: flex; flex-direction: column; gap: 8px; }
 .ofc-item { display: flex; justify-content: space-between; align-items: center; }
@@ -911,6 +1102,118 @@ onMounted(loadInitialData);
 .msg-error   { font-size: 0.85rem; color: #f87171; font-weight: 500; }
 .msg-enter-active, .msg-leave-active { transition: all 0.25s ease; }
 .msg-enter-from, .msg-leave-to { opacity: 0; transform: translateX(-8px); }
+
+.field-hint {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: #4b5563;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 6px;
+}
+
+.msg-banner {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.msg-banner.success { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: #4ade80; }
+.msg-banner.error   { background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
+
+.email-change-hint {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid #374151;
+  color: #9ca3af;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover { border-color: #6b7280; color: #e5e7eb; }
+
+.btn-spin {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Notification toggles ── */
+.notify-card .settings-form { gap: 6px; }
+
+.notify-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #0d1117;
+  border: 1px solid #1e2d40;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.notify-toggle:hover { border-color: #3b82f6; background: #0f1f30; }
+.notify-toggle input[type="checkbox"] { display: none; }
+
+.toggle-track {
+  flex-shrink: 0;
+  width: 44px;
+  height: 24px;
+  background: #1e2d40;
+  border-radius: 12px;
+  position: relative;
+  transition: background 0.25s ease;
+  border: 1px solid #2d4060;
+}
+.notify-toggle input:checked ~ .toggle-track {
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  border-color: transparent;
+}
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #475569;
+  border-radius: 50%;
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+.notify-toggle input:checked ~ .toggle-track .toggle-thumb {
+  transform: translateX(20px);
+  background: #fff;
+}
+
+.toggle-body { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.toggle-title { font-size: 0.9rem; font-weight: 600; color: #e2e8f0; }
+.toggle-desc  { font-size: 0.78rem; color: #475569; }
+.notify-toggle input:checked ~ .toggle-track ~ .toggle-body .toggle-title { color: #93c5fd; }
+
+.notify-saving {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #475569;
+  padding: 8px 0 0 4px;
+}
 
 /* States */
 .loading-state {

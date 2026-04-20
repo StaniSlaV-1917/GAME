@@ -16,7 +16,7 @@
 
         <!-- Badges -->
         <div class="card-badges">
-          <span v-if="game.is_featured" class="badge b-hot">🔥 Хит</span>
+          <span v-if="game.is_featured" class="badge b-hot">Хит</span>
           <span v-if="game.is_new" class="badge b-new">✨ Новинка</span>
           <span v-if="game.discount_percent" class="badge b-disc">-{{ game.discount_percent }}%</span>
         </div>

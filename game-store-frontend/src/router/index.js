@@ -21,6 +21,7 @@ const AdminNews = () => import('../views/AdminNews.vue');
 const AdminOrders = () => import('../views/AdminOrders.vue');
 const AdminUsers = () => import('../views/AdminUsers.vue');
 const AdminReviewsPage = () => import('../views/AdminReviewsPage.vue');
+const AdminSupport     = () => import('../views/AdminSupport.vue');
 
 const routes = [
   { path: '/', name: 'home', component: HomeView },
@@ -102,6 +103,12 @@ const routes = [
     name: 'AdminReviewsPage',
     component: AdminReviewsPage,
     meta: { requiresAuth: true, roles: ['admin'] }
+  },
+  {
+    path: '/admin/support',
+    name: 'AdminSupport',
+    component: AdminSupport,
+    meta: { requiresAuth: true, roles: ['manager', 'admin'] }
   },
   {
     path: '/:pathMatch(.*)*',

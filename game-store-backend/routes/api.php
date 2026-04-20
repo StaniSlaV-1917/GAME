@@ -9,11 +9,13 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\SupportController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\AdminGamesController;
 use App\Http\Controllers\Admin\AdminNewsController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminReviewController;
+use App\Http\Controllers\Admin\AdminSupportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,15 +29,22 @@ Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/passwordless', [AuthController::class, 'sendLoginCode']);
     Route::post('/passwordless/login', [AuthController::class, 'loginWithCode']);
+    Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetCode']);
+    Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
     
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
-        Route::put('/profile', [AuthController::class, 'updateProfile']); 
+        Route::put('/profile', [AuthController::class, 'updateProfile']);
         Route::post('/password', [AuthController::class, 'changePassword']);
         Route::get('/my-reviews', [AuthController::class, 'myReviews']);
+        Route::post('/email-change/request', [AuthController::class, 'requestEmailChange']);
+        Route::post('/email-change/confirm', [AuthController::class, 'confirmEmailChange']);
     });
 });
+
+// --- Поддержка --- //
+Route::post('/support/send', [SupportController::class, 'send']);
 
 // --- Публичный маршрут для синхронизации корзины --- //
 Route::post('/cart/sync', [CartController::class, 'sync']);
@@ -47,11 +56,13 @@ Route::get('/employees', [EmployeeController::class, 'index']);
 Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function () {
     Route::get('/stats', function () {
         return response()->json([
-            'users'   => \App\Models\User::count(),
-            'games'   => \App\Models\Game::count(),
-            'orders'  => \App\Models\Order::count(),
-            'reviews' => \App\Models\Review::count(),
-            'revenue' => (int) \App\Models\Order::sum('total'),
+            'users'           => \App\Models\User::count(),
+            'games'           => \App\Models\Game::count(),
+            'orders'          => \App\Models\Order::count(),
+            'reviews'         => \App\Models\Review::count(),
+            'revenue'         => (int) \App\Models\Order::sum('total'),
+            'support_new'     => \App\Models\SupportTicket::where('status', 'new')->count(),
+            'support_total'   => \App\Models\SupportTicket::count(),
         ]);
     });
 
@@ -89,6 +100,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/news/{news}', [AdminNewsController::class, 'show']);
     Route::put('/news/{news}', [AdminNewsController::class, 'update']);
     Route::delete('/news/{news}', [AdminNewsController::class, 'destroy']);
+
+    Route::get('/support',        [AdminSupportController::class, 'index']);
+    Route::put('/support/{id}',   [AdminSupportController::class, 'update']);
+    Route::delete('/support/{id}',[AdminSupportController::class, 'destroy']);
 });
 
 // --- Основные публичные маршруты --- //

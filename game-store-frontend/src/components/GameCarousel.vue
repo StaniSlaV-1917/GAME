@@ -91,14 +91,13 @@
             :disabled="isSpinning || !games.length"
             :class="{ spinning: isSpinning }"
           >
-            <span class="roulette-btn-icon">{{ isSpinning ? '⚙️' : '🎰' }}</span>
             <span>{{ isSpinning ? 'Крутится...' : 'Испытать удачу!' }}</span>
           </button>
         </template>
         <template v-else>
           <div class="winner-actions">
             <router-link :to="{ name: 'game', params: { id: winnerGame.id } }" class="winner-btn-buy">
-              🛒 Купить за {{ Number(winnerGame.price).toFixed(0) }} ₽
+              Купить за {{ Number(winnerGame.price).toFixed(0) }} ₽
             </router-link>
             <button class="winner-btn-reset" @click="resetRoulette">Крутить ещё</button>
           </div>
@@ -110,7 +109,7 @@
     <Transition name="winner-pop">
       <div class="winner-spotlight" v-if="winnerGame && isOverlayVisible">
         <div class="winner-card">
-          <div class="winner-badge">🏆 ПОБЕДИТЕЛЬ!</div>
+          <div class="winner-badge">ПОБЕДИТЕЛЬ</div>
           <div class="winner-img-wrap">
             <img :src="resolveImageUrl(winnerGame.image)" :alt="winnerGame.title" class="winner-img" loading="lazy" />
             <div class="winner-glow-ring r1"></div>

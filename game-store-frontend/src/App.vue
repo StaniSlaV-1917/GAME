@@ -7,7 +7,11 @@ import { useThemeStore } from './stores/theme';
 import { storeToRefs } from 'pinia';
 import api from './api/axios';
 import ParticlesBackground from './components/ParticlesBackground.vue';
+import SupportChat from './components/SupportChat.vue';
 import { resolveMediaUrl } from './utils/media';
+import { useToast } from './composables/useToast';
+
+const { toasts, remove: removeToast } = useToast();
 
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
@@ -330,8 +334,8 @@ onUnmounted(() => {
               Контакты
             </h4>
             <div class="footer-links">
-              <a href="mailto:support@gamestore.com">
-                <span class="link-icon">✉️</span> support@gamestore.com
+              <a href="mailto:Gamestore.help@yandex.com">
+                <span class="link-icon">✉️</span> Gamestore.help@yandex.com
               </a>
               <a href="tel:+79991234567">
                 <span class="link-icon">📞</span> +7 (999) 123-45-67
@@ -358,6 +362,33 @@ onUnmounted(() => {
         </div>
       </div>
     </footer>
+
+    <!-- ===== SUPPORT CHAT ===== -->
+    <SupportChat />
+
+    <!-- ===== TOAST NOTIFICATIONS ===== -->
+    <Teleport to="body">
+      <div class="toast-container">
+        <TransitionGroup name="toast">
+          <div
+            v-for="toast in toasts"
+            :key="toast.id"
+            class="toast"
+            :class="[`toast-${toast.type}`, { 'toast-visible': toast.visible }]"
+            @click="removeToast(toast.id)"
+          >
+            <span class="toast-icon">
+              <template v-if="toast.type === 'success'">✦</template>
+              <template v-else-if="toast.type === 'error'">✖</template>
+              <template v-else-if="toast.type === 'warning'">⚠</template>
+              <template v-else>ℹ</template>
+            </span>
+            <span class="toast-msg">{{ toast.message }}</span>
+            <button class="toast-close" @click.stop="removeToast(toast.id)" aria-label="Закрыть">×</button>
+          </div>
+        </TransitionGroup>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -1042,6 +1073,94 @@ onUnmounted(() => {
 /* ===================================================
    LIGHT THEME OVERRIDES  (non-scoped rules below in separate <style>)
 =================================================== */
+
+/* ===== TOAST NOTIFICATIONS ===== */
+/* NOTE: .toast-container is inside <Teleport to="body"> so these need :deep or
+   global styles. Using :deep here for scoped context. */
+</style>
+
+<!-- Toast styles are global because Teleport renders outside the scoped root -->
+<style>
+/* ===== GLOBAL TOAST STYLES ===== */
+.toast-container {
+  position: fixed;
+  bottom: 28px;
+  right: 24px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 360px;
+  width: calc(100vw - 32px);
+}
+
+.toast {
+  pointer-events: all;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 14px 13px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(15, 23, 42, 0.94);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05);
+  color: #e5e7eb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.28s ease, transform 0.28s ease;
+  word-break: break-word;
+}
+.toast.toast-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.toast-success { border-color: rgba(74, 222, 128, 0.3); }
+.toast-success .toast-icon { color: #4ade80; }
+
+.toast-error { border-color: rgba(248, 113, 113, 0.35); background: rgba(20, 10, 10, 0.95); }
+.toast-error .toast-icon { color: #f87171; }
+
+.toast-warning { border-color: rgba(251, 191, 36, 0.3); }
+.toast-warning .toast-icon { color: #fbbf24; }
+
+.toast-info { border-color: rgba(59, 130, 246, 0.35); }
+.toast-info .toast-icon { color: #60a5fa; }
+
+.toast-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.toast-msg { flex: 1; }
+.toast-close {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 0 0 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.toast-close:hover { color: #e5e7eb; }
+
+/* TransitionGroup animations (uses CSS classes, not .toast-visible) */
+.toast-enter-active { transition: opacity 0.28s ease, transform 0.28s ease; }
+.toast-leave-active { transition: opacity 0.25s ease, transform 0.25s ease; }
+.toast-enter-from   { opacity: 0; transform: translateX(20px); }
+.toast-leave-to     { opacity: 0; transform: translateX(20px); }
+
+@media (max-width: 480px) {
+  .toast-container { bottom: 14px; right: 8px; left: 8px; width: auto; max-width: none; }
+}
 </style>
 
 <!-- Global non-scoped styles -->

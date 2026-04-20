@@ -125,7 +125,6 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
         <p class="hero-sub reveal">Лицензионные ключи для ПК, PlayStation и Xbox — мгновенная доставка</p>
 
         <div class="hero-search reveal">
-          <span class="srch-icon">🔍</span>
           <input v-model="searchQuery" type="text" placeholder="Поиск по названию или жанру..." class="srch-input" />
           <button v-if="searchQuery" class="srch-clear" @click="searchQuery = ''">✕</button>
         </div>
@@ -179,7 +178,7 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
 
       <!-- Empty -->
       <div v-else-if="filteredGames.length === 0" class="empty-box">
-        <div class="empty-icon">🔍</div>
+        <div class="empty-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" style="opacity:0.25"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
         <p class="empty-text">По вашему запросу ничего не найдено</p>
         <button @click="resetFilters" class="empty-btn">Сбросить фильтры</button>
       </div>

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderCreatedMail;
 use App\Models\Game;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
@@ -85,6 +87,16 @@ class OrderController extends Controller
             }
 
             DB::commit();
+
+            // Отправляем email-уведомление об оформлении заказа (если включено)
+            try {
+                if ($user->notify_order_created !== false) {
+                    $order->load('items.game');
+                    Mail::to($user->email)->send(new OrderCreatedMail($order, $user->fullname ?? ''));
+                }
+            } catch (\Throwable $e) {
+                // Не прерываем ответ, если письмо не отправилось
+            }
 
             return response()->json([
                 'message' => 'Заказ успешно оформлен',
