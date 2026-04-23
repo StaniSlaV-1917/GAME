@@ -136,10 +136,20 @@ const openAddModal = () => {
   isModalOpen.value = true;
 };
 
-const openEditModal = (game) => {
+const openEditModal = async (game) => {
   isEditing.value = true;
   const gameToEdit = games.value.find(g => g.id === game.id);
   selectedGame.value = JSON.parse(JSON.stringify(gameToEdit));
+
+  // Load mods for the game
+  try {
+    const { data: mods } = await api.get(`/admin/games/${game.id}/mods`);
+    selectedGame.value.mods = mods;
+  } catch (error) {
+    console.error('Error loading mods:', error);
+    selectedGame.value.mods = [];
+  }
+
   isModalOpen.value = true;
 };
 

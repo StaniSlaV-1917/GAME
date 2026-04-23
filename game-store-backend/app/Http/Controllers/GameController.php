@@ -64,4 +64,13 @@ class GameController extends Controller
 
         return response()->json($game);
     }
+
+    // GET /api/games/{gameId}/mods
+    public function getMods($gameId)
+    {
+        $game = Game::findOrFail($gameId);
+        $mods = $game->mods()->orderBy('sort_order')->orderBy('popularity_score', 'desc')->get();
+
+        return response()->json($mods);
+    }
 }

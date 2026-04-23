@@ -14,9 +14,12 @@ const gameId = computed(() => route.params.id);
 const game = ref(null);
 const similarGames = ref([]);
 const reviews = ref([]);
+const mods = ref([]);
 const loading = ref(true);
 const loadingReviews = ref(false);
+const loadingMods = ref(false);
 const error = ref('');
+const activeTab = ref('info'); // 'info' or 'mods'
 
 const cartStore = useCartStore();
 const authStore = useAuthStore();
@@ -53,9 +56,16 @@ const loadGame = async (id) => {
     game.value = data;
     loadSimilarGames(data.genre, data.id);
     loadReviews(id);
+    loadMods(id);
     setupReveal();
   } catch (e) { error.value = 'Игра не найдена или произошла ошибка.'; console.error(e); }
   finally { loading.value = false; }
+};
+
+const loadMods = async (id) => {
+  loadingMods.value = true;
+  try { const { data } = await api.get(`/games/${id}/mods`); mods.value = data; }
+  catch (e) { console.error(e); } finally { loadingMods.value = false; }
 };
 
 const loadSimilarGames = async (genre, currentId) => {
@@ -91,6 +101,12 @@ const youtubeEmbedUrl = computed(() => {
     return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
   } catch { return null; }
 });
+
+const formatNumber = (num) => {
+  if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+  return num.toString();
+};
 
 const hasSystemRequirements = computed(() => {
   return game.value && (
@@ -218,8 +234,26 @@ watch(gameId, (id) => { if (id) loadGame(id); });
         </div>
       </header>
 
+      <!-- TABS -->
+      <div class="tabs-container reveal">
+        <button
+          @click="activeTab = 'info'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'info' }"
+        >
+          📋 Об игре
+        </button>
+        <button
+          @click="activeTab = 'mods'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'mods' }"
+        >
+          🎮 Моды ({{ mods.length }})
+        </button>
+      </div>
+
       <!-- CONTENT GRID -->
-      <div class="content-grid">
+      <div v-show="activeTab === 'info'" class="content-grid">
 
         <!-- LEFT: Trailer + Screenshots + Reviews -->
         <div class="main-col">
@@ -277,6 +311,70 @@ watch(gameId, (id) => { if (id) loadGame(id); });
             </ul>
           </div>
         </aside>
+      </div>
+
+      <!-- MODS SECTION -->
+      <div v-show="activeTab === 'mods'" class="mods-section">
+        <section class="content-card reveal">
+          <h2 class="sec-title"><span class="sec-accent">🎮</span> Моды для {{ game.title }}</h2>
+
+          <div v-if="loadingMods" class="mods-loading">
+            <div class="loading-spinner"></div>
+            <p>Загружаем моды...</p>
+          </div>
+
+          <div v-else-if="mods.length === 0" class="mods-empty">
+            <div class="empty-icon">📦</div>
+            <h3>Модов пока нет</h3>
+            <p>Для этой игры ещё не добавлены моды. Следите за обновлениями!</p>
+          </div>
+
+          <div v-else class="mods-list">
+            <div
+              v-for="mod in mods"
+              :key="mod.id"
+              class="mod-card"
+              :class="{ featured: mod.is_featured }"
+            >
+              <div class="mod-header">
+                <h3 class="mod-title">{{ mod.title }}</h3>
+                <div class="mod-badges">
+                  <span v-if="mod.is_featured" class="badge featured-badge">⭐ Избранный</span>
+                  <span v-if="mod.version" class="badge version-badge">v{{ mod.version }}</span>
+                </div>
+              </div>
+
+              <p v-if="mod.description" class="mod-description">{{ mod.description }}</p>
+
+              <div class="mod-meta">
+                <span v-if="mod.author" class="meta-item">
+                  <span class="meta-icon">👤</span> {{ mod.author }}
+                </span>
+                <span v-if="mod.source_site" class="meta-item">
+                  <span class="meta-icon">🌐</span> {{ mod.source_site }}
+                </span>
+                <span v-if="mod.download_count" class="meta-item">
+                  <span class="meta-icon">⬇️</span> {{ formatNumber(mod.download_count) }}
+                </span>
+                <span v-if="mod.popularity_score" class="meta-item">
+                  <span class="meta-icon">⭐</span> {{ Number(mod.popularity_score).toFixed(1) }}
+                </span>
+              </div>
+
+              <a
+                v-if="mod.external_url"
+                :href="mod.external_url"
+                target="_blank"
+                rel="noopener"
+                class="mod-download-btn"
+              >
+                <span class="btn-icon">🔗</span>
+                <span class="btn-text">Открыть источник</span>
+                <span class="btn-arrow">→</span>
+              </a>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- SIMILAR GAMES -->
@@ -608,4 +706,79 @@ watch(gameId, (id) => { if (id) loadGame(id); });
   .price-row { justify-content: center; }
   .action-row { flex-direction: column; }
 }
+
+/* ─── Tabs ─── */
+.tabs-container {
+  display: flex; gap: 8px; margin-bottom: 24px;
+  background: rgba(15,23,42,0.5); padding: 6px; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.tab-btn {
+  flex: 1; padding: 12px 20px; border: none; border-radius: 8px;
+  background: transparent; color: #9ca3af; font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.tab-btn:hover { color: #e5e7eb; background: rgba(255,255,255,0.05); }
+.tab-btn.active {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff; box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+}
+
+/* ─── Mods Section ─── */
+.mods-section { margin-bottom: 36px; }
+.mods-loading, .mods-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 60px 20px; text-align: center; gap: 16px;
+}
+.mods-empty .empty-icon { font-size: 4rem; opacity: 0.5; }
+.mods-empty h3 { margin: 0; color: #e5e7eb; font-size: 1.2rem; }
+.mods-empty p { margin: 0; color: #6b7280; font-size: 0.95rem; }
+
+.mods-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.mod-card {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px; padding: 20px; transition: all 0.2s;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.mod-card:hover {
+  border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.05);
+  transform: translateY(-2px);
+}
+.mod-card.featured {
+  border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.05);
+}
+.mod-card.featured:hover { border-color: rgba(251,191,36,0.5); }
+
+.mod-header { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.mod-title { margin: 0; color: #e5e7eb; font-size: 1.1rem; font-weight: 600; line-height: 1.3; }
+.mod-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.badge {
+  padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+  white-space: nowrap;
+}
+.featured-badge { background: rgba(251,191,36,0.2); color: #fbbf24; }
+.version-badge { background: rgba(59,130,246,0.2); color: #60a5fa; }
+
+.mod-description {
+  margin: 0; color: #9ca3af; font-size: 0.9rem; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.mod-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.85rem; color: #6b7280; }
+.meta-item { display: flex; align-items: center; gap: 4px; }
+.meta-icon { font-size: 0.9rem; }
+
+.mod-download-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 16px; border-radius: 8px; border: none;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff; font-size: 0.9rem; font-weight: 600; text-decoration: none;
+  cursor: pointer; transition: all 0.2s; margin-top: auto;
+}
+.mod-download-btn:hover {
+  transform: translateY(-2px); box-shadow: 0 6px 16px rgba(59,130,246,0.4);
+}
+.btn-icon { font-size: 1rem; }
+.btn-text { flex: 1; }
+.btn-arrow { font-size: 1.1rem; }
 </style>

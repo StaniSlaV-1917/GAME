@@ -145,6 +145,89 @@
             </div>
         </div>
 
+        <hr class="form-divider" />
+
+        <!-- Моды -->
+        <h3 class="subsection-title">Моды для игры</h3>
+        <div v-if="isEditing && form.mods && form.mods.length" class="mods-grid">
+          <div v-for="mod in form.mods" :key="mod.id" class="mod-item">
+            <div class="mod-info">
+              <h4>{{ mod.title }}</h4>
+              <p v-if="mod.description" class="mod-description">{{ mod.description }}</p>
+              <div class="mod-meta">
+                <span v-if="mod.author" class="mod-author">Автор: {{ mod.author }}</span>
+                <span v-if="mod.version" class="mod-version">Версия: {{ mod.version }}</span>
+                <span v-if="mod.download_count" class="mod-downloads">Загрузок: {{ mod.download_count }}</span>
+              </div>
+              <a v-if="mod.external_url" :href="mod.external_url" target="_blank" class="mod-link">Открыть источник</a>
+            </div>
+            <div class="mod-actions">
+              <button type="button" @click="editMod(mod)" class="btn-edit-mod">Редактировать</button>
+              <button type="button" @click="requestModDelete(mod)" class="btn-delete-mod">Удалить</button>
+            </div>
+          </div>
+        </div>
+        <p v-else-if="isEditing">У этой игры пока нет модов.</p>
+
+        <div class="form-group" style="margin-top: 20px;">
+          <button type="button" @click="showAddModForm = true" class="btn-add-mod">
+            {{ isEditing ? 'Добавить новый мод' : 'Добавить мод' }}
+          </button>
+        </div>
+
+        <!-- Форма добавления/редактирования мода -->
+        <div v-if="showAddModForm" class="mod-form-container">
+          <h4>{{ editingMod ? 'Редактировать мод' : 'Добавить новый мод' }}</h4>
+          <div class="form-group">
+            <label for="mod_title">Название мода</label>
+            <input id="mod_title" v-model="modForm.title" type="text" required>
+          </div>
+          <div class="form-group">
+            <label for="mod_description">Описание</label>
+            <textarea id="mod_description" v-model="modForm.description" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="mod_external_url">Ссылка на источник</label>
+            <input id="mod_external_url" v-model="modForm.external_url" type="url" placeholder="https://..." required>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="mod_source_site">Сайт-источник</label>
+              <input id="mod_source_site" v-model="modForm.source_site" type="text" placeholder="Nexus Mods, ModDB и т.д.">
+            </div>
+            <div class="form-group">
+              <label for="mod_author">Автор</label>
+              <input id="mod_author" v-model="modForm.author" type="text">
+            </div>
+            <div class="form-group">
+              <label for="mod_version">Версия</label>
+              <input id="mod_version" v-model="modForm.version" type="text">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="mod_download_count">Количество загрузок</label>
+              <input id="mod_download_count" v-model.number="modForm.download_count" type="number">
+            </div>
+            <div class="form-group">
+              <label for="mod_popularity_score">Рейтинг популярности (0-10)</label>
+              <input id="mod_popularity_score" v-model.number="modForm.popularity_score" type="number" step="0.1" max="10">
+            </div>
+            <div class="form-group">
+              <label for="mod_sort_order">Порядок сортировки</label>
+              <input id="mod_sort_order" v-model.number="modForm.sort_order" type="number">
+            </div>
+          </div>
+          <div class="form-group-checkbox">
+            <input id="mod_is_featured" v-model="modForm.is_featured" type="checkbox">
+            <label for="mod_is_featured">Избранный мод</label>
+          </div>
+          <div class="form-actions">
+            <button type="button" @click="saveMod" class="btn-save">{{ editingMod ? 'Сохранить изменения' : 'Добавить мод' }}</button>
+            <button type="button" @click="cancelModEdit" class="btn-cancel">Отмена</button>
+          </div>
+        </div>
+
         <!-- Кнопки -->
         <div class="form-actions">
           <button type="submit" class="btn-save">{{ isEditing ? 'Сохранить изменения' : 'Создать игру' }}</button>
@@ -158,12 +241,27 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { resolveMediaUrl } from '../utils/media';
+import api from '../api/axios';
 
 const props = defineProps({ game: Object, isEditing: Boolean });
 const emit = defineEmits(['close', 'save', 'delete-image']);
 
 const form = ref({});
-const newGalleryFiles = ref([]); // Массив объектов { file, url, name }
+const newGalleryFiles = ref([]);
+const showAddModForm = ref(false);
+const editingMod = ref(null);
+const modForm = ref({
+  title: '',
+  description: '',
+  external_url: '',
+  source_site: '',
+  author: '',
+  version: '',
+  download_count: 0,
+  popularity_score: 0,
+  is_featured: false,
+  sort_order: 0,
+});
 
 const getInitialForm = () => ({
     title: '',
@@ -186,6 +284,7 @@ const getInitialForm = () => ({
     is_featured: false,
     is_new: false,
     images: [],
+    mods: [],
 });
 
 // Watch for price changes to calculate discount
@@ -271,6 +370,68 @@ const requestImageDelete = (image) => {
     if (confirm('Вы уверены, что хотите удалить это изображение?')) {
         emit('delete-image', { gameId: props.game.id, imageId: image.id });
     }
+};
+
+const editMod = (mod) => {
+    editingMod.value = mod;
+    modForm.value = { ...mod };
+    showAddModForm.value = true;
+};
+
+const saveMod = async () => {
+    if (!props.game?.id) {
+        alert('Сначала сохраните игру');
+        return;
+    }
+
+    try {
+        const modData = { ...modForm.value };
+        modData.is_featured = modData.is_featured ? 1 : 0;
+
+        if (editingMod.value) {
+            await api.put(`/admin/games/${props.game.id}/mods/${editingMod.value.id}`, modData);
+        } else {
+            await api.post(`/admin/games/${props.game.id}/mods`, modData);
+        }
+
+        // Reload mods
+        const response = await api.get(`/admin/games/${props.game.id}/mods`);
+        form.value.mods = response.data;
+
+        cancelModEdit();
+    } catch (error) {
+        console.error('Error saving mod:', error);
+        alert('Ошибка при сохранении мода');
+    }
+};
+
+const requestModDelete = async (mod) => {
+    if (confirm('Вы уверены, что хотите удалить этот мод?')) {
+        try {
+            await api.delete(`/admin/games/${props.game.id}/mods/${mod.id}`);
+            form.value.mods = form.value.mods.filter(m => m.id !== mod.id);
+        } catch (error) {
+            console.error('Error deleting mod:', error);
+            alert('Ошибка при удалении мода');
+        }
+    }
+};
+
+const cancelModEdit = () => {
+    showAddModForm.value = false;
+    editingMod.value = null;
+    modForm.value = {
+        title: '',
+        description: '',
+        external_url: '',
+        source_site: '',
+        author: '',
+        version: '',
+        download_count: 0,
+        popularity_score: 0,
+        is_featured: false,
+        sort_order: 0,
+    };
 };
 
 const close = () => { emit('close'); };
@@ -428,4 +589,93 @@ const close = () => { emit('close'); };
   padding: 4px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .gallery-item.new-preview .btn-delete-img { opacity: 1; }
+
+.mods-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px; margin-top: 12px;
+}
+.mod-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.mod-item:hover {
+  border-color: rgba(59,130,246,0.3);
+  background: rgba(59,130,246,0.05);
+}
+.mod-info h4 {
+  margin: 0 0 8px;
+  color: #e5e7eb; font-size: 1rem; font-weight: 600;
+}
+.mod-description {
+  margin: 0 0 12px;
+  color: #9ca3af; font-size: 0.85rem; line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mod-meta {
+  display: flex; flex-wrap: wrap; gap: 12px;
+  margin-bottom: 12px; font-size: 0.8rem; color: #6b7280;
+}
+.mod-author, .mod-version, .mod-downloads {
+  display: flex; align-items: center;
+}
+.mod-link {
+  display: inline-block;
+  color: #3b82f6; text-decoration: none;
+  font-size: 0.85rem; font-weight: 500;
+  transition: color 0.2s;
+}
+.mod-link:hover { color: #60a5fa; text-decoration: underline; }
+.mod-actions {
+  display: flex; gap: 8px; margin-top: 12px;
+}
+.btn-edit-mod, .btn-delete-mod {
+  padding: 6px 12px; border-radius: 6px; border: none;
+  font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-edit-mod {
+  background: rgba(59,130,246,0.2);
+  color: #60a5fa;
+}
+.btn-edit-mod:hover {
+  background: rgba(59,130,246,0.3);
+  color: #93c5fd;
+}
+.btn-delete-mod {
+  background: rgba(239,68,68,0.2);
+  color: #f87171;
+}
+.btn-delete-mod:hover {
+  background: rgba(239,68,68,0.3);
+  color: #fca5a5;
+}
+.btn-add-mod {
+  padding: 10px 20px; border-radius: 8px; border: none;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+  transition: all 0.2s;
+}
+.btn-add-mod:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16,185,129,0.4);
+}
+.mod-form-container {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+.mod-form-container h4 {
+  margin: 0 0 16px;
+  color: #e5e7eb; font-size: 1rem; font-weight: 600;
+}
 </style>

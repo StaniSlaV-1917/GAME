@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\AdminNewsController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminSupportController;
+use App\Http\Controllers\Admin\AdminModsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,6 +80,13 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::delete('/games/{game}', [AdminGamesController::class, 'destroy']);  // было {id}
     Route::post('/games/{game}/gallery', [AdminGamesController::class, 'uploadGallery']);
     Route::delete('/games/{game}/gallery/{image}', [AdminGamesController::class, 'deleteGalleryImage']);
+
+    // Моды для игр
+    Route::get('/games/{game}/mods', [AdminModsController::class, 'index']);
+    Route::get('/games/{game}/mods/{mod}', [AdminModsController::class, 'show']);
+    Route::post('/games/{game}/mods', [AdminModsController::class, 'store']);
+    Route::put('/games/{game}/mods/{mod}', [AdminModsController::class, 'update']);
+    Route::delete('/games/{game}/mods/{mod}', [AdminModsController::class, 'destroy']);
     
     // дальше остальные админские
     Route::get('/reviews', [AdminReviewController::class, 'index']);
@@ -112,6 +120,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 Route::get('/games', [GameController::class, 'index']);
 Route::get('/games/{id}', [GameController::class, 'show']);
 Route::get('/genres', [GameController::class, 'getGenres']);
+Route::get('/games/{gameId}/mods', [GameController::class, 'getMods']);
 
 // Новости
 Route::get('/news', [NewsController::class, 'index']);
