@@ -39,6 +39,37 @@
             <textarea id="description" v-model="form.description" rows="4"></textarea>
         </div>
 
+        <hr class="form-divider" />
+
+        <!-- Системные требования -->
+        <h3 class="subsection-title">Системные требования</h3>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="os_requirements">ОС</label>
+                <input id="os_requirements" v-model="form.os_requirements" type="text" placeholder="Windows 10, 11 (64-bit)">
+            </div>
+            <div class="form-group">
+                <label for="processor_requirements">Процессор</label>
+                <input id="processor_requirements" v-model="form.processor_requirements" type="text" placeholder="Intel Core i5-4670">
+            </div>
+            <div class="form-group">
+                <label for="ram_requirements">Оперативная память</label>
+                <input id="ram_requirements" v-model="form.ram_requirements" type="text" placeholder="8 GB ОЗУ">
+            </div>
+            <div class="form-group">
+                <label for="graphics_requirements">Видеокарта</label>
+                <input id="graphics_requirements" v-model="form.graphics_requirements" type="text" placeholder="GTX 1050, DirectX 12">
+            </div>
+            <div class="form-group">
+                <label for="storage_requirements">Место на диске</label>
+                <input id="storage_requirements" v-model="form.storage_requirements" type="text" placeholder="16 GB">
+            </div>
+        </div>
+
+        <hr class="form-divider" />
+
+        <!-- Трейлер и ссылки -->
+        <h3 class="subsection-title">Медиа и ссылки</h3>
         <div class="form-group">
             <label for="trailer_url">URL трейлера (YouTube)</label>
             <input id="trailer_url" v-model="form.trailer_url" type="url" placeholder="https://www.youtube.com/watch?v=...">
@@ -144,12 +175,45 @@ const getInitialForm = () => ({
     rating: null,
     release_year: new Date().getFullYear(),
     description: '',
+    os_requirements: '',
+    processor_requirements: '',
+    ram_requirements: '',
+    graphics_requirements: '',
+    storage_requirements: '',
     image: '',
     stopgame_url_code: '',
     trailer_url: '',
     is_featured: false,
     is_new: false,
     images: [],
+});
+
+// Watch for price changes to calculate discount
+watch(() => form.value.price, (newPrice) => {
+    if (form.value.old_price && newPrice) {
+        const discount = Math.round(((form.value.old_price - newPrice) / form.value.old_price) * 100);
+        form.value.discount_percent = discount > 0 ? discount : null;
+    }
+});
+
+// Watch for old_price changes to calculate discount
+watch(() => form.value.old_price, (newOldPrice) => {
+    if (newOldPrice && form.value.price) {
+        const discount = Math.round(((newOldPrice - form.value.price) / newOldPrice) * 100);
+        form.value.discount_percent = discount > 0 ? discount : null;
+    } else if (!newOldPrice) {
+        form.value.discount_percent = null;
+    }
+});
+
+// Watch for discount_percent changes to calculate old_price
+watch(() => form.value.discount_percent, (newDiscount) => {
+    if (newDiscount && form.value.price) {
+        const oldPrice = Math.round(form.value.price / (1 - newDiscount / 100));
+        form.value.old_price = oldPrice > form.value.price ? oldPrice : null;
+    } else if (!newDiscount) {
+        form.value.old_price = null;
+    }
 });
 
 watch(() => props.game, (newGame) => {

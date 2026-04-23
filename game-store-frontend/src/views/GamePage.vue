@@ -92,6 +92,16 @@ const youtubeEmbedUrl = computed(() => {
   } catch { return null; }
 });
 
+const hasSystemRequirements = computed(() => {
+  return game.value && (
+    game.value.os_requirements ||
+    game.value.processor_requirements ||
+    game.value.ram_requirements ||
+    game.value.graphics_requirements ||
+    game.value.storage_requirements
+  );
+});
+
 useHead(computed(() => {
   if (!game.value) return { title: 'Загрузка...' };
   const title = `Купить ${game.value.title} — GameStore`;
@@ -200,11 +210,10 @@ watch(gameId, (id) => { if (id) loadGame(id); });
             Мгновенная доставка ключа на e-mail после оплаты
           </div>
 
-          <!-- Guarantees -->
-          <div class="guarantees">
-            <div class="guarantee-item"><span class="gi-icon">🔒</span><span>Безопасная оплата</span></div>
-            <div class="guarantee-item"><span>Лицензионный ключ</span></div>
-            <div class="guarantee-item"><span>Поддержка 24/7</span></div>
+          <!-- Description -->
+          <div v-if="game.description" class="game-description">
+            <h3 class="desc-title">📖 Об игре</h3>
+            <div v-html="game.description" class="desc-body"></div>
           </div>
         </div>
       </header>
@@ -256,13 +265,16 @@ watch(gameId, (id) => { if (id) loadGame(id); });
             </ul>
           </div>
 
-          <!-- Description -->
-          <div class="content-card reveal">
-            <h3 class="sidebar-title">📖 Об игре</h3>
-            <div v-if="game.description" v-html="game.description" class="desc-body"></div>
-            <p v-else class="desc-body">
-              В онлайн-магазине <strong>GameStore</strong> вы можете купить лицензионный ключ <strong>{{ game.title }}</strong> для {{ game.platform }} по самой выгодной цене.
-            </p>
+          <!-- System Requirements card -->
+          <div v-if="hasSystemRequirements" class="content-card reveal">
+            <h3 class="sidebar-title">💻 Системные требования</h3>
+            <ul class="details-list">
+              <li v-if="game.os_requirements"><span class="dl-key">ОС</span><strong class="dl-val">{{ game.os_requirements }}</strong></li>
+              <li v-if="game.processor_requirements"><span class="dl-key">Процессор</span><strong class="dl-val">{{ game.processor_requirements }}</strong></li>
+              <li v-if="game.ram_requirements"><span class="dl-key">Оперативная память</span><strong class="dl-val">{{ game.ram_requirements }}</strong></li>
+              <li v-if="game.graphics_requirements"><span class="dl-key">Видеокарта</span><strong class="dl-val">{{ game.graphics_requirements }}</strong></li>
+              <li v-if="game.storage_requirements"><span class="dl-key">Место на диске</span><strong class="dl-val">{{ game.storage_requirements }}</strong></li>
+            </ul>
           </div>
         </aside>
       </div>
@@ -441,13 +453,46 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 
 .delivery-note { font-size: 0.88rem; color: #9ca3af; display: flex; align-items: center; gap: 8px; }
 
-.guarantees { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.guarantee-item {
-  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 10px; padding: 10px; display: flex; flex-direction: column;
-  align-items: center; gap: 5px; text-align: center; font-size: 0.78rem; color: #9ca3af;
+/* ─── Game Description ─── */
+.game-description {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.1);
 }
-.gi-icon { font-size: 1.2rem; }
+.desc-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.game-description .desc-body {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #9ca3af;
+  margin: 0;
+}
+.game-description .desc-body :deep(p) {
+  margin: 0 0 1em;
+}
+.game-description .desc-body :deep(p:last-child) {
+  margin: 0;
+}
+.game-description .desc-body :deep(h3) {
+  color: #e5e7eb;
+  margin: 1.2em 0 0.6em;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.game-description .desc-body :deep(ul) {
+  margin: 0.6em 0;
+  padding-left: 1.5em;
+}
+.game-description .desc-body :deep(li) {
+  margin: 0.4em 0;
+}
 
 /* ─── Content Grid ─── */
 .content-grid { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; }
@@ -494,11 +539,6 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 .dl-key { color: #6b7280; }
 .dl-val { color: #e5e7eb; }
 .rating-val { color: #fbbf24; }
-
-/* Description */
-.desc-body { font-size: 0.94rem; line-height: 1.8; color: #9ca3af; margin: 0; }
-.desc-body :deep(p) { margin: 0 0 1em; }
-.desc-body :deep(p:last-child) { margin: 0; }
 
 /* ─── Similar Games ─── */
 .similar-section { margin-top: 40px; }
@@ -567,7 +607,5 @@ watch(gameId, (id) => { if (id) loadGame(id); });
   .meta-pills { justify-content: center; }
   .price-row { justify-content: center; }
   .action-row { flex-direction: column; }
-  .guarantees { grid-template-columns: repeat(3, 1fr); }
 }
-@media (max-width: 480px) { .guarantees { grid-template-columns: 1fr; } }
 </style>

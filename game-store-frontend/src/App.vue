@@ -4,6 +4,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
+import { useCartStore } from './stores/cart';
 import { storeToRefs } from 'pinia';
 import api from './api/axios';
 import ParticlesBackground from './components/ParticlesBackground.vue';
@@ -18,6 +19,11 @@ const themeStore = useThemeStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
 const router = useRouter();
 const route = useRoute();
+
+// Scroll to top on route change
+watch(() => route.path, () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}, { flush: 'post' });
 
 const scrolled = ref(false);
 const mobileMenuOpen = ref(false);
@@ -144,7 +150,6 @@ onUnmounted(() => {
           <RouterLink to="/news">Новости</RouterLink>
           <RouterLink to="/catalog">Каталог</RouterLink>
           <RouterLink to="/about">О магазине</RouterLink>
-          <RouterLink to="/soviet" class="soviet-link">☭ СССР</RouterLink>
           <RouterLink v-if="user?.is_admin" to="/admin" class="admin-link">Админка</RouterLink>
         </nav>
 
@@ -323,7 +328,7 @@ onUnmounted(() => {
               <RouterLink to="/catalog">Каталог</RouterLink>
               <RouterLink to="/about">О магазине</RouterLink>
               <RouterLink to="/cart">Корзина</RouterLink>
-              <RouterLink to="/soviet">☭ Игры про СССР</RouterLink>
+              <RouterLink to="/soviet">☭</RouterLink>
             </div>
           </div>
 

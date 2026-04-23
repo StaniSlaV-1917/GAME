@@ -132,4 +132,5 @@ Route::middleware('auth:sanctum')->prefix('cart')->group(function () {
     Route::post('/add', [CartController::class, 'add']);
     Route::post('/update', [CartController::class, 'update']);
     Route::post('/remove', [CartController::class, 'remove']);
+    Route::post('/clear', [CartController::class, 'clear']);
 });

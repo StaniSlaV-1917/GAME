@@ -2,6 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import api from '../api/axios';
+import { useCartStore } from './cart';
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('user')));
@@ -29,6 +30,14 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data } = await api.get('/auth/me');
       setUser(data);
+
+      // Загружаем корзину с сервера
+      try {
+        const cartStore = useCartStore();
+        await cartStore.loadFromServer();
+      } catch (cartError) {
+        console.error('Failed to load cart:', cartError);
+      }
     } catch (error) {
       console.error('Failed to fetch user:', error);
       if (error.response && error.response.status === 401) {
@@ -42,6 +51,15 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await api.post('/auth/login', credentials);
       setToken(data.token);
       setUser(data.user);
+
+      // Загружаем корзину с сервера после входа
+      try {
+        const cartStore = useCartStore();
+        await cartStore.loadFromServer();
+      } catch (cartError) {
+        console.error('Failed to load cart:', cartError);
+      }
+
       return true; // Успех
     } catch (error) {
       // Пробрасываем ошибку дальше, чтобы компонент мог ее обработать
@@ -62,6 +80,15 @@ export const useAuthStore = defineStore('auth', () => {
         const { data } = await api.post('/auth/passwordless/login', credentials);
         setToken(data.token);
         setUser(data.user);
+
+        // Загружаем корзину с сервера после входа
+        try {
+          const cartStore = useCartStore();
+          await cartStore.loadFromServer();
+        } catch (cartError) {
+          console.error('Failed to load cart:', cartError);
+        }
+
         return true;
     } catch (error) {
         throw error.response.data.message || 'Login with code failed';
@@ -73,6 +100,15 @@ export const useAuthStore = defineStore('auth', () => {
       const { data } = await api.post('/auth/register', credentials);
       setToken(data.token);
       setUser(data.user);
+
+      // Загружаем корзину с сервера после регистрации
+      try {
+        const cartStore = useCartStore();
+        await cartStore.loadFromServer();
+      } catch (cartError) {
+        console.error('Failed to load cart:', cartError);
+      }
+
       return true; // Успех
     } catch (error) {
       // Пробрасываем ошибку дальше для обработки в компоненте
@@ -86,7 +122,7 @@ export const useAuthStore = defineStore('auth', () => {
     } catch(e) {
       console.error("Server logout failed, continuing with client-side cleanup", e)
     }
-    
+
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');

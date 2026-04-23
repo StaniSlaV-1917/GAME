@@ -29,20 +29,26 @@ const removingId = ref(null);
 const loadCart = async () => {
   loading.value = true;
   globalError.value = '';
-  if (cartStore.items.length === 0) {
-    cart.value = { items: [] };
-    loading.value = false;
-    return;
-  }
   try {
-    const game_ids = cartStore.items.map(i => i.id);
-    const { data } = await api.post('/cart/sync', { game_ids });
-    const synced = data.items.map(s => {
-      const local = cartStore.items.find(l => l.id === s.id);
-      return { ...s, quantity: local ? local.quantity : 1 };
-    });
-    cart.value = { ...data, items: synced };
-  } catch {
+    // If user is logged in, load cart from server
+    if (authStore.isLoggedIn) {
+      await cartStore.loadFromServer();
+    }
+
+    // Use cart store items directly
+    if (cartStore.items.length === 0) {
+      cart.value = { items: [] };
+    } else {
+      cart.value = {
+        items: cartStore.items.map(item => ({
+          ...item,
+          sum: item.price * item.quantity
+        })),
+        total: cartStore.totalPrice
+      };
+    }
+  } catch (error) {
+    console.error('Failed to load cart:', error);
     globalError.value = 'Ошибка загрузки корзины.';
     cart.value = null;
   } finally {
@@ -50,21 +56,35 @@ const loadCart = async () => {
   }
 };
 
-const updateQuantity = (itemId, qty) => {
+const updateQuantity = async (itemId, qty) => {
   if (qty < 1) return;
-  const local = cartStore.items.find(i => i.id === itemId);
-  if (local) local.quantity = qty;
-  const ci = cart.value?.items.find(i => i.id === itemId);
-  if (ci) ci.quantity = qty;
+  try {
+    await cartStore.updateItemQuantity(itemId, qty);
+    // Update local cart display
+    const ci = cart.value?.items.find(i => i.id === itemId);
+    if (ci) {
+      ci.quantity = qty;
+      ci.sum = ci.price * qty;
+    }
+  } catch (error) {
+    console.error('Failed to update quantity:', error);
+    globalError.value = 'Ошибка обновления количества.';
+  }
 };
 
-const removeItem = (itemId) => {
+const removeItem = async (itemId) => {
   removingId.value = itemId;
-  setTimeout(() => {
-    cartStore.removeItem(itemId);
-    if (cart.value) cart.value.items = cart.value.items.filter(i => i.id !== itemId);
+  try {
+    await cartStore.removeItem(itemId);
+    if (cart.value) {
+      cart.value.items = cart.value.items.filter(i => i.id !== itemId);
+    }
+  } catch (error) {
+    console.error('Failed to remove item:', error);
+    globalError.value = 'Ошибка удаления товара.';
+  } finally {
     removingId.value = null;
-  }, 320);
+  }
 };
 
 const makeOrder = async () => {
@@ -77,7 +97,7 @@ const makeOrder = async () => {
       items: cartItems.value.map(i => ({ game_id: i.id, quantity: i.quantity }))
     });
     successMessage.value = data.message || 'Заказ успешно оформлен!';
-    cartStore.clearCart();
+    await cartStore.clearCart();
     cart.value = null;
   } catch (e) {
     globalError.value = e.response?.data?.message || 'Ошибка при оформлении заказа.';
