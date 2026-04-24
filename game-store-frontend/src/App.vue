@@ -29,6 +29,38 @@ watch(() => route.path, () => {
 const scrolled = ref(false);
 const mobileMenuOpen = ref(false);
 
+// ── Nav dropdowns ──
+const genresDropdownOpen = ref(false);
+const adminDropdownOpen = ref(false);
+let genresHoverTimer = null;
+let adminHoverTimer = null;
+
+const openGenresDropdown = () => {
+  clearTimeout(genresHoverTimer);
+  genresDropdownOpen.value = true;
+};
+const closeGenresDropdown = () => {
+  genresHoverTimer = setTimeout(() => { genresDropdownOpen.value = false; }, 150);
+};
+const openAdminDropdown = () => {
+  clearTimeout(adminHoverTimer);
+  adminDropdownOpen.value = true;
+};
+const closeAdminDropdown = () => {
+  adminHoverTimer = setTimeout(() => { adminDropdownOpen.value = false; }, 150);
+};
+
+const genres = [
+  { key: 'Action',    label: 'Action',      icon: '⚔' },
+  { key: 'RPG',       label: 'RPG',         icon: '✦' },
+  { key: 'Strategy',  label: 'Стратегии',   icon: '◈' },
+  { key: 'Adventure', label: 'Приключения', icon: '⚑' },
+  { key: 'Sports',    label: 'Спорт',       icon: '⚡' },
+  { key: 'Horror',    label: 'Хоррор',      icon: '☾' },
+  { key: 'Simulator', label: 'Симуляторы',  icon: '⚙' },
+  { key: 'Racing',    label: 'Гонки',       icon: '➤' },
+];
+
 // ── Global search ──
 const searchOpen = ref(false);
 const searchQuery = ref('');
@@ -157,9 +189,108 @@ onUnmounted(() => {
         <nav class="main-nav" aria-label="Главное меню">
           <RouterLink to="/" class="nav-link"><span>Главная</span></RouterLink>
           <RouterLink to="/news" class="nav-link"><span>Хроники</span></RouterLink>
-          <RouterLink to="/catalog" class="nav-link"><span>Оружейная</span></RouterLink>
+
+          <!-- Оружейная с dropdown-ом жанров -->
+          <div
+            class="nav-link-wrap"
+            @mouseenter="openGenresDropdown"
+            @mouseleave="closeGenresDropdown"
+          >
+            <RouterLink to="/catalog" class="nav-link has-dropdown">
+              <span>Оружейная</span>
+              <span class="nav-chevron" :class="{ open: genresDropdownOpen }">▾</span>
+            </RouterLink>
+            <Transition name="dropdown">
+              <div
+                v-if="genresDropdownOpen"
+                class="nav-dropdown genres-dropdown"
+                @mouseenter="openGenresDropdown"
+                @mouseleave="closeGenresDropdown"
+              >
+                <div class="dropdown-head">
+                  <span class="dropdown-eyebrow">Школы боя</span>
+                </div>
+                <div class="dropdown-grid genres-grid">
+                  <RouterLink
+                    v-for="g in genres"
+                    :key="g.key"
+                    :to="{ path: '/catalog', query: { genre: g.key } }"
+                    class="dropdown-item"
+                  >
+                    <span class="dd-icon">{{ g.icon }}</span>
+                    <span class="dd-label">{{ g.label }}</span>
+                  </RouterLink>
+                </div>
+                <div class="dropdown-foot">
+                  <RouterLink to="/catalog" class="dd-see-all">
+                    Весь арсенал
+                    <span>→</span>
+                  </RouterLink>
+                </div>
+              </div>
+            </Transition>
+          </div>
+
           <RouterLink to="/about" class="nav-link"><span>О клане</span></RouterLink>
-          <RouterLink v-if="user?.is_admin" to="/admin" class="nav-link admin-link"><span>Совет</span></RouterLink>
+
+          <!-- Совет — dropdown с админскими разделами (только для админов) -->
+          <div
+            v-if="user?.is_admin"
+            class="nav-link-wrap"
+            @mouseenter="openAdminDropdown"
+            @mouseleave="closeAdminDropdown"
+          >
+            <RouterLink to="/admin" class="nav-link admin-link has-dropdown">
+              <span>Совет</span>
+              <span class="nav-chevron" :class="{ open: adminDropdownOpen }">▾</span>
+            </RouterLink>
+            <Transition name="dropdown">
+              <div
+                v-if="adminDropdownOpen"
+                class="nav-dropdown admin-dropdown"
+                @mouseenter="openAdminDropdown"
+                @mouseleave="closeAdminDropdown"
+              >
+                <div class="dropdown-head">
+                  <span class="dropdown-eyebrow">Совет старейшин</span>
+                </div>
+                <div class="dropdown-col">
+                  <RouterLink to="/admin" class="dropdown-item">
+                    <span class="dd-icon">◈</span>
+                    <span class="dd-label">Панель управления</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/games" class="dropdown-item">
+                    <span class="dd-icon">⚔</span>
+                    <span class="dd-label">Игры</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/news" class="dropdown-item">
+                    <span class="dd-icon">✉</span>
+                    <span class="dd-label">Хроники</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/orders" class="dropdown-item">
+                    <span class="dd-icon">☷</span>
+                    <span class="dd-label">Заказы</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/users" class="dropdown-item">
+                    <span class="dd-icon">☗</span>
+                    <span class="dd-label">Воины</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/employees" class="dropdown-item">
+                    <span class="dd-icon">⚑</span>
+                    <span class="dd-label">Команда</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/reviews" class="dropdown-item">
+                    <span class="dd-icon">★</span>
+                    <span class="dd-label">Рецензии</span>
+                  </RouterLink>
+                  <RouterLink to="/admin/support" class="dropdown-item">
+                    <span class="dd-icon">☎</span>
+                    <span class="dd-label">Поддержка</span>
+                  </RouterLink>
+                </div>
+              </div>
+            </Transition>
+          </div>
         </nav>
 
         <!-- Global search — "Вестник" -->
@@ -677,6 +808,165 @@ onUnmounted(() => {
 .nav-link.admin-link.router-link-exact-active::after {
   background: var(--grad-bronze);
   box-shadow: var(--glow-brass);
+}
+
+/* ==========================================================
+   NAV DROPDOWNS
+   ========================================================== */
+.nav-link-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.nav-link.has-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.nav-chevron {
+  font-size: 0.65rem;
+  color: var(--brass);
+  transition: transform var(--dur-fast) var(--ease-smoke), color var(--dur-fast);
+  margin-top: 1px;
+}
+.nav-chevron.open { transform: rotate(-180deg); }
+.nav-link.has-dropdown:hover .nav-chevron { color: var(--ember-spark); }
+
+.nav-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: -8px;
+  min-width: 360px;
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  border: 1px solid var(--iron-mid);
+  box-shadow:
+    var(--shadow-lift),
+    var(--inset-iron-top),
+    var(--inset-forge);
+  padding: 18px;
+  z-index: var(--z-overlay);
+  backdrop-filter: blur(16px);
+  clip-path: var(--clip-forged-sm);
+}
+/* Бронзовая полоса сверху dropdown — имитация литого края */
+.nav-dropdown::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--bronze) 30%,
+    var(--brass) 50%,
+    var(--bronze) 70%,
+    transparent 100%);
+  box-shadow: 0 0 8px rgba(199, 154, 94, 0.4);
+}
+
+.dropdown-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 8px 12px;
+  border-bottom: 1px dashed var(--iron-dark);
+  margin-bottom: 12px;
+}
+.dropdown-eyebrow {
+  font-family: var(--font-tribal);
+  font-size: 0.72rem;
+  color: var(--brass);
+  letter-spacing: var(--ls-widest);
+  text-transform: uppercase;
+}
+
+.dropdown-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+.dropdown-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: var(--text-parchment);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: var(--fw-medium);
+  border-radius: var(--r-xs);
+  border-left: 2px solid transparent;
+  transition: all var(--dur-fast) var(--ease-smoke);
+  position: relative;
+}
+.dropdown-item:hover,
+.dropdown-item.router-link-active {
+  color: var(--text-bright);
+  background: rgba(194, 40, 26, 0.12);
+  border-left-color: var(--ember-heart);
+}
+.dropdown-item:hover .dd-icon { color: var(--ember-spark); filter: drop-shadow(0 0 6px rgba(255, 122, 43, 0.6)); }
+
+.dd-icon {
+  color: var(--brass);
+  font-size: 1rem;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  transition: all var(--dur-fast) var(--ease-smoke);
+}
+.dd-label { flex: 1; }
+
+.dropdown-foot {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--iron-dark);
+}
+.dd-see-all {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  color: var(--ember-gold);
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  text-decoration: none;
+  border-radius: var(--r-xs);
+  transition: all var(--dur-fast) var(--ease-smoke);
+}
+.dd-see-all:hover {
+  background: rgba(255, 122, 43, 0.1);
+  color: var(--ember-spark);
+}
+.dd-see-all span {
+  transition: transform var(--dur-fast);
+}
+.dd-see-all:hover span { transform: translateX(4px); }
+
+/* Admin dropdown — narrower + single col */
+.admin-dropdown {
+  min-width: 260px;
+}
+
+/* Transitions */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition:
+    opacity var(--dur-fast) var(--ease-smoke),
+    transform var(--dur-med) var(--ease-forge);
+}
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.96);
 }
 
 /* ==========================================================
@@ -1430,30 +1720,69 @@ onUnmounted(() => {
 /* ==========================================================
    CURSOR
    ========================================================== */
+@keyframes cursorPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.25); opacity: 0.85; }
+}
+@keyframes cursorRotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 .cursor-dot,
 .cursor-ring {
   position: fixed;
   top: 0; left: 0;
   pointer-events: none;
   z-index: var(--z-cursor);
-  border-radius: 50%;
   will-change: transform;
 }
 .cursor-dot {
-  width: 7px; height: 7px;
-  margin: -3.5px 0 0 -3.5px;
-  background: var(--ember-glow);
+  width: 8px; height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--ember-gold) 0%, var(--ember-glow) 50%, var(--ember-flame) 100%);
   box-shadow:
-    0 0 10px rgba(255, 122, 43, 0.9),
-    0 0 20px rgba(226, 67, 16, 0.6);
+    0 0 6px rgba(255, 201, 121, 1),
+    0 0 14px rgba(255, 122, 43, 0.9),
+    0 0 24px rgba(226, 67, 16, 0.6);
   transition: transform 0.04s linear;
 }
+/* Внутренняя анимация пульса через ::before */
+.cursor-dot::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 201, 121, 0.35) 0%, transparent 70%);
+  animation: cursorPulse 1.6s var(--ease-smoke) infinite;
+}
+
 .cursor-ring {
-  width: 36px; height: 36px;
-  margin: -18px 0 0 -18px;
-  border: 1.5px solid rgba(255, 122, 43, 0.55);
+  width: 38px; height: 38px;
+  margin: -19px 0 0 -19px;
   transition: transform 0.18s ease-out;
   mix-blend-mode: screen;
+  position: fixed;
+}
+/* Внешнее кованое кольцо с гексагональным вырезом через clip-path */
+.cursor-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: transparent;
+  border: 1.5px solid rgba(255, 122, 43, 0.6);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  animation: cursorRotate 14s linear infinite;
+}
+/* Инверсное внутреннее кольцо (крутится в другую сторону) — эффект "гироскопа" */
+.cursor-ring::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(255, 201, 121, 0.3);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  animation: cursorRotate 9s linear infinite reverse;
 }
 
 /* ==========================================================
