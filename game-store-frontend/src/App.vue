@@ -188,9 +188,13 @@ onUnmounted(() => {
   <div id="app-wrapper">
 
     <!-- Custom cursor (desktop only) — грубый кулак с торчащим пальцем-указателем,
-         на кончике — чёрный коготь. Никаких вращений/пульсаций/искр. -->
-    <template v-if="!isTouch">
+         на кончике — чёрный коготь. Никаких вращений/пульсаций/искр.
+         Teleport в <body>, чтобы курсор был сиблингом чатов/модалок
+         (которые тоже телепортируются), иначе backdrop-filter-модалки
+         создают свой stacking-context и курсор оказывается под ними. -->
+    <Teleport to="body">
       <svg
+        v-if="!isTouch"
         class="orc-cursor"
         :class="{ 'is-hover': cursorHover, 'is-clicking': cursorClicking }"
         ref="cursorRing"
@@ -200,9 +204,7 @@ onUnmounted(() => {
         aria-hidden="true"
         focusable="false"
       >
-        <!-- Коготь (торчит над кончиком пальца) -->
         <path class="oc-claw" d="M 8 0 L 12 0 L 10 -4 Z" />
-        <!-- Кулак с пальцем-указателем (единая силуэт-фигура) -->
         <path
           class="oc-hand"
           d="M 8 0
@@ -216,7 +218,7 @@ onUnmounted(() => {
              Z"
         />
       </svg>
-    </template>
+    </Teleport>
 
     <!-- Ambient particles (existing; will blend with new theme) -->
     <ParticlesBackground />
