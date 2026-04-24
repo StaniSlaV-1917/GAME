@@ -1,17 +1,17 @@
 @import './base.css';
 
-/* Оставляем только общий цвет ссылок, если нужно */
-a,
-.green {
+/* Глобальная ссылка — в кованой палитре (ember-spark), с плавным
+   переходом до ember-gold на hover. Специфичные классы (forge-link,
+   RouterLink в компонентах) переопределят если надо. */
+a {
   text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+  color: var(--ember-spark);
+  transition: color 0.22s var(--ease-smoke);
 }
 
 @media (hover: hover) {
   a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+    color: var(--ember-gold);
   }
 }
 

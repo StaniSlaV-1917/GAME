@@ -111,3 +111,418 @@ body {
     );
   opacity: 0.7;
 }
+
+/* ============================================================
+   SIEGE DAY — детальные refinements
+   ----------------------------------------------------------
+   Переделанные страницы (auth/profile/news/admin/etc) используют
+   токены, поэтому поверхности адаптируются. Но есть несколько
+   мест, где были хардкоженные dark-rgba:
+   · input/textarea backgrounds (поля форм)
+   · декоративные "обугленные" оверлеи
+   · error-баннеры, которые слишком тёмные на свету
+
+   Переопределяем их более узкими селекторами.
+   ============================================================ */
+
+/* ── Поля форм: светлый песчаный фон вместо обсидиана ── */
+[data-theme="light"] .field input,
+[data-theme="light"] .field textarea,
+[data-theme="light"] .field select,
+[data-theme="light"] .form-group input,
+[data-theme="light"] .form-group textarea,
+[data-theme="light"] .form-group select,
+[data-theme="light"] .cf-input,
+[data-theme="light"] .cf-textarea,
+[data-theme="light"] .search-input,
+[data-theme="light"] .admin-search-input,
+[data-theme="light"] .note-textarea,
+[data-theme="light"] .filter-input,
+[data-theme="light"] .filter-select,
+[data-theme="light"] .table-input,
+[data-theme="light"] .table-select,
+[data-theme="light"] .input,
+[data-theme="light"] .textarea {
+  background: linear-gradient(180deg,
+    rgba(248, 232, 190, 0.7) 0%,
+    rgba(220, 199, 150, 0.85) 100%);
+  color: var(--text-bone);
+  border-color: var(--iron-mid);
+}
+[data-theme="light"] .field input::placeholder,
+[data-theme="light"] .field textarea::placeholder,
+[data-theme="light"] .form-group input::placeholder,
+[data-theme="light"] .form-group textarea::placeholder,
+[data-theme="light"] .cf-input::placeholder,
+[data-theme="light"] .cf-textarea::placeholder,
+[data-theme="light"] .search-input::placeholder,
+[data-theme="light"] .admin-search-input::placeholder,
+[data-theme="light"] .note-textarea::placeholder,
+[data-theme="light"] .table-input::placeholder,
+[data-theme="light"] .input::placeholder,
+[data-theme="light"] .textarea::placeholder {
+  color: var(--text-smoke);
+}
+
+/* Focus — тёплый ember-glow на светлом */
+[data-theme="light"] .field input:focus,
+[data-theme="light"] .field textarea:focus,
+[data-theme="light"] .form-group input:focus,
+[data-theme="light"] .form-group textarea:focus,
+[data-theme="light"] .cf-input:focus,
+[data-theme="light"] .cf-textarea:focus,
+[data-theme="light"] .search-input:focus,
+[data-theme="light"] .admin-search-input:focus,
+[data-theme="light"] .note-textarea:focus,
+[data-theme="light"] .filter-input:focus,
+[data-theme="light"] .filter-select:focus,
+[data-theme="light"] .table-input:focus,
+[data-theme="light"] .table-select:focus,
+[data-theme="light"] .input:focus,
+[data-theme="light"] .textarea:focus {
+  border-color: var(--ember-flame);
+  box-shadow: var(--inset-iron-top), 0 0 0 3px rgba(239, 74, 24, 0.2);
+  background: linear-gradient(180deg,
+    rgba(254, 240, 200, 0.85) 0%,
+    rgba(230, 208, 160, 0.95) 100%);
+}
+
+/* ── Каменные поверхности с hardcoded темным фоном ── */
+[data-theme="light"] .contact-form,
+[data-theme="light"] .ticket-body,
+[data-theme="light"] .ofc-header {
+  background: linear-gradient(180deg,
+    rgba(232, 215, 170, 0.65) 0%,
+    rgba(210, 190, 145, 0.8) 100%);
+  border-color: var(--iron-mid);
+}
+
+/* Стили ticket-id, filter-count, chat-icon-btn и т.п. — полупрозрачные тёмные
+   пятна заменяем на светло-бронзовые */
+[data-theme="light"] .ticket-id,
+[data-theme="light"] .filter-count,
+[data-theme="light"] .game-chip,
+[data-theme="light"] .chat-icon-btn,
+[data-theme="light"] .back-link,
+[data-theme="light"] .mode-switcher,
+[data-theme="light"] .role-badge,
+[data-theme="light"] .ofc-status,
+[data-theme="light"] .status-pill,
+[data-theme="light"] .badge,
+[data-theme="light"] .ap-close,
+[data-theme="light"] .modal-close-button,
+[data-theme="light"] .modal-close-btn,
+[data-theme="light"] .del-btn,
+[data-theme="light"] .admin-back-button,
+[data-theme="light"] .status-select,
+[data-theme="light"] .filter-btn,
+[data-theme="light"] .card-read-btn,
+[data-theme="light"] .rating-badge,
+[data-theme="light"] .status-badge,
+[data-theme="light"] .tc-role-badge,
+[data-theme="light"] .featured-badge {
+  background: linear-gradient(180deg,
+    rgba(232, 215, 170, 0.6) 0%,
+    rgba(210, 190, 145, 0.75) 100%);
+}
+[data-theme="light"] .featured-badge {
+  background: linear-gradient(135deg,
+    rgba(239, 74, 24, 0.25),
+    rgba(211, 42, 24, 0.22));
+}
+
+/* ── Ошибки — красно-терракотовый, но ярче для контраста ── */
+[data-theme="light"] .err-banner,
+[data-theme="light"] .error-message,
+[data-theme="light"] .cf-error,
+[data-theme="light"] .msg-banner.error {
+  background: linear-gradient(180deg,
+    rgba(239, 74, 24, 0.18) 0%,
+    rgba(168, 35, 24, 0.18) 100%);
+  border-color: rgba(211, 42, 24, 0.55);
+  color: #5a1810;
+}
+
+/* ── Success/msg-banner success — адаптирован под светлый ── */
+[data-theme="light"] .msg-banner.success {
+  background: linear-gradient(180deg,
+    rgba(239, 74, 24, 0.2) 0%,
+    rgba(211, 42, 24, 0.12) 100%);
+  border-color: rgba(255, 132, 51, 0.55);
+  color: var(--ember-deep);
+}
+
+/* ── Курсор: бронза выцветает на песке — усилим контраст ── */
+[data-theme="light"] .cur-outer-main {
+  stroke: var(--iron-void);
+  opacity: 0.85;
+}
+[data-theme="light"] .cur-teeth line {
+  stroke: var(--iron-dark);
+  opacity: 1;
+}
+[data-theme="light"] .cur-rivet {
+  fill: var(--bronze-dark);
+  opacity: 1;
+}
+[data-theme="light"] .cur-gear-shape {
+  stroke: var(--ember-heart);
+  opacity: 0.95;
+}
+[data-theme="light"] .cur-gear-inner {
+  stroke: var(--ember-flame);
+  opacity: 0.8;
+}
+[data-theme="light"] .cursor-dot {
+  box-shadow:
+    0 0 5px rgba(239, 74, 24, 1),
+    0 0 12px rgba(239, 74, 24, 0.85),
+    0 0 22px rgba(211, 42, 24, 0.65),
+    0 0 36px rgba(168, 35, 24, 0.4);
+}
+
+/* ── Admin header "Горн жив" бейдж — более тёплый фон ── */
+[data-theme="light"] .adm-badge {
+  background: linear-gradient(180deg,
+    rgba(239, 74, 24, 0.22) 0%,
+    rgba(168, 35, 24, 0.2) 100%);
+  color: var(--ember-deep);
+  text-shadow: none;
+}
+
+/* ── Header iron-strip / ember-line — хорошо читаются на песке ── */
+[data-theme="light"] .header-iron-strip {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--iron-void) 50%,
+    transparent 100%);
+  opacity: 0.55;
+}
+[data-theme="light"] .header-ember-line {
+  box-shadow: 0 0 10px rgba(239, 74, 24, 0.55);
+}
+
+/* ── Частицы/ambient glow блоки: ослабим на свету,
+     иначе "выжигают" восприятие ── */
+[data-theme="light"] .fa-glow,
+[data-theme="light"] .hero-ember,
+[data-theme="light"] .nf-glow,
+[data-theme="light"] .hero-bg-blur,
+[data-theme="light"] .adm-glow {
+  opacity: 0.18;
+  mix-blend-mode: multiply;
+}
+
+/* ── ФОНы кованых кнопок на свету: оставляем огонь, но тень мягче ── */
+[data-theme="light"] .forge-btn,
+[data-theme="light"] .submit-btn,
+[data-theme="light"] .roulette-btn,
+[data-theme="light"] .winner-btn-buy,
+[data-theme="light"] .btn-save,
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .admin-button-primary,
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .chat-fab:not(.open),
+[data-theme="light"] .cf-submit,
+[data-theme="light"] .btn.btn-primary {
+  text-shadow: 0 1px 2px rgba(90, 23, 16, 0.55);
+}
+
+/* ── Текст bright на светлом фоне карты — остаётся тёмным ── */
+[data-theme="light"] .hero-title,
+[data-theme="light"] .slab-title,
+[data-theme="light"] .article-title,
+[data-theme="light"] .featured-title,
+[data-theme="light"] .card-title,
+[data-theme="light"] .panel-header h2,
+[data-theme="light"] .hero-name,
+[data-theme="light"] .adm-title,
+[data-theme="light"] .modal-title,
+[data-theme="light"] .page-title,
+[data-theme="light"] .form-title,
+[data-theme="light"] .cta-title,
+[data-theme="light"] .section-title {
+  text-shadow: 0 2px 8px rgba(248, 232, 190, 0.65);
+}
+
+/* Hero/cta elements: tone down the dark obsidian-type overlays that
+   look out of place on day background */
+[data-theme="light"] .featured-overlay,
+[data-theme="light"] .hero-overlay,
+[data-theme="light"] .card-img-overlay,
+[data-theme="light"] .card-overlay {
+  background: linear-gradient(to top,
+    rgba(90, 61, 34, 0.85) 0%,
+    rgba(90, 61, 34, 0.4) 40%,
+    rgba(90, 61, 34, 0.05) 100%) !important;
+}
+
+/* ── Article body :deep code / pre адаптируем под светлый ── */
+[data-theme="light"] .article-body :deep(code),
+[data-theme="light"] .article-body :deep(pre) {
+  background: rgba(90, 61, 34, 0.12);
+  border-color: var(--iron-mid);
+  color: var(--ember-deep);
+}
+
+/* ── Таблица thead на свету — терракота вместо кровавого камня ── */
+[data-theme="light"] .admin-table thead,
+[data-theme="light"] .ofc-header,
+[data-theme="light"] thead tr {
+  background: linear-gradient(180deg,
+    rgba(168, 133, 85, 0.75) 0%,
+    rgba(184, 154, 104, 0.85) 100%);
+  color: var(--iron-void);
+}
+
+/* Notify toggles — трэк сделаем светлее когда off */
+[data-theme="light"] .notify-toggle {
+  background: linear-gradient(180deg,
+    rgba(232, 215, 170, 0.6) 0%,
+    rgba(210, 190, 145, 0.75) 100%);
+}
+[data-theme="light"] .toggle-track {
+  background: var(--ash-ironrust);
+  border-color: var(--iron-dark);
+}
+[data-theme="light"] .toggle-thumb {
+  background: radial-gradient(circle at 30% 30%,
+    var(--iron-mid) 0%,
+    var(--iron-void) 100%);
+}
+
+/* ── 404 / auth-card и прочие каменные плиты на свету —
+     проверка, что inset-форж не превращается в тёмную дыру ── */
+[data-theme="light"] .fa-slab,
+[data-theme="light"] .modal-content,
+[data-theme="light"] .stat-card,
+[data-theme="light"] .nav-card,
+[data-theme="light"] .settings-card,
+[data-theme="light"] .value-card,
+[data-theme="light"] .mv-card,
+[data-theme="light"] .how-card,
+[data-theme="light"] .team-card,
+[data-theme="light"] .cta-block,
+[data-theme="light"] .review-card,
+[data-theme="light"] .order-full-card,
+[data-theme="light"] .ticket-card,
+[data-theme="light"] .no-reviews-placeholder,
+[data-theme="light"] .sidebar-widget,
+[data-theme="light"] .admin-table-wrapper,
+[data-theme="light"] .admin-loading,
+[data-theme="light"] .admin-empty,
+[data-theme="light"] .article-body-wrap,
+[data-theme="light"] .featured-card,
+[data-theme="light"] .news-card,
+[data-theme="light"] .skel-card,
+[data-theme="light"] .chat-panel,
+[data-theme="light"] .review-form-box,
+[data-theme="light"] .contact-form,
+[data-theme="light"] .game-card {
+  /* Усилим inset-светлый — чтобы плиты не казались плоскими */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 236, 200, 0.5),
+    inset 0 -1px 0 rgba(90, 61, 34, 0.18),
+    0 4px 14px rgba(90, 61, 34, 0.28);
+}
+
+/* Плита игр на карточке hover — тёплое свечение */
+[data-theme="light"] .stat-card:hover,
+[data-theme="light"] .nav-card:hover,
+[data-theme="light"] .value-card:hover,
+[data-theme="light"] .mv-card:hover,
+[data-theme="light"] .how-card:hover,
+[data-theme="light"] .team-card:hover,
+[data-theme="light"] .review-card:hover,
+[data-theme="light"] .news-card:hover,
+[data-theme="light"] .featured-card:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 236, 200, 0.55),
+    inset 0 -1px 0 rgba(90, 61, 34, 0.18),
+    0 10px 28px rgba(90, 61, 34, 0.38),
+    0 0 20px rgba(239, 74, 24, 0.22);
+}
+
+/* ── Scrollbar в модалках на свету ── */
+[data-theme="light"] .modal-content::-webkit-scrollbar-thumb,
+[data-theme="light"] .ap-grid::-webkit-scrollbar-thumb,
+[data-theme="light"] .chat-body::-webkit-scrollbar-thumb {
+  background: var(--iron-dark);
+}
+
+/* Dropdown панели (head nav) — светлый каменный фон */
+[data-theme="light"] .nav-dropdown {
+  background: linear-gradient(180deg,
+    var(--ash-ironrust) 0%,
+    var(--ash-stone) 100%);
+  border-color: var(--bronze-dark);
+  box-shadow: 0 8px 28px rgba(90, 61, 34, 0.38);
+}
+
+/* Toast — светлый песок с ember-подсветкой */
+[data-theme="light"] .admin-toast {
+  background: linear-gradient(180deg,
+    var(--ash-stone) 0%,
+    var(--ash-ironrust) 100%);
+  border-color: var(--bronze);
+  box-shadow: var(--shadow-deep), 0 0 18px rgba(239, 74, 24, 0.3);
+}
+
+/* Ember-ядра на светлом фоне (курсор, progress, иконки) — чуть ярче */
+[data-theme="light"] .read-progress {
+  box-shadow: 0 0 10px rgba(239, 74, 24, 0.65);
+}
+
+/* Убедимся, что текст на кнопках с ember-градиентом остаётся светлым
+   (text-bright в light = тёмный, это ломает readability на ember-фоне).
+   Форсим светлый текст для кнопок ember-gradient. */
+[data-theme="light"] .forge-btn,
+[data-theme="light"] .forge-btn *,
+[data-theme="light"] .submit-btn,
+[data-theme="light"] .submit-btn *,
+[data-theme="light"] .roulette-btn:not(.spinning),
+[data-theme="light"] .roulette-btn:not(.spinning) *,
+[data-theme="light"] .winner-btn-buy,
+[data-theme="light"] .winner-btn-buy *,
+[data-theme="light"] .btn-save,
+[data-theme="light"] .btn-save *,
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-primary *,
+[data-theme="light"] .admin-button-primary,
+[data-theme="light"] .admin-button-primary *,
+[data-theme="light"] .btn.btn-primary,
+[data-theme="light"] .btn.btn-primary *,
+[data-theme="light"] .cf-submit,
+[data-theme="light"] .cf-submit *,
+[data-theme="light"] .chat-fab:not(.open),
+[data-theme="light"] .chat-fab:not(.open) *,
+[data-theme="light"] .bubble-user,
+[data-theme="light"] .bubble-user * {
+  color: #fff6df !important;
+}
+
+/* Ember-gold text на каменных плитах остаётся ярким */
+[data-theme="light"] .stat-num,
+[data-theme="light"] .hs-num,
+[data-theme="light"] .order-total,
+[data-theme="light"] .ofc-total,
+[data-theme="light"] .adm-name,
+[data-theme="light"] .price,
+[data-theme="light"] .mv-stat.accent .mv-stat,
+[data-theme="light"] .order-id {
+  color: var(--ember-deep);
+  text-shadow: 0 0 6px rgba(239, 74, 24, 0.25);
+}
+
+/* Tribal-eyebrow и section-eyebrow — бронза читаемая на песке */
+[data-theme="light"] .tribal-eyebrow,
+[data-theme="light"] .section-eyebrow,
+[data-theme="light"] .carousel-eyebrow,
+[data-theme="light"] .dropdown-eyebrow {
+  color: var(--iron-void);
+}
+[data-theme="light"] .eb-spike,
+[data-theme="light"] .eyebrow-spike {
+  border-top-color: var(--iron-void);
+  filter: drop-shadow(0 0 3px rgba(201, 144, 64, 0.5));
+}
