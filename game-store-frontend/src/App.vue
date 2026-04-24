@@ -111,15 +111,41 @@ const goToGame = (id) => {
   router.push({ name: 'game', params: { id } });
 };
 
-// ── Custom cursor ──
+// ── Custom cursor · "Forged watcher" ──
 const cursorDot = ref(null);
 const cursorRing = ref(null);
+const cursorHover = ref(false);
+const cursorClicking = ref(false);
 const isTouch = ref(false);
+let cursorRevealed = false;
 
 const moveCursor = (e) => {
   const x = e.clientX, y = e.clientY;
   if (cursorDot.value)  cursorDot.value.style.transform  = `translate(${x}px,${y}px)`;
   if (cursorRing.value) cursorRing.value.style.transform = `translate(${x}px,${y}px)`;
+  if (!cursorRevealed) {
+    cursorRevealed = true;
+    document.documentElement.classList.add('cursor-ready');
+  }
+};
+
+const INTERACTIVE_SELECTOR =
+  'a, button, [role="button"], input:not([type="hidden"]), textarea, select, label[for], summary, [data-cursor-hover]';
+
+const updateCursorHover = (e) => {
+  const t = e.target;
+  if (!t || !(t instanceof Element)) return;
+  cursorHover.value = !!t.closest(INTERACTIVE_SELECTOR);
+};
+const onCursorDown = () => { cursorClicking.value = true; };
+const onCursorUp   = () => { cursorClicking.value = false; };
+const onCursorLeave = () => {
+  if (document.documentElement.classList.contains('cursor-ready')) {
+    document.documentElement.classList.remove('cursor-ready');
+  }
+};
+const onCursorEnter = () => {
+  if (cursorRevealed) document.documentElement.classList.add('cursor-ready');
 };
 
 
@@ -141,11 +167,21 @@ onMounted(() => {
     document.documentElement.classList.add('touch-device');
   } else {
     window.addEventListener('mousemove', moveCursor, { passive: true });
+    document.addEventListener('mouseover', updateCursorHover, { passive: true });
+    window.addEventListener('mousedown', onCursorDown, { passive: true });
+    window.addEventListener('mouseup',   onCursorUp,   { passive: true });
+    document.addEventListener('mouseleave', onCursorLeave);
+    document.addEventListener('mouseenter', onCursorEnter);
   }
 });
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll);
   window.removeEventListener('mousemove', moveCursor);
+  document.removeEventListener('mouseover', updateCursorHover);
+  window.removeEventListener('mousedown', onCursorDown);
+  window.removeEventListener('mouseup', onCursorUp);
+  document.removeEventListener('mouseleave', onCursorLeave);
+  document.removeEventListener('mouseenter', onCursorEnter);
   clearTimeout(searchTimer);
 });
 </script>
@@ -153,10 +189,56 @@ onUnmounted(() => {
 <template>
   <div id="app-wrapper">
 
-    <!-- Custom cursor (desktop only) — ember theme -->
+    <!-- Custom cursor (desktop only) — "Forged watcher":
+         раскалённое ядро + зубчатое бронзовое кольцо + 6-зубая шестерня + искры -->
     <template v-if="!isTouch">
-      <div class="cursor-dot"  ref="cursorDot"></div>
-      <div class="cursor-ring" ref="cursorRing"></div>
+      <div
+        class="cursor-dot"
+        :class="{ 'is-hover': cursorHover, 'is-clicking': cursorClicking }"
+        ref="cursorDot"
+      ></div>
+      <svg
+        class="cursor-ring"
+        :class="{ 'is-hover': cursorHover, 'is-clicking': cursorClicking }"
+        ref="cursorRing"
+        viewBox="-32 -32 64 64"
+        width="64"
+        height="64"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <g class="cur-frame">
+          <!-- Искры по сторонам света — вспыхивают на hover -->
+          <g class="cur-sparks">
+            <line x1="0"   y1="-30" x2="0"   y2="-26" />
+            <line x1="30"  y1="0"   x2="26"  y2="0" />
+            <line x1="0"   y1="30"  x2="0"   y2="26" />
+            <line x1="-30" y1="0"   x2="-26" y2="0" />
+          </g>
+
+          <!-- Внешнее зубчатое кольцо · медленно вращается -->
+          <g class="cur-outer">
+            <circle r="22" class="cur-outer-main" />
+            <g class="cur-teeth">
+              <line v-for="i in 12" :key="`t${i}`"
+                    x1="0" y1="-24" x2="0" y2="-20"
+                    :transform="`rotate(${(i - 1) * 30})`" />
+            </g>
+            <circle cx="0"   cy="-22" r="1.4" class="cur-rivet" />
+            <circle cx="22"  cy="0"   r="1.4" class="cur-rivet" />
+            <circle cx="0"   cy="22"  r="1.4" class="cur-rivet" />
+            <circle cx="-22" cy="0"   r="1.4" class="cur-rivet" />
+          </g>
+
+          <!-- Внутренняя 6-зубая шестерня · контр-вращение -->
+          <g class="cur-gear">
+            <polygon class="cur-gear-shape"
+              points="0,-12 3.5,-6.06 10.39,-6 7,0 10.39,6 3.5,6.06 0,12 -3.5,6.06 -10.39,6 -7,0 -10.39,-6 -3.5,-6.06" />
+            <polygon class="cur-gear-inner"
+              points="0,-6 3,-3 3,3 0,6 -3,3 -3,-3" />
+          </g>
+        </g>
+      </svg>
     </template>
 
     <!-- Ambient particles (existing; will blend with new theme) -->
@@ -1718,15 +1800,39 @@ onUnmounted(() => {
 .dropdown-leave-to { opacity: 0; transform: translateY(-8px); }
 
 /* ==========================================================
-   CURSOR
+   CURSOR · Forged watcher
+   - cursor-dot  : раскалённое ember-ядро (10px, дышит)
+   - cursor-ring : SVG 64px — зубчатое кольцо + шестерня + искры
+   - hover (a/button/input) : кольцо раскаляется, шестерня ускоряется,
+     искры вспыхивают, всё увеличивается
+   - click : короткий удар молота (scale overshoot)
    ========================================================== */
-@keyframes cursorPulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50%      { transform: scale(1.25); opacity: 0.85; }
+@keyframes curDotBreathe {
+  0%, 100% {
+    box-shadow:
+      0 0 4px rgba(255, 248, 234, 1),
+      0 0 10px rgba(255, 201, 121, 0.95),
+      0 0 20px rgba(255, 122, 43, 0.8),
+      0 0 36px rgba(226, 67, 16, 0.55);
+  }
+  50% {
+    box-shadow:
+      0 0 6px rgba(255, 248, 234, 1),
+      0 0 16px rgba(255, 201, 121, 1),
+      0 0 30px rgba(255, 122, 43, 0.95),
+      0 0 52px rgba(226, 67, 16, 0.75);
+  }
 }
-@keyframes cursorRotate {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+@keyframes curHaloPulse {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%      { transform: scale(1.4);  opacity: 0.55; }
+}
+@keyframes curRotate    { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+@keyframes curRotateRev { from { transform: rotate(360deg); } to { transform: rotate(0deg); } }
+@keyframes curStrike {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.45); }
+  100% { transform: scale(1); }
 }
 
 .cursor-dot,
@@ -1736,53 +1842,138 @@ onUnmounted(() => {
   pointer-events: none;
   z-index: var(--z-cursor);
   will-change: transform;
+  opacity: 0;
+  transition: opacity 0.25s var(--ease-smoke);
 }
+html.cursor-ready .cursor-dot,
+html.cursor-ready .cursor-ring { opacity: 1; }
+
+/* ── Ember-ядро ── */
 .cursor-dot {
-  width: 8px; height: 8px;
-  margin: -4px 0 0 -4px;
+  width: 10px; height: 10px;
+  margin: -5px 0 0 -5px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--ember-gold) 0%, var(--ember-glow) 50%, var(--ember-flame) 100%);
-  box-shadow:
-    0 0 6px rgba(255, 201, 121, 1),
-    0 0 14px rgba(255, 122, 43, 0.9),
-    0 0 24px rgba(226, 67, 16, 0.6);
-  transition: transform 0.04s linear;
+  background: radial-gradient(circle at 35% 35%,
+    #fff8ea 0%,
+    var(--ember-gold) 28%,
+    var(--ember-glow) 55%,
+    var(--ember-flame) 80%,
+    var(--ember-heart) 100%);
+  animation: curDotBreathe 1.6s var(--ease-smoke) infinite;
+  transition: transform 0.04s linear, opacity 0.25s var(--ease-smoke);
 }
-/* Внутренняя анимация пульса через ::before */
 .cursor-dot::before {
   content: '';
   position: absolute;
-  inset: -3px;
+  inset: -5px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 201, 121, 0.35) 0%, transparent 70%);
-  animation: cursorPulse 1.6s var(--ease-smoke) infinite;
+  background: radial-gradient(circle, rgba(255, 201, 121, 0.42) 0%, transparent 70%);
+  animation: curHaloPulse 1.4s var(--ease-smoke) infinite;
+  pointer-events: none;
+}
+.cursor-dot.is-hover     { animation-duration: 0.9s; }
+.cursor-dot.is-clicking  { animation: curStrike 0.26s var(--ease-forge); }
+
+/* ── SVG-кольцо (контейнер) ── */
+.cursor-ring {
+  width: 64px; height: 64px;
+  margin: -32px 0 0 -32px;
+  overflow: visible;
+  transition: transform 0.22s cubic-bezier(0.22, 0.68, 0, 1.2), opacity 0.25s var(--ease-smoke);
 }
 
-.cursor-ring {
-  width: 38px; height: 38px;
-  margin: -19px 0 0 -19px;
-  transition: transform 0.18s ease-out;
-  mix-blend-mode: screen;
-  position: fixed;
+/* Рамка (на ней живёт hover-scale и click-strike, чтобы не конфликтовать
+   с translate на самом <svg>) */
+.cur-frame {
+  transform-origin: 0 0;
+  transform-box: view-box;
+  transition: transform 0.24s var(--ease-forge);
 }
-/* Внешнее кованое кольцо с гексагональным вырезом через clip-path */
-.cursor-ring::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: transparent;
-  border: 1.5px solid rgba(255, 122, 43, 0.6);
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  animation: cursorRotate 14s linear infinite;
+.cur-frame.is-hover     { transform: scale(1.18); }
+.cur-frame.is-clicking  { animation: curStrike 0.26s var(--ease-forge); }
+
+.cursor-ring g {
+  transform-origin: 0 0;
+  transform-box: view-box;
 }
-/* Инверсное внутреннее кольцо (крутится в другую сторону) — эффект "гироскопа" */
-.cursor-ring::after {
-  content: '';
-  position: absolute;
-  inset: 6px;
-  border: 1px solid rgba(255, 201, 121, 0.3);
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-  animation: cursorRotate 9s linear infinite reverse;
+
+/* Внешнее зубчатое кольцо */
+.cur-outer {
+  animation: curRotate 22s linear infinite;
+}
+.cur-outer-main {
+  fill: none;
+  stroke: var(--bronze);
+  stroke-width: 1.5;
+  opacity: 0.55;
+  filter: drop-shadow(0 0 2px rgba(199, 154, 94, 0.45));
+  transition: opacity 0.2s var(--ease-smoke), stroke-width 0.2s var(--ease-smoke), stroke 0.2s var(--ease-smoke);
+}
+.cur-teeth line {
+  stroke: var(--brass);
+  stroke-width: 2;
+  stroke-linecap: square;
+  opacity: 0.72;
+  transition: opacity 0.2s var(--ease-smoke), stroke-width 0.2s var(--ease-smoke);
+}
+.cur-rivet {
+  fill: var(--gold-faint);
+  opacity: 0.9;
+  filter: drop-shadow(0 0 2px rgba(255, 201, 121, 0.6));
+  transition: opacity 0.2s var(--ease-smoke), filter 0.2s var(--ease-smoke);
+}
+
+/* Внутренняя 6-зубая шестерня */
+.cur-gear {
+  animation: curRotateRev 10s linear infinite;
+}
+.cur-gear-shape {
+  fill: none;
+  stroke: var(--ember-flame);
+  stroke-width: 1.25;
+  stroke-linejoin: miter;
+  stroke-linecap: round;
+  opacity: 0.78;
+  filter: drop-shadow(0 0 3px rgba(255, 122, 43, 0.55));
+  transition: opacity 0.2s var(--ease-smoke), stroke-width 0.2s var(--ease-smoke), stroke 0.2s var(--ease-smoke), filter 0.2s var(--ease-smoke);
+}
+.cur-gear-inner {
+  fill: none;
+  stroke: var(--ember-glow);
+  stroke-width: 0.8;
+  opacity: 0.6;
+  transition: opacity 0.2s var(--ease-smoke), stroke 0.2s var(--ease-smoke);
+}
+
+/* Искры — по сторонам света */
+.cur-sparks line {
+  stroke: var(--ember-spark);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0;
+  filter: drop-shadow(0 0 3px rgba(255, 167, 88, 0.8));
+  transition: opacity 0.18s var(--ease-smoke), stroke-width 0.2s var(--ease-smoke);
+}
+
+/* ── Hover · на любом интерактивном элементе ── */
+.cur-frame.is-hover .cur-outer              { animation-duration: 8s; }
+.cur-frame.is-hover .cur-gear               { animation-duration: 4.5s; }
+.cur-frame.is-hover .cur-outer-main         { opacity: 1; stroke-width: 1.8; stroke: var(--brass); }
+.cur-frame.is-hover .cur-teeth line         { opacity: 1; stroke-width: 2.6; }
+.cur-frame.is-hover .cur-gear-shape         {
+  opacity: 1;
+  stroke-width: 1.8;
+  stroke: var(--ember-glow);
+  filter: drop-shadow(0 0 6px rgba(255, 122, 43, 0.9));
+}
+.cur-frame.is-hover .cur-gear-inner         { opacity: 1; stroke: var(--ember-gold); }
+.cur-frame.is-hover .cur-sparks line        { opacity: 0.95; stroke-width: 2.6; }
+.cur-frame.is-hover .cur-rivet              { opacity: 1; filter: drop-shadow(0 0 4px rgba(255, 201, 121, 0.9)); }
+
+/* ── Reduce-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .cur-outer, .cur-gear, .cursor-dot, .cursor-dot::before { animation: none; }
+  .cur-frame.is-clicking, .cursor-dot.is-clicking { animation: none; }
 }
 
 /* ==========================================================
