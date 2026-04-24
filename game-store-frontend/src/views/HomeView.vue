@@ -1,61 +1,88 @@
 <template>
   <main class="home-page">
 
-    <!-- ===== HERO ===== -->
+    <!-- ===================================================
+         HERO · "Оплот воина"
+    =================================================== -->
     <section class="hero-section">
-      <!-- Animated background blobs -->
-      <div class="blob blob-1"></div>
-      <div class="blob blob-2"></div>
-      <div class="blob blob-3"></div>
-      <!-- Orbit rings -->
-      <div class="particles-container">
-        <div class="particle-orbit orbit-1"></div>
-        <div class="particle-orbit orbit-2"></div>
-        <div class="particle-orbit orbit-3"></div>
+      <!-- Фон: закатное небо Оргриммара -->
+      <div class="hero-sky"></div>
+      <!-- Горы-силуэты вдалеке -->
+      <div class="hero-mountains">
+        <svg viewBox="0 0 1600 200" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0,200 L0,130 L80,80 L160,110 L240,60 L340,95 L430,40 L520,85 L620,50 L720,100 L820,45 L920,90 L1020,55 L1130,95 L1230,60 L1340,100 L1440,70 L1530,105 L1600,85 L1600,200 Z" fill="currentColor"/>
+        </svg>
       </div>
-      <!-- Grid overlay -->
-      <div class="hero-grid-overlay"></div>
+      <!-- Раскалённый горн снизу -->
+      <div class="hero-forge-glow"></div>
+      <!-- Летящие угли -->
+      <div class="hero-embers" aria-hidden="true">
+        <span v-for="n in 12" :key="n" class="ember-particle" :style="{ '--i': n }"></span>
+      </div>
+      <!-- Свисающий баннер Орды -->
+      <div class="hero-banner-wrap" aria-hidden="true">
+        <div class="hero-banner">
+          <span class="banner-rope"></span>
+          <span class="banner-cloth">
+            <span class="banner-sigil">⚔</span>
+          </span>
+        </div>
+      </div>
 
       <div class="hero-content">
-        <div class="hero-badge">Новинки уже в каталоге</div>
-        <h1 class="hero-title">
-          Новые горизонты<br>
-          <span class="hero-title-accent">в мире игр</span>
-        </h1>
-        <p class="hero-subtitle">
-          Тысячи лицензионных ключей для Steam, Epic Games, GOG и других платформ.
-          Мгновенная доставка, честные цены, поддержка 24/7.
-        </p>
-        <div class="hero-actions">
-          <router-link to="/catalog" class="hero-btn primary">
-            Перейти в каталог
-            <span class="btn-arrow">→</span>
-          </router-link>
-          <router-link to="/news" class="hero-btn secondary">Новости</router-link>
+        <div class="hero-badge">
+          <span class="badge-spike"></span>
+          Новые поступления в оружейной
+          <span class="badge-spike right"></span>
         </div>
 
-        <!-- Hero stats -->
+        <h1 class="hero-title">
+          <span class="hero-title-line">Оплот</span>
+          <span class="hero-title-line hero-title-accent">воина</span>
+        </h1>
+        <p class="hero-tagline">Кузница клана. Тысячи лицензионных ключей для&nbsp;настоящих воинов.</p>
+        <p class="hero-subtitle">
+          Steam, Epic Games, GOG и другие платформы.
+          Мгновенная доставка, честь и&nbsp;верность.
+        </p>
+
+        <div class="hero-actions">
+          <router-link to="/catalog" class="hero-btn primary">
+            <span class="btn-icon">⚔</span>
+            <span>В оружейную</span>
+            <span class="btn-arrow">→</span>
+          </router-link>
+          <router-link to="/news" class="hero-btn secondary">
+            <span>Хроники</span>
+          </router-link>
+        </div>
+
+        <!-- Каменные плитки со статистикой -->
         <div class="hero-stats">
           <div class="hstat">
-            <span class="hstat-num">500+</span>
-            <span class="hstat-label">Игр в каталоге</span>
+            <span class="hstat-num">500<span class="hstat-plus">+</span></span>
+            <span class="hstat-label">Игр в арсенале</span>
           </div>
-          <div class="hstat-sep"></div>
+          <div class="hstat-sep" aria-hidden="true"><span></span></div>
           <div class="hstat">
-            <span class="hstat-num">12 000+</span>
-            <span class="hstat-label">Довольных покупателей</span>
+            <span class="hstat-num">12&nbsp;000<span class="hstat-plus">+</span></span>
+            <span class="hstat-label">Воинов в клане</span>
           </div>
-          <div class="hstat-sep"></div>
+          <div class="hstat-sep" aria-hidden="true"><span></span></div>
           <div class="hstat">
-            <span class="hstat-num">99.8%</span>
+            <span class="hstat-num">99.8<span class="hstat-plus">%</span></span>
             <span class="hstat-label">Ключей активировано</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ===== PLATFORMS TICKER ===== -->
+    <!-- ===================================================
+         PLATFORMS · каменная лента с платформами
+    =================================================== -->
     <div class="platforms-strip">
+      <div class="platforms-edge platforms-edge-l" aria-hidden="true"></div>
+      <div class="platforms-edge platforms-edge-r" aria-hidden="true"></div>
       <div class="platforms-track">
         <span
           v-for="(p, idx) in [...platforms, ...platforms]"
@@ -68,22 +95,35 @@
       </div>
     </div>
 
-    <!-- ===== CAROUSEL ===== -->
+    <!-- ===================================================
+         GAME CAROUSEL
+    =================================================== -->
     <section class="home-section game-carousel-section">
       <GameCarousel />
     </section>
 
     <div class="page-content-wrapper">
 
-      <!-- ===== FEATURES ===== -->
+      <!-- ===================================================
+           FEATURES · преимущества
+      =================================================== -->
       <section class="home-section features-section">
         <div class="section-head">
-          <span class="section-eyebrow">Наши преимущества</span>
-          <h2 class="section-title">Почему выбирают GameStore?</h2>
+          <div class="tribal-eyebrow">
+            <span class="eyebrow-spike"></span>
+            <span class="eyebrow-text">Наши преимущества</span>
+            <span class="eyebrow-spike right"></span>
+          </div>
+          <h2 class="section-title">Почему выбирают нас</h2>
         </div>
         <div class="features-grid">
-          <div v-for="f in features" :key="f.title" class="feature-card">
-            <div class="feature-icon-wrap" :style="{ '--fc': f.color }">
+          <div v-for="(f, i) in features" :key="f.title" class="feature-card" :style="{ '--i': i }">
+            <span class="rivet rivet-tl" aria-hidden="true"></span>
+            <span class="rivet rivet-tr" aria-hidden="true"></span>
+            <span class="rivet rivet-bl" aria-hidden="true"></span>
+            <span class="rivet rivet-br" aria-hidden="true"></span>
+            <div class="feature-icon-wrap">
+              <span class="feature-icon-halo"></span>
               <span class="feature-icon">{{ f.icon }}</span>
             </div>
             <h3 class="feature-title">{{ f.title }}</h3>
@@ -92,36 +132,58 @@
         </div>
       </section>
 
-      <!-- ===== HOW IT WORKS ===== -->
+      <!-- ===================================================
+           HOW · "Путь воина"
+      =================================================== -->
       <section class="home-section how-section">
         <div class="section-head">
-          <span class="section-eyebrow">Просто и быстро</span>
-          <h2 class="section-title">Как это работает?</h2>
+          <div class="tribal-eyebrow">
+            <span class="eyebrow-spike"></span>
+            <span class="eyebrow-text">Просто и быстро</span>
+            <span class="eyebrow-spike right"></span>
+          </div>
+          <h2 class="section-title">Путь воина</h2>
         </div>
         <div class="steps-grid">
-          <div v-for="(step, i) in steps" :key="i" class="step-card">
-            <div class="step-num">{{ i + 1 }}</div>
-            <div class="step-connector" v-if="i < steps.length - 1"></div>
-            <div class="step-icon">{{ step.icon }}</div>
+          <div v-for="(step, i) in steps" :key="i" class="step-card" :style="{ '--i': i }">
+            <div class="step-num-wrap">
+              <div class="step-num">{{ i + 1 }}</div>
+              <div class="step-num-glow"></div>
+            </div>
+            <div class="step-connector" v-if="i < steps.length - 1" aria-hidden="true">
+              <span class="step-connector-line"></span>
+              <span class="step-connector-spike"></span>
+            </div>
+            <div class="step-icon" aria-hidden="true">{{ step.icon }}</div>
             <h3 class="step-title">{{ step.title }}</h3>
             <p class="step-desc">{{ step.desc }}</p>
           </div>
         </div>
       </section>
 
-      <!-- ===== FAQ ===== -->
+      <!-- ===================================================
+           FAQ · "Свитки мудрецов"
+      =================================================== -->
       <section class="home-section faq-section">
         <div class="section-head">
-          <span class="section-eyebrow">Часто задаваемые вопросы</span>
-          <h2 class="section-title">Помощь и поддержка</h2>
+          <div class="tribal-eyebrow">
+            <span class="eyebrow-spike"></span>
+            <span class="eyebrow-text">Часто задаваемые вопросы</span>
+            <span class="eyebrow-spike right"></span>
+          </div>
+          <h2 class="section-title">Свитки мудрецов</h2>
         </div>
         <div class="faq-container">
-          <div v-for="item in faqItems" :key="item.id" class="faq-item" :class="{ open: openFaqItem === item.id }">
+          <div
+            v-for="item in faqItems"
+            :key="item.id"
+            class="faq-item"
+            :class="{ open: openFaqItem === item.id }"
+          >
             <div class="faq-question" @click="toggleFaq(item.id)">
-              <span>{{ item.question }}</span>
-              <span class="faq-icon">
-                <span class="faq-icon-bar h"></span>
-                <span class="faq-icon-bar v"></span>
+              <span class="faq-question-text">{{ item.question }}</span>
+              <span class="faq-icon" aria-hidden="true">
+                <span class="faq-icon-inner"></span>
               </span>
             </div>
             <Transition name="faq-slide">
@@ -144,11 +206,11 @@ import GameCarousel from '../components/GameCarousel.vue';
 import SvgIcon from '@/components/SvgIcon.vue';
 
 useHead({
-  title: 'GameStore — Купить ключи для игр',
+  title: 'GameStore — Кузница воина',
   meta: [
     { name: 'description', content: 'Магазин лицензионных ключей для игр. Steam, Epic Games, GOG и другие платформы по выгодным ценам.' },
     { property: 'og:type', content: 'website' },
-    { property: 'og:title', content: 'GameStore — Купить ключи для игр' },
+    { property: 'og:title', content: 'GameStore — Кузница воина' },
     { property: 'og:description', content: 'Магазин лицензионных ключей для игр. Steam, Epic Games, GOG и другие платформы по выгодным ценам.' },
     { property: 'og:image', content: '/images.png' },
     { name: 'robots', content: 'index, follow' },
@@ -167,25 +229,25 @@ const platforms = ref([
 ]);
 
 const features = ref([
-  { icon: '→', title: 'Мгновенная доставка', desc: 'Ключ приходит на почту сразу после оплаты — без ожидания и задержек.', color: '#f59e0b' },
-  { icon: '✓', title: 'Гарантия качества', desc: 'Только официальные издатели. Гарантируем валидность каждого ключа.', color: '#3b82f6' },
-  { icon: '✦', title: 'Поддержка 24/7', desc: 'Наша команда всегда готова помочь с любым вопросом в кратчайшие сроки.', color: '#22c55e' },
-  { icon: '💳', title: 'Удобная оплата', desc: 'Visa, MasterCard, МИР и другие способы. Безопасные транзакции.', color: '#a855f7' },
+  { icon: '⚡', title: 'Мгновенная доставка', desc: 'Ключ приходит на почту сразу после оплаты — ни ожидания, ни задержек.' },
+  { icon: '⚔', title: 'Гарантия качества',   desc: 'Только официальные издатели. Валидность каждого ключа гарантирована честью.' },
+  { icon: '☾',  title: 'Поддержка 24/7',      desc: 'Клан всегда на страже. Ответим на вопрос в любое время суток.' },
+  { icon: '◈', title: 'Удобная оплата',      desc: 'Visa, MasterCard, МИР и другие способы. Безопасные транзакции.' },
 ]);
 
 const steps = ref([
-  { icon: '', title: 'Найдите игру', desc: 'Используйте поиск или каталог для выбора нужной игры' },
-  { icon: '', title: 'Добавьте в корзину', desc: 'Оформите заказ за несколько кликов' },
-  { icon: '', title: 'Оплатите', desc: 'Выберите удобный способ оплаты' },
-  { icon: '', title: 'Играйте!', desc: 'Ключ мгновенно придёт на вашу почту' },
+  { icon: '⌕', title: 'Найди', desc: 'Через поиск или каталог выбери нужную игру' },
+  { icon: '☰', title: 'Забери', desc: 'Оформи заказ за пару кликов' },
+  { icon: '◈', title: 'Оплати', desc: 'Выбери удобный способ оплаты' },
+  { icon: '⚔', title: 'Играй', desc: 'Ключ мгновенно придёт на твою почту' },
 ]);
 
 const faqItems = ref([
-  { id: 1, question: 'Как я получу купленную игру?', answer: 'Сразу после оплаты ключ будет отправлен на вашу электронную почту. Также он будет доступен в личном кабинете в разделе «Мои покупки».' },
-  { id: 2, question: 'Принимаете ли вы карты всех банков?', answer: 'Мы принимаем Visa, MasterCard и МИР большинства банков. При проблемах с оплатой свяжитесь с нашей поддержкой.' },
-  { id: 3, question: 'Что делать, если ключ не работает?', answer: 'Свяжитесь с поддержкой, предоставьте номер заказа и скриншот ошибки. Мы оперативно заменим ключ или вернём деньги.' },
-  { id: 4, question: 'Могу ли я вернуть игру?', answer: 'Цифровые ключи не подлежат возврату после активации. Пожалуйста, внимательно изучите системные требования и описание до покупки.' },
-  { id: 5, question: 'На какой платформе активировать ключ?', answer: 'Платформа (Steam, Epic Games, GOG и т.д.) всегда указана на странице товара. Убедитесь, что у вас есть аккаунт в соответствующем сервисе.' },
+  { id: 1, question: 'Как я получу купленную игру?', answer: 'Сразу после оплаты ключ будет отправлен на твою электронную почту. Также он будет доступен в личном кабинете в разделе «Мои покупки».' },
+  { id: 2, question: 'Принимаете ли вы карты всех банков?', answer: 'Мы принимаем Visa, MasterCard и МИР большинства банков. При проблемах с оплатой свяжись с нашей поддержкой.' },
+  { id: 3, question: 'Что делать, если ключ не работает?', answer: 'Свяжись с поддержкой, предоставь номер заказа и скриншот ошибки. Мы оперативно заменим ключ или вернём деньги.' },
+  { id: 4, question: 'Могу ли я вернуть игру?', answer: 'Цифровые ключи не подлежат возврату после активации. Пожалуйста, внимательно изучи системные требования и описание до покупки.' },
+  { id: 5, question: 'На какой платформе активировать ключ?', answer: 'Платформа (Steam, Epic Games, GOG и т.д.) всегда указана на странице товара. Убедись, что у тебя есть аккаунт в соответствующем сервисе.' },
 ]);
 
 const openFaqItem = ref(null);
@@ -193,299 +255,632 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
 </script>
 
 <style scoped>
-/* ===== BASE ===== */
-@keyframes rotate-cw  { to { transform: rotate(360deg); } }
-@keyframes rotate-ccw { to { transform: rotate(-360deg); } }
-@keyframes blobFloat {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%       { transform: translate(40px, -30px) scale(1.05); }
-  66%       { transform: translate(-20px, 20px) scale(0.95); }
+/* ============================================================
+   ASHENFORGE · HomeView
+   ============================================================ */
+
+@keyframes emberRise {
+  0%   { opacity: 0; transform: translate(var(--x, 0), 0) scale(0.6); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(var(--x, 0) + 40px), -180px) scale(1.2); }
 }
+
+@keyframes bannerDrop {
+  from { transform: translateY(-24px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes tickerScroll {
   from { transform: translateX(0); }
   to   { transform: translateX(-50%); }
 }
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
 
 .home-page {
-  color: #e5e7eb;
+  color: var(--text-bone);
   width: 100%;
-  background: #020617;
   overflow-x: hidden;
+  position: relative;
 }
 
-/* ===== HERO ===== */
+/* ==========================================================
+   HERO
+   ========================================================== */
 .hero-section {
   position: relative;
-  min-height: 100vh;
+  min-height: 92vh;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 120px 24px 100px;
+  padding: 160px 24px 120px;
   overflow: hidden;
-  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(59,130,246,0.15), transparent 70%);
+  isolation: isolate;
 }
 
-/* Animated blobs */
-.blob {
+/* Небо заката */
+.hero-sky {
   position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  pointer-events: none;
-  animation: blobFloat 12s ease-in-out infinite;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 100%, rgba(226, 67, 16, 0.25) 0%, transparent 55%),
+    radial-gradient(ellipse 90% 55% at 50% 20%, rgba(138, 31, 24, 0.22) 0%, transparent 60%),
+    linear-gradient(180deg,
+      #0a0806 0%,
+      #14100c 25%,
+      #2a1612 55%,
+      #5a1412 80%,
+      #8a1f18 100%);
+  z-index: -2;
 }
-.blob-1 { width: 500px; height: 500px; background: rgba(99,102,241,0.12); top: -100px; left: -100px; animation-duration: 14s; }
-.blob-2 { width: 400px; height: 400px; background: rgba(59,130,246,0.10); bottom: 0; right: -100px; animation-duration: 18s; animation-delay: -5s; }
-.blob-3 { width: 300px; height: 300px; background: rgba(34,197,94,0.07); top: 50%; left: 60%; animation-duration: 20s; animation-delay: -9s; }
-
-/* Grid overlay */
-.hero-grid-overlay {
+.hero-sky::before {
+  content: '';
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size: 60px 60px;
-  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);
+    radial-gradient(2px 2px at 20% 30%, rgba(255, 201, 121, 0.55), transparent),
+    radial-gradient(1.5px 1.5px at 70% 15%, rgba(255, 201, 121, 0.5), transparent),
+    radial-gradient(1px 1px at 45% 25%, rgba(199, 154, 94, 0.6), transparent),
+    radial-gradient(1px 1px at 85% 35%, rgba(199, 154, 94, 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 15% 20%, rgba(212, 181, 106, 0.6), transparent),
+    radial-gradient(1px 1px at 90% 10%, rgba(199, 154, 94, 0.55), transparent);
+  background-size: 100% 100%;
+  opacity: 0.7;
+}
+
+/* Silhouette гор */
+.hero-mountains {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 28vh;
+  min-height: 220px;
+  color: #0a0704;
+  z-index: -1;
+  filter: drop-shadow(0 -4px 8px rgba(138, 31, 24, 0.3));
+}
+.hero-mountains svg { display: block; width: 100%; height: 100%; }
+
+/* Раскалённый горн снизу */
+.hero-forge-glow {
+  position: absolute;
+  bottom: -80px; left: 50%;
+  transform: translateX(-50%);
+  width: 120%; height: 340px;
+  background: radial-gradient(ellipse 50% 80% at 50% 100%,
+    rgba(255, 122, 43, 0.55) 0%,
+    rgba(226, 67, 16, 0.35) 25%,
+    rgba(138, 31, 24, 0.18) 50%,
+    transparent 75%);
+  filter: blur(16px);
+  z-index: -1;
+  animation: emberPulse 4s ease-in-out infinite;
   pointer-events: none;
 }
 
-/* Orbits */
-.particles-container { position: absolute; inset: 0; pointer-events: none; }
-.particle-orbit {
+/* Летящие угли */
+.hero-embers {
   position: absolute;
-  top: 10%;
-  left: 20%;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.05);
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
 }
-.orbit-1 { width: 44vw; height: 44vw; min-width: 280px; max-width: 480px; animation: rotate-cw 28s linear infinite; }
-.orbit-2 { width: 68vw; height: 68vw; min-width: 380px; max-width: 820px; animation: rotate-ccw 45s linear infinite; }
-.orbit-3 { width: 95vw; height: 95vw; min-width: 480px; max-width: 1200px; animation: rotate-cw 70s linear infinite; border-color: rgba(255,255,255,0.03); }
+.ember-particle {
+  position: absolute;
+  bottom: 10%;
+  left: calc((var(--i) * 8%) + 5%);
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--ember-gold), var(--ember-flame));
+  box-shadow: 0 0 8px rgba(255, 122, 43, 0.8);
+  animation: emberRise 7s ease-out infinite;
+  animation-delay: calc(var(--i) * -0.55s);
+  --x: calc((var(--i) * 3px) - 20px);
+  opacity: 0;
+}
+
+/* Свисающий баннер */
+.hero-banner-wrap {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  animation: bannerDrop 0.8s var(--ease-forge) 0.2s both;
+  pointer-events: none;
+}
+.hero-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.banner-rope {
+  width: 2px;
+  height: 30px;
+  background: linear-gradient(180deg, var(--iron-void) 0%, var(--iron-mid) 100%);
+}
+.banner-cloth {
+  position: relative;
+  width: 80px;
+  height: 110px;
+  background: var(--grad-ember-banner);
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 201, 121, 0.2),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.35),
+    0 8px 16px rgba(0, 0, 0, 0.5);
+  animation: bannerSway 5s ease-in-out infinite;
+  transform-origin: top center;
+}
+.banner-sigil {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--ember-gold);
+  text-shadow: 0 0 12px rgba(255, 201, 121, 0.9);
+  margin-top: -16px;
+}
 
 /* Hero content */
 .hero-content {
   position: relative;
-  z-index: 10;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
-  animation: fadeInUp 0.7s ease both;
+  gap: var(--sp-5);
+  animation: fadeUp 0.8s var(--ease-forge) both;
+  max-width: 780px;
 }
 
+/* Badge */
 .hero-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #93c5fd;
-  background: rgba(59,130,246,0.1);
-  border: 1px solid rgba(59,130,246,0.25);
-  padding: 6px 18px;
-  border-radius: 999px;
-  letter-spacing: 0.5px;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: var(--fw-semibold);
+  color: var(--brass);
+  background: linear-gradient(180deg, rgba(42, 10, 8, 0.7) 0%, rgba(18, 16, 13, 0.6) 100%);
+  border: 1px solid var(--iron-mid);
+  padding: 8px 20px;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wider);
+  box-shadow:
+    inset 0 1px 0 rgba(199, 154, 94, 0.15),
+    0 0 18px rgba(194, 40, 26, 0.25);
+  backdrop-filter: blur(8px);
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
 }
+.badge-spike {
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--ember-heart);
+  filter: drop-shadow(0 0 4px rgba(194, 40, 26, 0.6));
+}
+.badge-spike.right { transform: rotate(180deg); }
 
+/* Title */
 .hero-title {
-  font-size: clamp(2.8rem, 6vw, 5.2rem);
-  font-weight: 900;
-  color: #fff;
-  line-height: 1.1;
+  font-family: var(--font-display);
+  font-weight: var(--fw-black);
+  font-size: var(--fs-display);
+  line-height: 0.95;
   margin: 0;
-  letter-spacing: -1px;
+  letter-spacing: var(--ls-tight);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hero-title-line {
+  color: var(--text-bright);
+  text-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.7),
+    0 4px 14px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(194, 40, 26, 0.15);
 }
 .hero-title-accent {
-  background: linear-gradient(90deg, #3b82f6, #818cf8, #6366f1);
+  background: var(--grad-ember-text);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
   background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 24px rgba(226, 67, 16, 0.5));
+}
+
+/* Tagline — Spectral italic */
+.hero-tagline {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--text-bone);
+  margin: 0;
+  max-width: 620px;
+  line-height: 1.55;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .hero-subtitle {
-  font-size: 1.15rem;
-  color: #9ca3af;
-  max-width: 580px;
-  line-height: 1.75;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text-parchment);
+  max-width: 560px;
+  line-height: 1.7;
   margin: 0;
 }
 
-.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
-
+/* Actions */
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
 .hero-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 14px 32px;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 700;
+  gap: 10px;
+  padding: 14px 28px;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
   text-decoration: none;
-  transition: all 0.25s ease;
+  border-radius: var(--r-xs);
+  border: 1px solid transparent;
+  transition: all var(--dur-med) var(--ease-smoke);
+  position: relative;
+  overflow: hidden;
 }
+.btn-icon { font-size: 1.1rem; }
+.btn-arrow { transition: transform var(--dur-fast); }
+
 .hero-btn.primary {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  color: #fff;
-  box-shadow: 0 8px 30px rgba(99,102,241,0.35);
+  background: var(--grad-ember);
+  color: var(--text-bright);
+  border-color: var(--ember-heart);
+  box-shadow:
+    var(--glow-ember-soft),
+    var(--inset-iron-top),
+    inset 0 -3px 4px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
-.hero-btn.primary:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(99,102,241,0.5); filter: brightness(1.1); }
-.hero-btn.secondary {
-  background: rgba(255,255,255,0.06);
-  color: #d1d5db;
-  border: 1px solid rgba(255,255,255,0.12);
+.hero-btn.primary::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -120%;
+  width: 50%; height: 100%;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255, 201, 121, 0.4),
+    transparent);
+  transform: skewX(-20deg);
+  transition: left 0.7s var(--ease-smoke);
 }
-.hero-btn.secondary:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2); }
-.btn-arrow { transition: transform 0.2s; }
+.hero-btn.primary:hover {
+  filter: brightness(1.1) saturate(1.1);
+  box-shadow: var(--glow-ember-strong), var(--inset-iron-top), inset 0 -3px 4px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
+}
+.hero-btn.primary:hover::before { left: 120%; }
 .hero-btn.primary:hover .btn-arrow { transform: translateX(4px); }
+
+.hero-btn.secondary {
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  color: var(--text-parchment);
+  border-color: var(--iron-mid);
+  box-shadow: var(--inset-iron-top);
+}
+.hero-btn.secondary:hover {
+  color: var(--text-bright);
+  border-color: var(--iron-warm);
+  background: linear-gradient(180deg, var(--ash-ironrust) 0%, var(--ash-stone) 100%);
+  box-shadow: var(--glow-ember-soft), var(--inset-iron-top);
+  transform: translateY(-1px);
+}
 
 /* Hero stats */
 .hero-stats {
   display: flex;
-  align-items: center;
-  gap: 28px;
-  padding: 18px 36px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 14px;
-  backdrop-filter: blur(12px);
+  align-items: stretch;
+  gap: 0;
+  padding: 4px;
+  background: linear-gradient(180deg, rgba(42, 10, 8, 0.7) 0%, rgba(18, 16, 13, 0.7) 100%);
+  border: 1px solid var(--iron-mid);
+  box-shadow:
+    inset 0 1px 0 rgba(199, 154, 94, 0.15),
+    0 6px 20px rgba(0, 0, 0, 0.5);
   flex-wrap: wrap;
   justify-content: center;
+  margin-top: 20px;
+  clip-path: var(--clip-forged-sm);
+  position: relative;
 }
-.hstat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.hstat-num { font-size: 1.5rem; font-weight: 800; color: #fff; line-height: 1; }
-.hstat-label { font-size: 0.72rem; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; }
-.hstat-sep { width: 1px; height: 36px; background: rgba(255,255,255,0.1); }
+.hstat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 26px;
+}
+.hstat-num {
+  font-family: var(--font-display);
+  font-weight: var(--fw-black);
+  font-size: 1.65rem;
+  color: var(--text-bright);
+  line-height: 1;
+  letter-spacing: var(--ls-tight);
+  text-shadow: 0 0 16px rgba(226, 67, 16, 0.3);
+}
+.hstat-plus {
+  background: var(--grad-ember-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-left: 1px;
+}
+.hstat-label {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  color: var(--text-ash);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wider);
+}
+.hstat-sep {
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+}
+.hstat-sep span {
+  width: 1px; height: 40px;
+  background: linear-gradient(180deg, transparent, var(--iron-mid) 30%, var(--iron-mid) 70%, transparent);
+}
 
-/* ===== PLATFORMS STRIP ===== */
+/* ==========================================================
+   PLATFORMS STRIP · каменная лента
+   ========================================================== */
 .platforms-strip {
+  position: relative;
   width: 100%;
   overflow: hidden;
-  border-top: 1px solid rgba(255,255,255,0.06);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
-  background: rgba(15,23,42,0.7);
-  backdrop-filter: blur(8px);
-  padding: 13px 0;
-  /* fade edges */
-  mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
-  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+  background: linear-gradient(180deg,
+    var(--ash-obsidian) 0%,
+    var(--ash-stone) 50%,
+    var(--ash-obsidian) 100%);
+  border-top: 1px solid var(--iron-dark);
+  border-bottom: 1px solid var(--iron-dark);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.5),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.5);
+  padding: 16px 0;
 }
+/* Края — затемнение */
+.platforms-edge {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 100px;
+  pointer-events: none;
+  z-index: 2;
+}
+.platforms-edge-l {
+  left: 0;
+  background: linear-gradient(90deg, var(--ash-obsidian) 0%, transparent 100%);
+}
+.platforms-edge-r {
+  right: 0;
+  background: linear-gradient(-90deg, var(--ash-obsidian) 0%, transparent 100%);
+}
+
 .platforms-track {
   display: flex;
   align-items: center;
   width: max-content;
-  animation: tickerScroll 28s linear infinite;
+  animation: tickerScroll 32s linear infinite;
 }
 .platform-item {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: 10px;
   white-space: nowrap;
-  padding: 0 28px;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  padding: 0 34px;
+  position: relative;
   cursor: default;
-  transition: opacity 0.25s;
+  transition: all var(--dur-med) var(--ease-smoke);
 }
-.platform-item:last-child { border-right: none; }
+.platform-item::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 24px;
+  background: linear-gradient(180deg, transparent, var(--iron-mid) 50%, transparent);
+}
+.platform-item:last-child::after { display: none; }
 
-/*
-  mix-blend-mode: screen делает тёмные/чёрные пиксели SVG прозрачными
-  на тёмном фоне — работает для ВСЕХ SVG включая те, у кого чёрный фон (battle-net).
-  opacity 0.55 — приглушённый вид по умолчанию.
-*/
 .platform-icon {
   mix-blend-mode: screen;
   opacity: 0.55;
-  transition: opacity 0.3s;
+  transition: opacity var(--dur-med) var(--ease-smoke), filter var(--dur-med);
   flex-shrink: 0;
 }
 .platform-item:hover .platform-icon {
   opacity: 1;
+  filter: drop-shadow(0 0 8px rgba(255, 122, 43, 0.6));
 }
 
 .platform-name {
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: #6b7280;
-  letter-spacing: 0.4px;
-  transition: color 0.25s;
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: var(--fw-semibold);
+  color: var(--text-ash);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  transition: color var(--dur-med);
 }
-.platform-item:hover .platform-name { color: #e2e8f0; }
+.platform-item:hover .platform-name { color: var(--brass); }
 
-/* ===== CAROUSEL SECTION ===== */
+/* ==========================================================
+   CAROUSEL SECTION
+   ========================================================== */
 .game-carousel-section {
   position: relative;
   padding: 80px 0 60px;
 }
 
-/* ===== SHARED SECTION STYLES ===== */
+/* ==========================================================
+   SHARED SECTION STYLES
+   ========================================================== */
 .page-content-wrapper {
-  max-width: 1200px;
-  margin: 0 auto 60px;
+  max-width: var(--content-max);
+  margin: 0 auto 80px;
   padding: 0 24px;
 }
-.home-section { margin-bottom: 80px; }
+.home-section { margin-bottom: 100px; }
 
 .section-head {
-  margin-bottom: 40px;
-}
-.section-eyebrow {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  color: #3b82f6;
-  margin-bottom: 10px;
-}
-.section-title {
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  font-weight: 800;
-  color: #f9fafb;
-  margin: 0;
-  letter-spacing: -0.5px;
+  margin-bottom: 48px;
+  text-align: center;
 }
 
-/* ===== FEATURES ===== */
+.tribal-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.eyebrow-spike {
+  width: 0; height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-right: 10px solid var(--ember-heart);
+  filter: drop-shadow(0 0 4px rgba(194, 40, 26, 0.5));
+}
+.eyebrow-spike.right {
+  border-right: none;
+  border-left: 10px solid var(--ember-heart);
+}
+.eyebrow-text {
+  font-family: var(--font-tribal);
+  font-size: 0.78rem;
+  color: var(--brass);
+  letter-spacing: var(--ls-widest);
+  text-transform: uppercase;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.6vw, 2.6rem);
+  font-weight: var(--fw-bold);
+  color: var(--text-bright);
+  margin: 0;
+  letter-spacing: var(--ls-wide);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.6), 0 0 30px rgba(226, 67, 16, 0.2);
+}
+
+/* ==========================================================
+   FEATURES
+   ========================================================== */
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 20px;
 }
 .feature-card {
-  padding: 28px;
-  border-radius: 16px;
-  background: rgba(17,24,39,0.7);
-  border: 1px solid rgba(255,255,255,0.07);
-  backdrop-filter: blur(12px);
-  transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
-  animation: fadeInUp 0.5s ease both;
+  position: relative;
+  padding: 32px 28px 28px;
+  background:
+    linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  clip-path: var(--clip-forged-sm);
+  box-shadow:
+    inset 0 0 0 1px var(--iron-mid),
+    inset 0 0 0 3px var(--iron-void),
+    var(--shadow-cast);
+  transition: all var(--dur-med) var(--ease-smoke);
+  animation: fadeUp 0.6s var(--ease-forge) both;
+  animation-delay: calc(var(--i, 0) * 0.1s);
 }
 .feature-card:hover {
   transform: translateY(-6px);
-  border-color: rgba(59,130,246,0.3);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.3), 0 0 30px rgba(59,130,246,0.08);
+  box-shadow:
+    inset 0 0 0 1px var(--bronze-dark),
+    inset 0 0 0 3px var(--iron-void),
+    inset 0 0 40px rgba(226, 67, 16, 0.08),
+    var(--shadow-lift);
 }
-.feature-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--fc) 15%, transparent);
-  border: 1px solid color-mix(in srgb, var(--fc) 25%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  margin-bottom: 18px;
-}
-.feature-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0 0 10px; }
-.feature-desc { font-size: 0.9rem; color: #9ca3af; line-height: 1.65; margin: 0; }
 
-/* ===== HOW IT WORKS ===== */
+/* Rivets on feature card */
+.feature-card .rivet {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--brass) 0%, var(--bronze) 45%, var(--iron-void) 100%);
+  box-shadow:
+    inset -1px -1px 2px rgba(0, 0, 0, 0.7),
+    inset 1px 1px 1px rgba(255, 201, 121, 0.35);
+  pointer-events: none;
+}
+.feature-card .rivet-tl { top: 10px; left: 10px; }
+.feature-card .rivet-tr { top: 10px; right: 10px; }
+.feature-card .rivet-bl { bottom: 10px; left: 10px; }
+.feature-card .rivet-br { bottom: 10px; right: 10px; }
+
+.feature-icon-wrap {
+  position: relative;
+  width: 56px; height: 56px;
+  margin-bottom: 20px;
+  display: grid;
+  place-items: center;
+}
+.feature-icon-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 122, 43, 0.5) 0%, rgba(194, 40, 26, 0.25) 50%, transparent 75%);
+  filter: blur(4px);
+  animation: emberFlicker 4s ease-in-out infinite;
+}
+.feature-card:hover .feature-icon-halo {
+  background: radial-gradient(circle, rgba(255, 122, 43, 0.75) 0%, rgba(226, 67, 16, 0.4) 50%, transparent 75%);
+}
+.feature-icon {
+  position: relative;
+  z-index: 1;
+  font-size: 1.75rem;
+  color: var(--ember-gold);
+  filter: drop-shadow(0 0 8px rgba(255, 122, 43, 0.8));
+  line-height: 1;
+}
+
+.feature-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: var(--fw-bold);
+  color: var(--text-bright);
+  margin: 0 0 10px;
+  letter-spacing: var(--ls-wide);
+}
+.feature-desc {
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  color: var(--text-parchment);
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* ==========================================================
+   STEPS · "Путь воина"
+   ========================================================== */
 .steps-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -494,103 +889,225 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
 }
 .step-card {
   text-align: center;
-  padding: 32px 24px;
+  padding: 32px 24px 28px;
   position: relative;
-  border-radius: 16px;
-  transition: background 0.25s;
+  animation: fadeUp 0.6s var(--ease-forge) both;
+  animation-delay: calc(var(--i, 0) * 0.12s);
 }
-.step-card:hover { background: rgba(255,255,255,0.03); }
+
+.step-num-wrap {
+  position: relative;
+  display: inline-block;
+  margin: 0 auto 18px;
+}
 .step-num {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  color: #fff;
-  font-size: 1.1rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 16px;
-  box-shadow: 0 8px 20px rgba(99,102,241,0.35);
+  position: relative;
+  width: 58px; height: 58px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: var(--fw-black);
+  color: var(--text-bright);
+  background: var(--grad-ember);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 201, 121, 0.35),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  z-index: 2;
 }
+.step-num-glow {
+  position: absolute;
+  inset: -10px;
+  background: radial-gradient(circle, rgba(255, 122, 43, 0.45) 0%, transparent 70%);
+  filter: blur(10px);
+  z-index: 1;
+  animation: emberPulse 3s ease-in-out infinite;
+}
+
+/* Connector — огненная линия + шип */
 .step-connector {
   position: absolute;
-  top: 53px;
-  right: -12px;
-  width: 24px;
-  height: 2px;
-  background: linear-gradient(90deg, #3b82f6, #6366f1);
-  opacity: 0.4;
+  top: 60px;
+  right: -16px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   z-index: 1;
 }
-.step-icon { font-size: 2.2rem; margin-bottom: 12px; }
-.step-title { font-size: 1rem; font-weight: 700; color: #fff; margin: 0 0 8px; }
-.step-desc { font-size: 0.85rem; color: #6b7280; line-height: 1.6; margin: 0; }
+.step-connector-line {
+  width: 36px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--ember-heart), transparent);
+  box-shadow: 0 0 6px rgba(194, 40, 26, 0.5);
+}
+.step-connector-spike {
+  width: 0; height: 0;
+  border-left: 6px solid var(--ember-heart);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  filter: drop-shadow(0 0 4px rgba(194, 40, 26, 0.6));
+}
 
-/* ===== FAQ ===== */
+.step-icon {
+  font-size: 1.75rem;
+  color: var(--brass);
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 6px rgba(199, 154, 94, 0.4));
+}
+.step-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: var(--fw-bold);
+  color: var(--text-bright);
+  margin: 0 0 8px;
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+}
+.step-desc {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--text-ash);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ==========================================================
+   FAQ · "Свитки мудрецов"
+   ========================================================== */
 .faq-container {
-  max-width: 860px;
+  max-width: var(--narrow-max);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 .faq-item {
-  border-radius: 12px;
-  background: rgba(17,24,39,0.7);
-  border: 1px solid rgba(255,255,255,0.07);
-  backdrop-filter: blur(12px);
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  border: 1px solid var(--iron-mid);
+  box-shadow:
+    inset 0 1px 0 rgba(199, 154, 94, 0.12),
+    var(--shadow-subtle);
   overflow: hidden;
-  transition: border-color 0.25s;
+  transition: all var(--dur-med) var(--ease-smoke);
+  clip-path: var(--clip-forged-sm);
 }
-.faq-item.open { border-color: rgba(59,130,246,0.3); }
+.faq-item.open {
+  border-color: var(--ember-deep);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 201, 121, 0.2),
+    var(--inset-forge-hot),
+    var(--shadow-cast),
+    0 0 20px rgba(194, 40, 26, 0.18);
+}
+
 .faq-question {
-  padding: 20px 24px;
+  padding: 20px 26px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 1rem;
-  color: #f3f4f6;
   gap: 16px;
   user-select: none;
-  transition: background 0.2s;
+  transition: background var(--dur-fast);
 }
-.faq-question:hover { background: rgba(255,255,255,0.04); }
+.faq-question:hover {
+  background: rgba(255, 122, 43, 0.04);
+}
+.faq-question-text {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: 1rem;
+  color: var(--text-bright);
+  letter-spacing: var(--ls-wide);
+}
+
 .faq-icon {
   position: relative;
-  width: 20px;
-  height: 20px;
+  width: 22px; height: 22px;
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
+  border: 1px solid var(--iron-mid);
+  background: var(--ash-coal);
+  transition: all var(--dur-med) var(--ease-forge);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
 }
-.faq-icon-bar {
+.faq-icon-inner {
+  position: relative;
+  width: 10px; height: 10px;
+}
+.faq-icon-inner::before,
+.faq-icon-inner::after {
+  content: '';
   position: absolute;
-  background: #3b82f6;
-  border-radius: 2px;
-  transition: transform 0.3s ease, opacity 0.3s;
+  background: var(--brass);
+  transition: all var(--dur-med) var(--ease-forge);
 }
-.faq-icon-bar.h { width: 20px; height: 2px; top: 9px; left: 0; }
-.faq-icon-bar.v { width: 2px; height: 20px; top: 0; left: 9px; }
-.faq-item.open .faq-icon-bar.v { transform: rotate(90deg); opacity: 0; }
-.faq-answer { color: #9ca3af; line-height: 1.75; overflow: hidden; }
-.faq-answer p { margin: 0; padding: 0 24px 20px; font-size: 0.95rem; }
+.faq-icon-inner::before {
+  top: 50%; left: 0;
+  width: 100%; height: 2px;
+  transform: translateY(-50%);
+}
+.faq-icon-inner::after {
+  top: 0; left: 50%;
+  width: 2px; height: 100%;
+  transform: translateX(-50%);
+}
+.faq-item.open .faq-icon {
+  background: var(--grad-ember);
+  border-color: var(--ember-heart);
+  transform: rotate(180deg);
+  box-shadow: var(--glow-ember-soft);
+}
+.faq-item.open .faq-icon-inner::before { background: var(--text-bright); }
+.faq-item.open .faq-icon-inner::after { transform: translateX(-50%) scaleY(0); }
 
-.faq-slide-enter-active, .faq-slide-leave-active { transition: max-height 0.35s ease, opacity 0.25s ease; max-height: 200px; }
-.faq-slide-enter-from, .faq-slide-leave-to { max-height: 0; opacity: 0; }
+.faq-answer {
+  color: var(--text-parchment);
+  line-height: 1.75;
+  overflow: hidden;
+  border-top: 1px dashed var(--iron-dark);
+}
+.faq-answer p {
+  margin: 0;
+  padding: 18px 26px 22px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+}
 
-/* ===== RESPONSIVE ===== */
+.faq-slide-enter-active,
+.faq-slide-leave-active {
+  transition: max-height var(--dur-med) var(--ease-smoke), opacity var(--dur-fast) var(--ease-smoke);
+  max-height: 260px;
+}
+.faq-slide-enter-from,
+.faq-slide-leave-to { max-height: 0; opacity: 0; }
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+@media (max-width: 980px) {
+  .hero-title { font-size: clamp(2.4rem, 9vw, 4.5rem); }
+  .hero-tagline { font-size: 1.1rem; }
+  .platform-item { padding: 0 22px; }
+}
 @media (max-width: 768px) {
-  .hero-section { padding: 100px 20px 80px; }
-  .hero-stats { gap: 16px; padding: 16px 20px; }
+  .hero-section { padding: 120px 20px 80px; }
+  .hero-stats { gap: 0; }
+  .hstat { padding: 12px 18px; }
   .hstat-sep { display: none; }
   .steps-grid { grid-template-columns: 1fr 1fr; }
   .step-connector { display: none; }
-  .hero-actions { flex-direction: column; align-items: center; }
+  .hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; }
+  .hero-btn { justify-content: center; }
+  .hero-banner { transform: scale(0.8); }
 }
 @media (max-width: 480px) {
   .steps-grid { grid-template-columns: 1fr; }
   .features-grid { grid-template-columns: 1fr; }
+  .hero-title { font-size: clamp(2.2rem, 12vw, 3.5rem); }
+  .hero-banner-wrap { display: none; }
 }
 </style>

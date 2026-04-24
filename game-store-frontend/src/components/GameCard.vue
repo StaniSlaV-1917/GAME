@@ -6,65 +6,101 @@
       @mousemove="handleMouseMove"
       @mouseleave="handleMouseLeave"
     >
+      <!-- Декоративные бронзовые заклёпки в углах -->
+      <span class="rivet rivet-tl" aria-hidden="true"></span>
+      <span class="rivet rivet-tr" aria-hidden="true"></span>
+      <span class="rivet rivet-bl" aria-hidden="true"></span>
+      <span class="rivet rivet-br" aria-hidden="true"></span>
 
-      <RouterLink class="card-main-link" :to="{ name: 'game', params: { id: game.id } }" :aria-label="game.title"></RouterLink>
+      <!-- Внутренняя рамка с forged clip-path -->
+      <div class="card-frame">
 
-      <!-- Image: blurred bg of same image + contain so nothing is cropped -->
-      <div class="card-img-wrap" :style="{ '--thumb': `url(${imageUrl})` }">
-        <img :src="imageUrl" :alt="game.title" width="270" height="180" loading="lazy" class="card-img" />
-        <div class="img-gradient"></div>
+        <RouterLink class="card-main-link" :to="{ name: 'game', params: { id: game.id } }" :aria-label="game.title"></RouterLink>
 
-        <!-- Badges -->
-        <div class="card-badges">
-          <span v-if="game.is_featured" class="badge b-hot">Хит</span>
-          <span v-if="game.is_new" class="badge b-new">✨ Новинка</span>
-          <span v-if="game.discount_percent" class="badge b-disc">-{{ game.discount_percent }}%</span>
-        </div>
+        <!-- Image -->
+        <div class="card-img-wrap" :style="{ '--thumb': `url(${imageUrl})` }">
+          <img :src="imageUrl" :alt="game.title" width="270" height="180" loading="lazy" class="card-img" />
+          <div class="img-gradient"></div>
+          <div class="img-vignette"></div>
 
-        <!-- External link -->
-        <a class="ext-link" :href="game.stopgame_url_code" target="_blank" rel="noopener" title="Обзор на StopGame" @click.stop>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </a>
-
-        <!-- Platform chip -->
-        <div class="platform-chip" v-if="game.platform">{{ game.platform }}</div>
-      </div>
-
-      <!-- Info -->
-      <div class="card-info">
-        <h2 class="card-title">{{ game.title }}</h2>
-        <p class="card-genre">{{ game.genre }}</p>
-
-        <!-- Rating -->
-        <div v-if="game.average_review_rating != null || game.rating != null" class="card-rating">
-          <span v-for="i in 5" :key="i" class="star" :class="{ filled: Number(game.average_review_rating ?? game.rating ?? 0) >= i - 0.25 }">★</span>
-          <span class="rating-val">{{ Number(game.average_review_rating ?? game.rating ?? 0).toFixed(1) }}</span>
-        </div>
-
-        <!-- Bottom row -->
-        <div class="card-bottom">
-          <div class="price-block">
-            <span v-if="game.old_price" class="old-price">{{ Number(game.old_price).toFixed(0) }} ₽</span>
-            <span class="price">{{ Number(game.price).toFixed(0) }} ₽</span>
+          <!-- Badges — треугольные знамёна -->
+          <div class="card-badges">
+            <span v-if="game.is_featured" class="badge b-hot">
+              <span class="badge-icon">⚔</span>
+              <span>Хит</span>
+            </span>
+            <span v-if="game.is_new" class="badge b-new">
+              <span class="badge-icon">✦</span>
+              <span>Новое</span>
+            </span>
+            <span v-if="game.discount_percent" class="badge b-disc">
+              <span>−{{ game.discount_percent }}%</span>
+            </span>
           </div>
-          <div class="card-actions">
-            <button
-              class="buy-btn" type="button"
-              @click.stop="handleAddToCart"
-              :disabled="!authStore.isLoggedIn || isInCart"
-              :class="{ 'in-cart': isInCart }"
-              :title="!authStore.isLoggedIn ? 'Войдите для покупки' : isInCart ? 'Уже в корзине' : 'В корзину'"
-            >
-              <span v-if="isInCart">✓ В корзине</span>
-              <span v-else>В корзину</span>
-            </button>
-            <RouterLink class="details-btn" :to="{ name: 'game', params: { id: game.id } }" title="Подробнее" @click.stop>
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </RouterLink>
+
+          <!-- External link — железный знак -->
+          <a class="ext-link" :href="game.stopgame_url_code" target="_blank" rel="noopener" title="Обзор на StopGame" @click.stop>
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          </a>
+
+          <!-- Platform chip — кованая плашка -->
+          <div class="platform-chip" v-if="game.platform">
+            <span class="chip-dot"></span>
+            <span>{{ game.platform }}</span>
           </div>
         </div>
-      </div>
 
+        <!-- Info -->
+        <div class="card-info">
+          <h2 class="card-title">{{ game.title }}</h2>
+          <p class="card-genre">{{ game.genre }}</p>
+
+          <!-- Rating -->
+          <div v-if="game.average_review_rating != null || game.rating != null" class="card-rating">
+            <div class="stars-track">
+              <span v-for="i in 5" :key="i" class="star" :class="{ filled: Number(game.average_review_rating ?? game.rating ?? 0) >= i - 0.25 }">★</span>
+            </div>
+            <span class="rating-val">{{ Number(game.average_review_rating ?? game.rating ?? 0).toFixed(1) }}</span>
+          </div>
+
+          <!-- Tribal divider -->
+          <div class="card-divider" aria-hidden="true">
+            <span></span><span class="card-divider-spike"></span><span></span>
+          </div>
+
+          <!-- Bottom row -->
+          <div class="card-bottom">
+            <div class="price-block">
+              <span v-if="game.old_price" class="old-price">{{ Number(game.old_price).toFixed(0) }}₽</span>
+              <span class="price">
+                <span class="price-val">{{ Number(game.price).toFixed(0) }}</span>
+                <span class="price-unit">₽</span>
+              </span>
+            </div>
+            <div class="card-actions">
+              <button
+                class="buy-btn" type="button"
+                @click.stop="handleAddToCart"
+                :disabled="!authStore.isLoggedIn || isInCart"
+                :class="{ 'in-cart': isInCart }"
+                :title="!authStore.isLoggedIn ? 'Войдите для покупки' : isInCart ? 'Уже в добыче' : 'Забрать'"
+              >
+                <span v-if="isInCart">
+                  <span class="buy-icon">✓</span>
+                  В добыче
+                </span>
+                <span v-else>
+                  <span class="buy-icon">⚔</span>
+                  Забрать
+                </span>
+              </button>
+              <RouterLink class="details-btn" :to="{ name: 'game', params: { id: game.id } }" title="Подробнее" @click.stop>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </RouterLink>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -96,12 +132,12 @@ const handleMouseMove = (e) => {
   const el = cardInnerRef.value;
   if (!el) return;
   const r = el.getBoundingClientRect();
-  const x = (e.clientX - r.left) / r.width  - 0.5;   // -0.5 … 0.5
+  const x = (e.clientX - r.left) / r.width  - 0.5;
   const y = (e.clientY - r.top)  / r.height - 0.5;
-  el.style.setProperty('--rx', `${-y * 11}deg`);
-  el.style.setProperty('--ry', `${x * 11}deg`);
-  el.style.setProperty('--ty', '-8px');
-  el.style.setProperty('--sc', '1.02');
+  el.style.setProperty('--rx', `${-y * 9}deg`);
+  el.style.setProperty('--ry', `${x * 9}deg`);
+  el.style.setProperty('--ty', '-6px');
+  el.style.setProperty('--sc', '1.015');
   el.style.setProperty('--tr', '0.08s linear');
 };
 
@@ -117,118 +153,530 @@ const handleMouseLeave = () => {
 </script>
 
 <style scoped>
+/* ============================================================
+   ASHENFORGE · GameCard — щит воина
+   ============================================================ */
+
 .game-card { height: 100%; }
 
+/* Внешняя обёртка — держит 3D-tilt transform */
 .game-card-inner {
-  position: relative; display: flex; flex-direction: column; height: 100%;
-  border-radius: 14px; overflow: hidden;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.45);
-  /* 3-D tilt via CSS vars (set by JS on mousemove/mouseleave) */
-  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(var(--ty, 0px)) scale(var(--sc, 1));
-  transition: transform var(--tr, 0.28s cubic-bezier(.22,.68,0,1.2)), border-color 0.28s, box-shadow 0.28s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transform:
+    perspective(900px)
+    rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg))
+    translateY(var(--ty, 0px))
+    scale(var(--sc, 1));
+  transition:
+    transform var(--tr, var(--dur-med) var(--ease-forge)),
+    filter var(--dur-med) var(--ease-smoke);
   will-change: transform;
   transform-style: preserve-3d;
 }
-.game-card-inner:hover {
-  border-color: rgba(59,130,246,0.55);
-  box-shadow: 0 20px 48px rgba(0,0,0,0.6), 0 0 32px rgba(59,130,246,0.25);
+.game-card-inner:hover { filter: brightness(1.06); }
+
+/* ==========================================================
+   RIVETS · бронзовые заклёпки в углах
+   ========================================================== */
+.rivet {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%,
+      var(--brass) 0%,
+      var(--bronze) 45%,
+      var(--iron-void) 100%);
+  box-shadow:
+    inset -1px -1px 2px rgba(0, 0, 0, 0.7),
+    inset 1px 1px 1px rgba(255, 201, 121, 0.35),
+    0 0 4px rgba(199, 154, 94, 0.45);
+  z-index: 4;
+  pointer-events: none;
+  transition: box-shadow var(--dur-med) var(--ease-smoke);
+}
+.rivet-tl { top: 8px;    left: 8px; }
+.rivet-tr { top: 8px;    right: 8px; }
+.rivet-bl { bottom: 8px; left: 8px; }
+.rivet-br { bottom: 8px; right: 8px; }
+
+.game-card-inner:hover .rivet {
+  box-shadow:
+    inset -1px -1px 2px rgba(0, 0, 0, 0.7),
+    inset 1px 1px 1px rgba(255, 201, 121, 0.5),
+    0 0 8px rgba(255, 122, 43, 0.6);
 }
 
-.card-main-link { position: absolute; inset: 0; z-index: 1; text-indent: -9999px; }
-.card-actions, .ext-link, .details-btn { position: relative; z-index: 2; }
-
-/* ─── Image ─── */
-.card-img-wrap {
-  position: relative; height: 200px; overflow: hidden; background: #0a0f1e;
-  /* Blurred duplicate of cover as background — fills letterbox gaps */
+/* ==========================================================
+   CARD FRAME · основной контейнер с clip-path
+   ========================================================== */
+.card-frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background:
+    linear-gradient(180deg,
+      var(--ash-ironrust) 0%,
+      var(--ash-stone) 45%,
+      var(--ash-coal) 100%);
+  clip-path: var(--clip-forged-sm);
+  overflow: hidden;
+  /* Каменная рамка — две подкладки для имитации кованого края */
+  box-shadow:
+    inset 0 0 0 1px var(--iron-mid),
+    inset 0 0 0 3px var(--iron-void),
+    inset 0 1px 0 3px var(--iron-warm),
+    var(--shadow-cast),
+    var(--inset-forge);
+  transition:
+    box-shadow var(--dur-med) var(--ease-smoke);
 }
-.card-img-wrap::before {
+.game-card-inner:hover .card-frame {
+  box-shadow:
+    inset 0 0 0 1px var(--bronze-dark),
+    inset 0 0 0 3px var(--iron-void),
+    inset 0 1px 0 3px var(--bronze),
+    var(--shadow-lift),
+    var(--inset-forge-hot),
+    0 0 0 1px rgba(255, 122, 43, 0.1);
+}
+
+/* Каменная шероховатая текстура — едва заметная */
+.card-frame::before {
   content: '';
-  position: absolute; inset: -10px;
-  background-image: var(--thumb); background-size: cover; background-position: center;
-  filter: blur(14px) brightness(0.45) saturate(1.2);
-  transform: scale(1.05);
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(127deg,
+      transparent 0,
+      transparent 2px,
+      rgba(0, 0, 0, 0.06) 2px,
+      rgba(0, 0, 0, 0.06) 3px);
+  pointer-events: none;
+  opacity: 0.5;
   z-index: 0;
 }
-/* The actual cover: contain so full art is shown, no cropping */
+
+.card-main-link {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  text-indent: -9999px;
+}
+
+/* ==========================================================
+   IMAGE
+   ========================================================== */
+.card-img-wrap {
+  position: relative;
+  height: 210px;
+  overflow: hidden;
+  background: var(--ash-void);
+  border-bottom: 1px solid var(--iron-dark);
+  z-index: 1;
+}
+/* Blurred duplicate как фон — чтобы letterbox не был пустым */
+.card-img-wrap::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  background-image: var(--thumb);
+  background-size: cover;
+  background-position: center;
+  filter: blur(16px) brightness(0.35) saturate(0.9) contrast(1.1);
+  transform: scale(1.08);
+  z-index: 0;
+}
 .card-img {
-  position: relative; z-index: 1;
-  width: 100%; height: 100%;
-  object-fit: contain; object-position: center;
-  transition: transform 0.35s ease; display: block;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  transition: transform var(--dur-slow) var(--ease-smoke);
+  display: block;
 }
-.game-card-inner:hover .card-img { transform: scale(1.05); }
+.game-card-inner:hover .card-img { transform: scale(1.06); }
+
+/* Градиент снизу — читаемость platform chip */
 .img-gradient {
-  position: absolute; inset: 0;
-  background: linear-gradient(to top, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0.1) 60%);
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top,
+    rgba(8, 6, 10, 0.9) 0%,
+    rgba(8, 6, 10, 0.3) 35%,
+    transparent 70%);
   pointer-events: none;
+  z-index: 2;
+}
+/* Виньетка — тёмные углы */
+.img-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center,
+    transparent 55%,
+    rgba(0, 0, 0, 0.45) 100%);
+  pointer-events: none;
+  z-index: 2;
 }
 
-/* Badges */
-.card-badges { position: absolute; left: 10px; top: 10px; display: flex; flex-direction: column; gap: 5px; z-index: 2; }
-.badge { display: inline-flex; padding: 4px 10px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; color: #fff; backdrop-filter: blur(6px); }
-.b-hot { background: rgba(249,115,22,0.85); }
-.b-new { background: rgba(16,185,129,0.85); }
-.b-disc { background: rgba(239,68,68,0.85); }
+/* ==========================================================
+   BADGES — знамёна
+   ========================================================== */
+.card-badges {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 3;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  color: var(--text-bright);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+  clip-path: polygon(0 0, 100% 0, 95% 50%, 100% 100%, 0 100%, 5% 50%);
+  border: 1px solid transparent;
+  line-height: 1;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+.badge-icon { font-size: 0.78rem; }
 
-/* External link */
+.b-hot {
+  background: var(--grad-ember-hot);
+  border-color: var(--ember-flame);
+}
+.b-new {
+  background: linear-gradient(135deg, var(--orc-green) 0%, var(--orc-moss) 100%);
+  border-color: var(--orc-emerald);
+}
+.b-disc {
+  background: linear-gradient(135deg, var(--ember-gold) 0%, var(--warn-ember) 100%);
+  border-color: var(--gold-faint);
+  color: var(--ember-abyss);
+  text-shadow: none;
+  font-weight: var(--fw-black);
+}
+
+/* ==========================================================
+   EXTERNAL LINK
+   ========================================================== */
 .ext-link {
-  position: absolute; right: 10px; top: 10px;
-  width: 32px; height: 32px; border-radius: 8px;
-  background: rgba(17,24,39,0.75); backdrop-filter: blur(6px);
-  color: #9ca3af; display: grid; place-items: center; cursor: pointer; z-index: 3;
-  opacity: 0; transform: scale(0.85) translateY(-4px);
-  transition: all 0.22s ease;
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  width: 30px; height: 30px;
+  border-radius: var(--r-xs);
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  border: 1px solid var(--iron-mid);
+  color: var(--bronze);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 4;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.85);
+  transition: all var(--dur-med) var(--ease-forge);
+  box-shadow: var(--inset-iron-top);
 }
-.game-card-inner:hover .ext-link { opacity: 1; transform: scale(1) translateY(0); }
-.ext-link:hover { background: #3b82f6; color: #fff; }
+.game-card-inner:hover .ext-link {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.ext-link:hover {
+  color: var(--ember-spark);
+  border-color: var(--ember-heart);
+  background: linear-gradient(180deg, var(--ash-bloodrock) 0%, var(--ash-stone) 100%);
+  box-shadow: var(--glow-ember-soft);
+}
 
-/* Platform chip */
+/* ==========================================================
+   PLATFORM CHIP
+   ========================================================== */
 .platform-chip {
-  position: absolute; bottom: 10px; right: 10px;
-  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
-  color: #cbd5e1; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.06em;
-  padding: 3px 9px; border-radius: 6px; text-transform: uppercase; z-index: 2;
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: linear-gradient(180deg, rgba(58, 42, 34, 0.92) 0%, rgba(18, 16, 13, 0.92) 100%);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--iron-mid);
+  color: var(--text-parchment);
+  font-family: var(--font-display);
+  font-size: 0.66rem;
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wider);
+  text-transform: uppercase;
+  border-radius: var(--r-xs);
+  z-index: 3;
+  box-shadow: var(--shadow-subtle);
+}
+.chip-dot {
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--ember-glow);
+  box-shadow: 0 0 6px rgba(255, 122, 43, 0.8);
+  animation: emberPulse 2s ease-in-out infinite;
 }
 
-/* ─── Info ─── */
-.card-info { padding: 14px; display: flex; flex-direction: column; gap: 7px; flex-grow: 1; }
+/* ==========================================================
+   CARD INFO
+   ========================================================== */
+.card-info {
+  padding: 16px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-grow: 1;
+  position: relative;
+  z-index: 1;
+}
 
-.card-title { margin: 0; font-size: 1.02rem; font-weight: 700; color: #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.card-genre { margin: 0; font-size: 0.8rem; color: #6b7280; }
+.card-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: var(--fw-semibold);
+  color: var(--text-bright);
+  letter-spacing: var(--ls-wide);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.card-genre {
+  margin: 0;
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.82rem;
+  color: var(--text-ash);
+}
 
 /* Rating */
-.card-rating { display: flex; align-items: center; gap: 5px; }
-.star { color: #374151; font-size: 0.9rem; transition: color 0.1s; }
-.star.filled { color: #fbbf24; text-shadow: 0 0 6px rgba(251,191,36,0.5); }
-.rating-val { font-size: 0.82rem; font-weight: 700; color: #fbbf24; }
+.card-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.stars-track { display: flex; gap: 1px; }
+.star {
+  color: var(--iron-dark);
+  font-size: 0.92rem;
+  line-height: 1;
+  transition: color var(--dur-fast);
+}
+.star.filled {
+  color: var(--ember-gold);
+  text-shadow: 0 0 6px rgba(255, 201, 121, 0.55);
+}
+.rating-val {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: var(--fw-bold);
+  color: var(--ember-gold);
+  letter-spacing: var(--ls-wide);
+}
 
-/* Bottom */
-.card-bottom { margin-top: auto; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+/* Tribal divider */
+.card-divider {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 4px;
+  height: 8px;
+}
+.card-divider > span:first-child,
+.card-divider > span:last-child {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--iron-mid) 50%, transparent);
+}
+.card-divider-spike {
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--ember-deep);
+  filter: drop-shadow(0 0 3px rgba(194, 40, 26, 0.5));
+  flex-shrink: 0;
+}
 
-.price-block { display: flex; align-items: baseline; gap: 7px; }
-.old-price { font-size: 0.82rem; color: #6b7280; text-decoration: line-through; }
-.price { font-weight: 800; font-size: 1.12rem; color: #4ade80; }
+/* ==========================================================
+   BOTTOM (price + actions)
+   ========================================================== */
+.card-bottom {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
 
-.card-actions { display: flex; align-items: center; gap: 7px; }
+.price-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  line-height: 1;
+}
+.old-price {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--text-smoke);
+  text-decoration: line-through;
+  text-decoration-color: var(--ember-deep);
+  text-decoration-thickness: 1.5px;
+}
+.price {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  font-family: var(--font-display);
+  font-weight: var(--fw-black);
+  color: var(--ember-gold);
+  text-shadow: 0 0 10px rgba(255, 201, 121, 0.35);
+}
+.price-val { font-size: 1.25rem; letter-spacing: var(--ls-tight); }
+.price-unit { font-size: 0.9rem; color: var(--brass); margin-left: 1px; }
 
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  z-index: 3;
+}
+
+/* ==========================================================
+   BUY BUTTON · кованый
+   ========================================================== */
 .buy-btn {
-  font-size: 0.85rem; padding: 8px 16px; border-radius: 9px; border: none; cursor: pointer;
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
-  color: #fff; font-weight: 600; transition: all 0.22s ease; white-space: nowrap;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  padding: 9px 14px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--ember-heart);
+  cursor: pointer;
+  background: var(--grad-ember);
+  color: var(--text-bright);
+  white-space: nowrap;
+  transition: all var(--dur-fast) var(--ease-smoke);
+  overflow: hidden;
+  box-shadow:
+    var(--inset-iron-top),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.35),
+    var(--glow-ember-soft);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
-.buy-btn:hover:not(:disabled) { filter: brightness(1.15); transform: scale(1.06); box-shadow: 0 4px 16px rgba(99,102,241,0.4); }
-.buy-btn:disabled { background: #374151; cursor: not-allowed; filter: none; transform: none; }
-.buy-btn.in-cart { background: linear-gradient(135deg, #16a34a, #22c55e); }
+.buy-icon {
+  display: inline-flex;
+  font-size: 0.85rem;
+  filter: drop-shadow(0 0 4px rgba(255, 201, 121, 0.5));
+}
+.buy-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -120%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 201, 121, 0.4) 50%,
+    transparent 100%);
+  transform: skewX(-20deg);
+  transition: left 0.6s var(--ease-smoke);
+}
+.buy-btn:hover:not(:disabled) {
+  filter: brightness(1.15) saturate(1.1);
+  box-shadow:
+    var(--inset-iron-top),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.35),
+    var(--glow-ember-strong);
+  transform: translateY(-1px);
+}
+.buy-btn:hover:not(:disabled)::after { left: 120%; }
+.buy-btn:active:not(:disabled) {
+  transform: translateY(0);
+  animation: forgeClang var(--dur-med) var(--ease-forge);
+}
+.buy-btn:disabled {
+  background: linear-gradient(180deg, var(--iron-dark) 0%, var(--iron-void) 100%);
+  border-color: var(--iron-mid);
+  color: var(--text-smoke);
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.35);
+  text-shadow: none;
+}
+.buy-btn.in-cart {
+  background: linear-gradient(180deg, var(--orc-green) 0%, var(--orc-moss) 100%);
+  border-color: var(--orc-emerald);
+  color: var(--text-bright);
+  cursor: default;
+  opacity: 0.95;
+}
+.buy-btn.in-cart:hover { filter: none; transform: none; box-shadow: var(--inset-iron-top), inset 0 -2px 3px rgba(0, 0, 0, 0.35); }
 
+/* ==========================================================
+   DETAILS BUTTON
+   ========================================================== */
 .details-btn {
-  width: 36px; height: 36px; border-radius: 9px;
-  border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
-  display: grid; place-items: center; color: #6b7280;
-  transition: all 0.2s ease;
+  display: grid;
+  place-items: center;
+  width: 34px; height: 34px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--iron-mid);
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  color: var(--text-ash);
+  transition: all var(--dur-fast) var(--ease-smoke);
+  text-decoration: none;
 }
-.details-btn:hover { border-color: #60a5fa; color: #93c5fd; background: rgba(59,130,246,0.1); }
+.details-btn:hover {
+  color: var(--ember-spark);
+  border-color: var(--ember-deep);
+  background: linear-gradient(180deg, var(--ash-bloodrock) 0%, var(--ash-stone) 100%);
+  box-shadow: var(--glow-ember-soft);
+}
+
+/* ==========================================================
+   RESPONSIVE
+   ========================================================== */
+@media (max-width: 480px) {
+  .card-info { padding: 14px 14px 12px; }
+  .card-title { font-size: 1rem; }
+  .price-val { font-size: 1.15rem; }
+  .buy-btn { padding: 8px 12px; font-size: 0.72rem; }
+  .details-btn { width: 32px; height: 32px; }
+}
 </style>
