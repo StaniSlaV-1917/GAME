@@ -225,19 +225,9 @@ onMounted(loadGames);
 <style>
 @import '../assets/admin.css';
 
+/* AdminGames — локальные добавки. Базовые стили (.admin-*, .status-badge,
+   .admin-toast) приходят из admin.css в Ashenforge-палитре. */
 .page-header .actions { display: flex; gap: 1rem; align-items: center; }
-.admin-search-wrapper { position: relative; }
-.admin-search-wrapper .search-icon { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: #9ca3af; pointer-events: none; }
-.admin-search-input { padding: 0.65rem 0.9rem 0.65rem 2.5rem; border-radius: 6px; border: 1px solid #4a5568; background-color: #2d3748; color: #e2e8f0; font-size: 0.95rem; min-width: 280px; transition: all 0.2s ease; }
-.admin-search-input:focus { outline: none; border-color: #4299e1; background-color: #1a202c; box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.3); }
-
-.old-price { text-decoration: line-through; color: #9ca3af; }
-.old-price-sub { font-size: 0.8rem; color: #9ca3af; }
-.status-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-right: 6px; text-transform: uppercase; letter-spacing: 0.02em; }
-.status-badge.discount { background-color: rgba(239, 68, 68, 0.1); color: #fca5a5; }
-.status-badge.featured { background-color: rgba(234, 179, 8, 0.1); color: #fcd34d; }
-.status-badge.new { background-color: rgba(59, 130, 246, 0.1); color: #93c5fd; }
-
-.admin-toast { position: fixed; right: 20px; bottom: 20px; background: #1f2937; border: 1px solid #374151; color: #e5e7eb; padding: 12px 18px; border-radius: 8px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5); z-index: 1300; font-size: 0.95rem; animation: toast-fade-in 0.3s ease-out; }
-@keyframes toast-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.old-price { text-decoration: line-through; color: var(--text-ash); opacity: 0.7; }
+.old-price-sub { font-size: 0.8rem; color: var(--text-ash); font-family: var(--font-ui); }
 </style>

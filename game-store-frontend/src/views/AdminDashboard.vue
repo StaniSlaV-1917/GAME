@@ -28,93 +28,91 @@ onMounted(async () => {
   } catch (e) { console.error(e); }
 });
 
+// Тон-классы для карточек: ember / brass / bronze — чередуем, чтобы сохранить ритм
 const cards = [
   {
     to: '/admin/games',
-    title: 'Игры',
-    desc: 'Добавляйте и редактируйте игры, цены, обложки и описания.',
-    color: '#3b82f6',
-    glow: 'rgba(59,130,246,0.25)',
+    title: 'Оружейная',
+    desc: 'Ковка клинков: добавляйте, переписывайте, меняйте цены и обложки.',
+    tone: 'ember',
     icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/><path d="M7 12h.01"/><path d="M17 12h.01"/><path d="M12 9v6"/></svg>`,
   },
   {
     to: '/admin/news',
-    title: 'Новости',
-    desc: 'Создавайте статьи и управляйте новостной лентой магазина.',
-    color: '#8b5cf6',
-    glow: 'rgba(139,92,246,0.25)',
+    title: 'Хроники',
+    desc: 'Пишите вести, правьте ленту, высекайте истории клана.',
+    tone: 'brass',
     icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9"/><path d="M8 6h8"/><path d="M8 10h8"/><path d="M8 14h4"/></svg>`,
   },
   {
     to: '/admin/users',
-    title: 'Пользователи',
-    desc: 'Управляйте аккаунтами, назначайте роли и редактируйте данные.',
-    color: '#22c55e',
-    glow: 'rgba(34,197,94,0.25)',
+    title: 'Воины',
+    desc: 'Учёт рядовых, назначение ролей, редактирование профилей.',
+    tone: 'bronze',
     icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   },
   {
     to: '/admin/orders',
     title: 'Заказы',
-    desc: 'История покупок, статусы заказов и выручка магазина.',
-    color: '#f59e0b',
-    glow: 'rgba(245,158,11,0.25)',
+    desc: 'История походов за клинками, статусы, казна оплота.',
+    tone: 'ember',
     icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
   },
   {
     to: '/admin/reviews',
-    title: 'Отзывы',
-    desc: 'Модерируйте пользовательские отзывы и рейтинги игр.',
-    color: '#06b6d4',
-    glow: 'rgba(6,182,212,0.25)',
+    title: 'Суды воинов',
+    desc: 'Разбирайте отзывы воинов, держите рейтинги клинков в чистоте.',
+    tone: 'brass',
     icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
   },
   {
     to: '/admin/employees',
-    title: 'Сотрудники',
-    desc: 'Учётные записи менеджеров и права доступа к панели.',
-    color: '#f43f5e',
-    glow: 'rgba(244,63,94,0.25)',
+    title: 'Совет',
+    desc: 'Учётные записи старейшин и посадников — права, роли, доступы.',
+    tone: 'bronze',
     icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`,
   },
   {
     to: '/admin/support',
-    title: 'Поддержка',
-    desc: 'Обращения пользователей из чата — меняйте статусы и оставляйте заметки.',
-    color: '#06b6d4',
-    glow: 'rgba(6,182,212,0.25)',
+    title: 'Стража поддержки',
+    desc: 'Обращения воинов из чата — меняйте статусы, оставляйте заметки.',
+    tone: 'ember',
     badge: 'support_new',
     icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg>`,
   },
 ];
 
 const statCards = [
-  { key: 'users',   label: 'Пользователей', color: '#22c55e', icon: '👤' },
-  { key: 'games',   label: 'Игр в каталоге', color: '#3b82f6', icon: '🎮' },
-  { key: 'orders',  label: 'Заказов',        color: '#f59e0b', icon: '📦' },
-  { key: 'reviews', label: 'Отзывов',        color: '#8b5cf6', icon: '⭐' },
+  { key: 'users',   label: 'Воинов',      tone: 'bronze' },
+  { key: 'games',   label: 'Клинков',     tone: 'ember' },
+  { key: 'orders',  label: 'Походов',     tone: 'brass' },
+  { key: 'reviews', label: 'Судов',       tone: 'ember' },
 ];
 </script>
 
 <template>
   <div class="adm-root">
-    <!-- Ambient glows -->
+    <!-- Ambient ember glows -->
     <div class="adm-glow g1"></div>
     <div class="adm-glow g2"></div>
 
     <!-- Header -->
     <div class="adm-header">
-      <div>
-        <p class="adm-eyebrow">Панель управления</p>
+      <div class="adm-header-left">
+        <span class="tribal-eyebrow">
+          <span class="eb-spike"></span>
+          Совет старейшин
+          <span class="eb-spike"></span>
+        </span>
         <h1 class="adm-title">
           Добро пожаловать<span class="adm-comma">,</span>
-          <span class="adm-name">{{ authStore.user?.fullname || 'Администратор' }}</span>
+          <span class="adm-name">{{ authStore.user?.fullname || 'Старейшина' }}</span>
         </h1>
-        <p class="adm-sub">Управляйте магазином — игры, пользователи, заказы и контент.</p>
+        <p class="adm-sub">Управляйте оплотом — оружейной, воинами, походами и хрониками.</p>
       </div>
       <div class="adm-badge">
         <span class="badge-dot"></span>
-        <span>Онлайн</span>
+        <span>Горн жив</span>
       </div>
     </div>
 
@@ -123,9 +121,10 @@ const statCards = [
       <div
         v-for="s in statCards" :key="s.key"
         class="stat-card"
-        :style="{ '--sc': s.color }"
+        :class="`tone-${s.tone}`"
       >
-        <div class="stat-icon">{{ s.icon }}</div>
+        <span class="sc-rivet sc-rivet--tl" aria-hidden="true"></span>
+        <span class="sc-rivet sc-rivet--tr" aria-hidden="true"></span>
         <div class="stat-val">{{ stats[s.key].toLocaleString('ru-RU') }}</div>
         <div class="stat-label">{{ s.label }}</div>
         <div class="stat-bar"></div>
@@ -138,8 +137,12 @@ const statCards = [
         v-for="c in cards" :key="c.to"
         :to="c.to"
         class="nav-card"
-        :style="{ '--cc': c.color, '--cg': c.glow }"
+        :class="`tone-${c.tone}`"
       >
+        <span class="nc-rivet nc-rivet--tl" aria-hidden="true"></span>
+        <span class="nc-rivet nc-rivet--tr" aria-hidden="true"></span>
+        <span class="nc-rivet nc-rivet--bl" aria-hidden="true"></span>
+        <span class="nc-rivet nc-rivet--br" aria-hidden="true"></span>
         <div class="nc-icon-wrap">
           <span class="nc-icon" v-html="c.icon"></span>
         </div>
@@ -160,198 +163,324 @@ const statCards = [
 </template>
 
 <style scoped>
+/* ==========================================================
+   ADMIN DASHBOARD · Ashenforge — Совет старейшин
+   ========================================================== */
 .adm-root {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 24px 80px;
+  padding: 44px 24px 80px;
   position: relative;
-  color: #e5e7eb;
+  color: var(--text-bone);
   min-height: 100vh;
 }
 
-/* Ambient glows */
+/* ── Ambient ember-glows ── */
 .adm-glow {
   position: fixed;
   border-radius: 50%;
-  filter: blur(120px);
+  filter: blur(130px);
   pointer-events: none;
   z-index: 0;
 }
-.g1 { width: 500px; height: 500px; background: rgba(59,130,246,0.07); top: -100px; right: -100px; }
-.g2 { width: 400px; height: 400px; background: rgba(139,92,246,0.06); bottom: 0; left: -80px; }
+.g1 {
+  width: 560px; height: 560px;
+  background: radial-gradient(circle, var(--ember-glow) 0%, transparent 70%);
+  top: -140px; right: -120px;
+  opacity: 0.22;
+}
+.g2 {
+  width: 440px; height: 440px;
+  background: radial-gradient(circle, var(--ember-heart) 0%, transparent 70%);
+  bottom: 0; left: -100px;
+  opacity: 0.18;
+}
 
-/* Header */
+/* ── Header ── */
 .adm-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 36px;
+  gap: 24px;
+  margin-bottom: 40px;
   position: relative;
   z-index: 1;
 }
-.adm-eyebrow {
+.tribal-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-ui);
   font-size: 0.78rem;
-  font-weight: 600;
-  color: #3b82f6;
-  letter-spacing: 2px;
+  font-weight: 700;
+  letter-spacing: 3px;
   text-transform: uppercase;
-  margin: 0 0 8px;
+  color: var(--bronze);
+  margin-bottom: 12px;
+}
+.eb-spike {
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--bronze);
+  filter: drop-shadow(0 0 3px rgba(199, 154, 94, 0.5));
 }
 .adm-title {
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  font-weight: 800;
-  color: #fff;
-  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  font-weight: var(--fw-black, 900);
+  color: var(--text-bright);
+  margin: 0 0 10px;
   line-height: 1.2;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
 }
-.adm-comma { color: #6b7280; }
-.adm-name { color: #60a5fa; }
-.adm-sub { color: #6b7280; font-size: 0.95rem; margin: 0; }
+.adm-comma { color: var(--text-ash); font-weight: 400; }
+.adm-name {
+  color: var(--ember-gold);
+  text-shadow: 0 0 12px rgba(255, 201, 121, 0.4);
+}
+.adm-sub {
+  font-family: var(--font-body);
+  color: var(--text-parchment);
+  font-size: 1rem;
+  margin: 0;
+}
 
 .adm-badge {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(34,197,94,0.1);
-  border: 1px solid rgba(34,197,94,0.25);
-  border-radius: 999px;
-  padding: 6px 14px;
-  font-size: 0.82rem;
-  color: #4ade80;
-  font-weight: 600;
+  background: linear-gradient(180deg,
+    rgba(226, 67, 16, 0.18) 0%,
+    rgba(138, 31, 24, 0.15) 100%);
+  border: 1px solid var(--ember-heart);
+  padding: 7px 16px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--ember-gold);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
   white-space: nowrap;
+  box-shadow: var(--inset-iron-top), 0 0 10px rgba(226, 67, 16, 0.25);
+  clip-path: var(--clip-forged-sm);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 .badge-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #4ade80;
-  box-shadow: 0 0 8px #4ade80;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ember-gold);
+  box-shadow: 0 0 10px var(--ember-gold);
   animation: pulse 2s ease-in-out infinite;
 }
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.8); }
+  50% { opacity: 0.6; transform: scale(0.85); }
 }
 
-/* Stats */
+/* ── Stats row — 4 каменных тайла с заклёпками ── */
 .stats-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  margin-bottom: 36px;
+  margin-bottom: 40px;
   position: relative;
   z-index: 1;
 }
 .stat-card {
-  background: rgba(15,23,42,0.8);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 16px;
-  padding: 20px 22px;
   position: relative;
+  background: linear-gradient(180deg,
+    var(--ash-stone) 0%,
+    var(--ash-coal) 100%);
+  border: 1px solid var(--iron-mid);
+  clip-path: var(--clip-forged-sm);
+  padding: 24px 22px 18px;
   overflow: hidden;
-  backdrop-filter: blur(12px);
-  transition: border-color 0.3s, transform 0.3s;
+  box-shadow: var(--inset-iron-top), var(--shadow-cast);
+  transition: transform 0.3s var(--ease-forge), box-shadow 0.3s var(--ease-smoke);
 }
 .stat-card:hover {
-  border-color: var(--sc);
   transform: translateY(-4px);
+  box-shadow:
+    var(--inset-iron-top),
+    var(--shadow-cast),
+    0 0 18px var(--tone-glow, rgba(226, 67, 16, 0.25));
 }
-.stat-icon { font-size: 1.5rem; margin-bottom: 10px; }
+.stat-card.tone-ember  { --tone-color: var(--ember-flame); --tone-glow: rgba(226, 67, 16, 0.3); }
+.stat-card.tone-brass  { --tone-color: var(--brass);       --tone-glow: rgba(255, 201, 121, 0.3); }
+.stat-card.tone-bronze { --tone-color: var(--bronze);      --tone-glow: rgba(199, 154, 94, 0.3); }
+
+.sc-rivet {
+  position: absolute;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%,
+    var(--brass) 0%,
+    var(--bronze) 50%,
+    var(--iron-void) 100%);
+  z-index: 2;
+  box-shadow: inset -1px -1px 1px rgba(0, 0, 0, 0.7);
+}
+.sc-rivet--tl { top: 10px; left: 10px; }
+.sc-rivet--tr { top: 10px; right: 10px; }
+
 .stat-val {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #fff;
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  font-weight: var(--fw-black, 900);
+  color: var(--text-bright);
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
-.stat-label { font-size: 0.8rem; color: #6b7280; font-weight: 500; }
+.stat-label {
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  color: var(--text-ash);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
 .stat-bar {
   position: absolute;
   bottom: 0; left: 0; right: 0;
   height: 2px;
-  background: var(--sc);
-  opacity: 0.6;
-  border-radius: 0 0 16px 16px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--tone-color) 50%,
+    transparent 100%);
+  opacity: 0.7;
 }
 
-/* Nav cards grid */
+/* ── Nav cards — каменные плиты с 4 заклёпками ── */
 .nav-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 18px;
   position: relative;
   z-index: 1;
 }
 .nav-card {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background: rgba(15,23,42,0.75);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 16px;
+  gap: 18px;
+  padding: 24px 22px;
+  background: linear-gradient(180deg,
+    var(--ash-ironrust) 0%,
+    var(--ash-stone) 50%,
+    var(--ash-coal) 100%);
+  border: 1px solid var(--iron-mid);
+  clip-path: var(--clip-forged-sm);
   text-decoration: none;
-  position: relative;
   overflow: hidden;
-  backdrop-filter: blur(12px);
-  transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+  box-shadow: var(--inset-iron-top), var(--shadow-cast);
+  transition: transform 0.3s var(--ease-forge), box-shadow 0.3s var(--ease-smoke), border-color 0.3s var(--ease-smoke);
   cursor: pointer;
 }
+.nav-card.tone-ember  { --tone-color: var(--ember-flame); --tone-glow: rgba(226, 67, 16, 0.3); }
+.nav-card.tone-brass  { --tone-color: var(--brass);       --tone-glow: rgba(255, 201, 121, 0.3); }
+.nav-card.tone-bronze { --tone-color: var(--bronze);      --tone-glow: rgba(199, 154, 94, 0.3); }
 .nav-card:hover {
-  border-color: var(--cc);
   transform: translateY(-5px);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.4), 0 0 0 1px var(--cc);
+  border-color: var(--tone-color);
+  box-shadow:
+    var(--inset-iron-top),
+    var(--shadow-cast),
+    0 0 28px var(--tone-glow);
 }
 .nav-card:hover .nc-glow { opacity: 1; }
-.nav-card:hover .nc-arrow { color: var(--cc); transform: translateX(4px); }
+.nav-card:hover .nc-arrow { color: var(--tone-color); transform: translateX(4px); }
+
+.nc-rivet {
+  position: absolute;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%,
+    var(--brass) 0%,
+    var(--bronze) 50%,
+    var(--iron-void) 100%);
+  z-index: 2;
+  box-shadow: inset -1px -1px 1px rgba(0, 0, 0, 0.7);
+}
+.nc-rivet--tl { top: 10px; left: 10px; }
+.nc-rivet--tr { top: 10px; right: 10px; }
+.nc-rivet--bl { bottom: 10px; left: 10px; }
+.nc-rivet--br { bottom: 10px; right: 10px; }
 
 .nc-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 0% 50%, var(--cg) 0%, transparent 65%);
+  background: radial-gradient(circle at 0% 50%, var(--tone-glow) 0%, transparent 65%);
   opacity: 0;
-  transition: opacity 0.4s;
+  transition: opacity 0.4s var(--ease-smoke);
   pointer-events: none;
 }
 
 .nc-icon-wrap {
-  width: 52px; height: 52px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.08);
+  width: 54px; height: 54px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: linear-gradient(180deg,
+    var(--ash-forge) 0%,
+    var(--ash-bloodrock) 100%);
+  border: 1px solid var(--bronze-dark);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  color: var(--cc);
-  transition: background 0.3s, border-color 0.3s;
+  color: var(--tone-color);
+  box-shadow: var(--inset-iron-top);
+  transition: background 0.3s var(--ease-smoke), border-color 0.3s var(--ease-smoke);
 }
 .nav-card:hover .nc-icon-wrap {
-  background: var(--cg);
-  border-color: var(--cc);
+  border-color: var(--tone-color);
+  box-shadow: var(--inset-iron-top), 0 0 12px var(--tone-glow);
 }
-.nc-icon { display: flex; align-items: center; justify-content: center; }
+.nc-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 4px var(--tone-glow));
+}
 
 .nc-body { flex: 1; min-width: 0; }
-.nc-title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.nc-title { font-size: 1rem; font-weight: 700; color: #f1f5f9; margin: 0; }
-.nc-badge {
-  font-size: 0.7rem;
+.nc-title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.nc-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(239,68,68,0.2);
-  color: #f87171;
-  border: 1px solid rgba(239,68,68,0.35);
-  animation: pulse-badge 2s ease infinite;
+  color: var(--text-bright);
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+.nc-badge {
+  font-family: var(--font-ui);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  background: linear-gradient(180deg, rgba(226, 67, 16, 0.25), rgba(138, 31, 24, 0.15));
+  color: var(--ember-gold);
+  border: 1px solid var(--ember-heart);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  animation: pulse-badge 2s var(--ease-smoke) infinite;
+  box-shadow: 0 0 8px rgba(226, 67, 16, 0.3);
 }
 @keyframes pulse-badge {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.65; }
+  50%       { opacity: 0.7; }
 }
-.nc-desc { font-size: 0.8rem; color: #6b7280; line-height: 1.5; margin: 0; }
+.nc-desc {
+  font-family: var(--font-body);
+  font-size: 0.86rem;
+  color: var(--text-parchment);
+  line-height: 1.55;
+  margin: 0;
+}
 
 .nc-arrow {
-  color: #374151;
-  transition: color 0.3s, transform 0.3s;
+  color: var(--bronze-dark);
+  transition: color 0.3s var(--ease-smoke), transform 0.3s var(--ease-forge);
   flex-shrink: 0;
 }
 

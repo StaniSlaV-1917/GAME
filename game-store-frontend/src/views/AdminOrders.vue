@@ -129,57 +129,42 @@ onMounted(loadOrders);
 <style>
 @import '../assets/admin.css';
 
+/* AdminOrders — локальные добавки. Admin-toast/общие стили — из admin.css */
 .order-id {
-  font-weight: 600;
-  color: #a5b4fc;
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--ember-gold);
+  text-shadow: 0 0 6px rgba(255, 201, 121, 0.3);
 }
 
 .user-email {
+  font-family: var(--font-ui);
   font-size: 0.8rem;
-  color: #9ca3af;
+  color: var(--text-ash);
 }
 
 .table-select {
-  min-width: 140px;
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: 1px solid #374151;
-  background-color: #1f2937;
-  color: #e5e7eb;
-  font-size: 0.9rem;
+  min-width: 148px;
+  padding: 7px 12px;
+  border: 1px solid var(--iron-mid);
+  background: linear-gradient(180deg, rgba(8, 6, 10, 0.7), rgba(18, 16, 13, 0.85));
+  color: var(--text-bone);
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
   outline: none;
-  transition: all 0.2s ease;
+  box-shadow: var(--inset-iron-top);
+  transition: border-color 0.2s var(--ease-smoke), box-shadow 0.2s var(--ease-smoke);
 }
 
 .table-select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  border-color: var(--ember-flame);
+  box-shadow: var(--inset-iron-top), 0 0 0 3px rgba(226, 67, 16, 0.15);
 }
 
-/* Status-specific colors */
-.table-select.status-created { color: #f3f4f6; }
-.table-select.status-paid { color: #86efac; }
-.table-select.status-shipped { color: #93c5fd; }
-.table-select.status-completed { color: #6ee7b7; }
-.table-select.status-cancelled { color: #fca5a5; }
-
-.admin-toast {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  background: #1f2937;
-  border: 1px solid #374151;
-  color: #e5e7eb;
-  padding: 12px 18px;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-  z-index: 1300;
-  font-size: 0.95rem;
-  animation: toast-fade-in 0.3s ease-out;
-}
-
-@keyframes toast-fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* Статусы заказов — ember-палитра */
+.table-select.status-created   { color: var(--text-bone); }
+.table-select.status-paid      { color: var(--ember-spark); }
+.table-select.status-shipped   { color: var(--ember-glow); }
+.table-select.status-completed { color: var(--ember-gold); }
+.table-select.status-cancelled { color: #ffb4a8; }
 </style>

@@ -134,43 +134,19 @@ onMounted(loadEmployees);
 <style>
 @import '../assets/admin.css';
 
+/* AdminEmployees — роли в ember/bronze палитре */
 .role-badge {
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 1.8px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  padding: 4px 12px;
+  background: rgba(8, 6, 10, 0.55);
+  border: 1px solid currentColor;
 }
 
-.role-badge.role-admin {
-  background-color: rgba(234, 179, 8, 0.1);
-  color: #fcd34d;
-}
-
-.role-badge.role-manager {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #93c5fd;
-}
-
-.admin-toast {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  background: #1f2937;
-  border: 1px solid #374151;
-  color: #e5e7eb;
-  padding: 12px 18px;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-  z-index: 1300;
-  font-size: 0.95rem;
-  animation: toast-fade-in 0.3s ease-out;
-}
-
-@keyframes toast-fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+.role-badge.role-admin   { color: var(--ember-gold); }
+.role-badge.role-manager { color: var(--bronze); }
 </style>

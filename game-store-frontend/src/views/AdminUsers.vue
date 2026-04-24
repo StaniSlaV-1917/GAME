@@ -174,59 +174,35 @@ onMounted(loadUsers);
 <style>
 @import '../assets/admin.css';
 
+/* AdminUsers — поля внутри таблицы и контактные данные */
 .table-input, .table-select {
   width: 100%;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #374151;
-  background-color: #1f2937;
-  color: #e5e7eb;
-  font-size: 0.9rem;
+  padding: 9px 13px;
+  border: 1px solid var(--iron-mid);
+  background: linear-gradient(180deg, rgba(8, 6, 10, 0.7), rgba(18, 16, 13, 0.85));
+  color: var(--text-bone);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
   outline: none;
-  transition: all 0.2s ease;
+  box-shadow: var(--inset-iron-top);
+  transition: border-color 0.2s var(--ease-smoke), box-shadow 0.2s var(--ease-smoke);
 }
 
 .table-input:focus, .table-select:focus {
-  border-color: #3b82f6;
-  background-color: #111827;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  border-color: var(--ember-flame);
+  box-shadow: var(--inset-iron-top), 0 0 0 3px rgba(226, 67, 16, 0.14);
 }
 
 .contact-info {
   display: flex;
   flex-direction: column;
+  gap: 3px;
 }
 
 .contact-info .phone {
-  font-size: 0.8rem;
-  color: #9ca3af;
-}
-
-.admin-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background-color: #374151;
-  border-color: #4b5563;
-}
-
-/* Toast Notification */
-.admin-toast {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  background: #1f2937;
-  border: 1px solid #374151;
-  color: #e5e7eb;
-  padding: 12px 18px;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-  z-index: 1300;
-  font-size: 0.95rem;
-  animation: toast-fade-in 0.3s ease-out;
-}
-
-@keyframes toast-fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--text-ash);
+  letter-spacing: 0.3px;
 }
 </style>

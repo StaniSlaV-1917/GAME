@@ -183,15 +183,18 @@ onMounted(loadReviews);
 <style>
 @import '../assets/admin.css';
 
+/* AdminReviewsPage — фильтры и локальные бейджи */
 .admin-filters-card {
-  background-color: #111827;
-  border: 1px solid #1f2937;
-  border-radius: 12px;
+  position: relative;
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  border: 1px solid var(--iron-mid);
+  clip-path: var(--clip-forged-sm);
   padding: 1.5rem;
   margin-bottom: 2rem;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
+  box-shadow: var(--inset-iron-top);
 }
 
 .filter-item {
@@ -200,79 +203,84 @@ onMounted(loadReviews);
 }
 
 .filter-item label {
-  font-size: 0.8rem;
-  color: #9ca3af;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--bronze);
   margin-bottom: 0.5rem;
   text-transform: uppercase;
+  letter-spacing: 1.5px;
 }
 
 .filter-input, .filter-select {
   width: 100%;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #374151;
-  background-color: #1f2937;
-  color: #e5e7eb;
-  font-size: 0.9rem;
+  padding: 9px 14px;
+  border: 1px solid var(--iron-mid);
+  background: linear-gradient(180deg, rgba(8, 6, 10, 0.7), rgba(18, 16, 13, 0.85));
+  color: var(--text-bone);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
   outline: none;
-  transition: all 0.2s ease;
+  box-shadow: var(--inset-iron-top);
+  transition: border-color 0.2s var(--ease-smoke), box-shadow 0.2s var(--ease-smoke);
 }
 
 .filter-input:focus, .filter-select:focus {
-  border-color: #3b82f6;
-  background-color: #111827;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  border-color: var(--ember-flame);
+  box-shadow: var(--inset-iron-top), 0 0 0 3px rgba(226, 67, 16, 0.14);
 }
 
-.search-filter {
-  grid-column: 1 / -1; /* Span full width on multi-line */
-}
-
+.search-filter { grid-column: 1 / -1; }
 @media (min-width: 1024px) {
-  .search-filter {
-    grid-column: span 2;
-  }
+  .search-filter { grid-column: span 2; }
 }
 
 .review-text p {
     margin: 0;
-    font-size: 0.9rem;
-    color: #d1d5db;
-    max-width: 45ch;
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    color: var(--text-bone);
+    max-width: 48ch;
+    line-height: 1.6;
     white-space: normal;
 }
 
 .sub-text {
+    font-family: var(--font-ui);
     font-size: 0.8rem;
-    color: #9ca3af;
+    color: var(--text-ash);
 }
 
 .rating-badge {
-    background-color: rgba(234, 179, 8, 0.1);
-    color: #fcd34d;
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
+    background: rgba(8, 6, 10, 0.55);
+    color: var(--ember-gold);
+    border: 1px solid var(--bronze-dark);
+    padding: 4px 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-shadow: 0 0 6px rgba(255, 201, 121, 0.3);
 }
 
 .status-pill {
   display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  padding: 4px 12px;
+  background: rgba(8, 6, 10, 0.55);
+  border: 1px solid currentColor;
 }
-.status-pill.status-pending { background-color: rgba(107, 114, 128, 0.2); color: #d1d5db; }
-.status-pill.status-approved { background-color: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
-.status-pill.status-rejected { background-color: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+.status-pill.status-pending  { color: var(--bronze); }
+.status-pill.status-approved { color: var(--ember-gold); }
+.status-pill.status-rejected { color: #ffb4a8; }
 
 .button-group {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.55rem;
 }
 
 .pagination-controls {
@@ -281,29 +289,9 @@ onMounted(loadReviews);
     align-items: center;
     gap: 1rem;
     margin-top: 2rem;
-    color: #9ca3af;
+    color: var(--text-parchment);
+    font-family: var(--font-ui);
+    font-size: 0.88rem;
+    letter-spacing: 0.5px;
 }
-
-
-/* Toast Notification */
-.admin-toast {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  background: #1f2937;
-  border: 1px solid #374151;
-  color: #e5e7eb;
-  padding: 12px 18px;
-  border-radius: 8px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-  z-index: 1300;
-  font-size: 0.95rem;
-  animation: toast-fade-in 0.3s ease-out;
-}
-
-@keyframes toast-fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
 </style>
