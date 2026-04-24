@@ -1,152 +1,296 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useHead } from '@vueuse/head';
 
 useHead({
-  title: '404 — Страница не найдена | GameStore',
+  title: '404 — Тропа теряется | GameStore',
   meta: [
-    { name: 'description', content: 'Запрошенная страница не найдена. Вернитесь на главную страницу GameStore.' },
+    { name: 'description', content: 'Запрошенная страница не найдена. Вернитесь в оплот — на главную страницу GameStore.' },
     { name: 'robots', content: 'noindex, follow' },
   ],
 });
 
 const router = useRouter();
-
-const goHome = () => {
-  router.push('/');
-};
-
-// --- Инициализация particles.js ---
-const initParticles = () => {
-  if (window.particlesJS) {
-    window.particlesJS('particles-js', {
-      "particles": {
-        "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
-        "color": { "value": "#ffffff" },
-        "shape": { "type": "circle" },
-        "opacity": { "value": 0.5, "random": true, "anim": { "enable": true, "speed": 0.4, "opacity_min": 0.1, "sync": false } },
-        "size": { "value": 2.5, "random": true },
-        "move": { "enable": true, "speed": 0.5, "direction": "none", "random": true, "straight": false, "out_mode": "out" }
-      },
-      "interactivity": {
-        "detect_on": "canvas",
-        "events": { "onhover": { "enable": true, "mode": "bubble" }, "resize": true },
-        "modes": {
-          "bubble": { "distance": 250, "size": 6, "duration": 2, "opacity": 0.8 }
-        }
-      },
-      "retina_detect": true
-    });
-  }
-}
-
-onMounted(() => {
-  // Даем DOM время на отрисовку перед инициализацией
-  setTimeout(initParticles, 100);
-});
-
-onUnmounted(() => {
-  if (window.pJSDom && window.pJSDom[0]) {
-      window.pJSDom[0].pJS.fn.vendors.destroypJS();
-      window.pJSDom = [];
-  }
-});
+const goHome = () => router.push('/');
 </script>
 
 <template>
-  <div class="not-found-container">
-    <div id="particles-js"></div>
-    
-    <div class="content-wrapper">
-      <h1 class="text-404">404</h1>
-      <p class="message">Кажется, вы попали в неизведанный сектор космоса.</p>
-      <button @click="goHome" class="home-button">
-        <span>Вернуться на базу</span>
-      </button>
+  <div class="not-found">
+    <div class="nf-bg" aria-hidden="true">
+      <div class="nf-glow nf-glow-1"></div>
+      <div class="nf-glow nf-glow-2"></div>
+      <div class="nf-grid"></div>
+    </div>
+
+    <div class="nf-inner">
+      <span class="tribal-eyebrow">
+        <span class="eb-spike"></span>
+        Тропа потеряна
+        <span class="eb-spike"></span>
+      </span>
+
+      <h1 class="nf-big" aria-label="404">
+        <span class="nf-digit">4</span>
+        <span class="nf-sigil" aria-hidden="true">
+          <svg viewBox="-32 -32 64 64" width="120" height="120" class="nf-sigil-svg">
+            <circle r="24" class="nf-ring" />
+            <g class="nf-ring-teeth">
+              <line v-for="i in 12" :key="i"
+                    x1="0" y1="-26" x2="0" y2="-22"
+                    :transform="`rotate(${(i - 1) * 30})`" />
+            </g>
+            <polygon class="nf-gear"
+              points="0,-13 4,-6.5 11.3,-6.5 7,0 11.3,6.5 4,6.5 0,13 -4,6.5 -11.3,6.5 -7,0 -11.3,-6.5 -4,-6.5" />
+            <circle r="4" class="nf-core" />
+          </svg>
+        </span>
+        <span class="nf-digit">4</span>
+      </h1>
+
+      <p class="nf-message">
+        Здесь нет ни кузницы, ни оружейной — только пепел и ветер.<br>
+        Возможно, эта тропа была перекована, а может — её никогда и не было.
+      </p>
+
+      <div class="nf-actions">
+        <button @click="goHome" class="forge-btn">
+          <span class="fb-label">Вернуться в оплот</span>
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-#particles-js {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  z-index: 1;
-}
-
-.not-found-container {
-  position: fixed;
-  inset: 0;
+.not-found {
+  position: relative;
+  min-height: calc(100vh - 180px);
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  /* Используем похожий фон, как на странице логина */
-  background: #030712 radial-gradient(ellipse at center, rgba(76, 29, 149, 0.4) 0%, transparent 70%);
+  padding: 60px 20px;
   overflow: hidden;
-  z-index: 2000;
+  text-align: center;
 }
 
-.content-wrapper {
+/* ── фон ── */
+.nf-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.nf-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+}
+.nf-glow-1 {
+  width: 620px; height: 620px;
+  background: radial-gradient(circle, var(--ember-glow) 0%, transparent 70%);
+  bottom: -200px; left: 30%;
+  opacity: 0.3;
+  animation: nfGlowFloat 10s ease-in-out infinite;
+}
+.nf-glow-2 {
+  width: 440px; height: 440px;
+  background: radial-gradient(circle, var(--ember-heart) 0%, transparent 70%);
+  top: -120px; right: 10%;
+  opacity: 0.22;
+  animation: nfGlowFloat 14s ease-in-out infinite reverse;
+}
+.nf-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(122, 93, 72, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(122, 93, 72, 0.06) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 80%);
+}
+@keyframes nfGlowFloat {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(20px, -24px); }
+}
+
+/* ── содержимое ── */
+.nf-inner {
   position: relative;
   z-index: 2;
-  animation: fade-in 1.5s ease-out;
+  max-width: 680px;
+  animation: nfFade 0.8s var(--ease-smoke) both;
 }
-
-.text-404 {
-  font-size: clamp(10rem, 25vw, 18rem); /* Адаптивный размер */
-  color: #fff;
-  font-weight: 800;
-  margin: 0;
-  line-height: 1;
-  text-shadow:
-    0 0 10px rgba(255, 255, 255, 0.6),
-    0 0 25px rgba(167, 139, 250, 0.5),
-    0 0 50px rgba(139, 92, 246, 0.4);
-  animation: gentle-float 6s ease-in-out infinite;
-}
-
-.message {
-  font-size: 1.2rem;
-  color: #9ca3af;
-  margin: -1rem 0 2.5rem;
-  text-shadow: 0 2px 5px rgba(0,0,0,0.5);
-}
-
-.home-button {
-  background: transparent;
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  color: #fff;
-  padding: 1rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 50px;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  transition: all 0.3s ease;
-}
-
-.home-button:hover {
-  transform: scale(1.05);
-  border-color: #a78bfa;
-  color: #a78bfa;
-  box-shadow: 0 0 25px rgba(167, 139, 250, 0.5);
-}
-
-/* Анимации */
-@keyframes fade-in {
+@keyframes nfFade {
   from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
-@keyframes gentle-float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-15px); }
-  100% { transform: translateY(0px); }
+.tribal-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 3.2px;
+  text-transform: uppercase;
+  color: var(--bronze);
+  margin-bottom: 22px;
+}
+.eb-spike {
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--bronze);
+  filter: drop-shadow(0 0 4px rgba(199, 154, 94, 0.55));
+}
+
+/* ── "404" с кузнечной сигилой вместо нуля ── */
+.nf-big {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: var(--fw-black, 900);
+  font-size: clamp(7rem, 18vw, 12rem);
+  line-height: 1;
+  color: var(--text-bright);
+  margin: 0 0 20px;
+  letter-spacing: -0.02em;
+}
+.nf-digit {
+  text-shadow:
+    0 0 12px rgba(255, 201, 121, 0.2),
+    0 0 32px rgba(226, 67, 16, 0.25),
+    0 4px 0 rgba(0, 0, 0, 0.5);
+  background: linear-gradient(180deg,
+    var(--text-bright) 0%,
+    var(--text-bone) 40%,
+    var(--bronze) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: nfFloat 5s ease-in-out infinite;
+}
+.nf-digit:last-child { animation-delay: 0.6s; }
+
+@keyframes nfFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+/* ── SVG сигила-шестерня ── */
+.nf-sigil {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(100px, 14vw, 160px);
+  height: clamp(100px, 14vw, 160px);
+  animation: nfFloat 6s ease-in-out 0.3s infinite;
+}
+.nf-sigil-svg { overflow: visible; }
+.nf-sigil-svg g {
+  transform-origin: 0 0;
+  transform-box: view-box;
+}
+.nf-ring {
+  fill: none;
+  stroke: var(--bronze);
+  stroke-width: 2;
+  opacity: 0.7;
+  filter: drop-shadow(0 0 4px rgba(199, 154, 94, 0.55));
+}
+.nf-ring-teeth {
+  animation: nfSpin 20s linear infinite;
+}
+.nf-ring-teeth line {
+  stroke: var(--brass);
+  stroke-width: 2.5;
+  stroke-linecap: square;
+  opacity: 0.8;
+}
+.nf-gear {
+  fill: none;
+  stroke: var(--ember-flame);
+  stroke-width: 2;
+  animation: nfSpinRev 12s linear infinite;
+  transform-origin: 0 0;
+  transform-box: view-box;
+  filter: drop-shadow(0 0 6px rgba(255, 122, 43, 0.65));
+}
+.nf-core {
+  fill: var(--ember-gold);
+  filter: drop-shadow(0 0 10px rgba(255, 201, 121, 0.8));
+  animation: nfPulse 1.8s ease-in-out infinite;
+}
+@keyframes nfSpin    { to { transform: rotate(360deg); } }
+@keyframes nfSpinRev { to { transform: rotate(-360deg); } }
+@keyframes nfPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.3); opacity: 0.85; }
+}
+
+/* ── сообщение ── */
+.nf-message {
+  font-family: var(--font-body);
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  color: var(--text-parchment);
+  line-height: 1.75;
+  margin: 0 0 36px;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+/* ── кнопка ── */
+.nf-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.forge-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 36px;
+  border: 1px solid var(--ember-heart);
+  background: var(--grad-ember);
+  color: var(--text-bright);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow:
+    var(--inset-iron-top),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.35),
+    var(--glow-ember);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+  transition: transform 0.18s var(--ease-forge), box-shadow 0.2s var(--ease-smoke);
+  clip-path: var(--clip-forged-sm);
+}
+.forge-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%, rgba(255, 201, 121, 0.4) 50%, transparent 100%);
+  transform: translateX(-120%);
+  transition: transform 0.6s var(--ease-smoke);
+  pointer-events: none;
+}
+.forge-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    var(--inset-iron-top),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.35),
+    var(--glow-ember-strong);
+}
+.forge-btn:hover::after { transform: translateX(120%); }
+.forge-btn:active { transform: translateY(0); }
+.fb-label { position: relative; z-index: 1; }
+
+@media (max-width: 480px) {
+  .nf-big { gap: 2px; }
+  .nf-message { font-size: 0.95rem; }
 }
 </style>
