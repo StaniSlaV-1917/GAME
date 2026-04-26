@@ -26,6 +26,9 @@
 /tests
 phpunit.xml
 
+# Локальные one-shot инструменты (миграция данных и т.п.)
+/scripts
+
 # Git / IDE
 /.git
 /.github
