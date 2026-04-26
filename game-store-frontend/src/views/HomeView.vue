@@ -17,58 +17,14 @@
       <div class="hero-forge-glow"></div>
       <!-- Летящие угли -->
       <div class="hero-embers" aria-hidden="true">
-        <span v-for="n in 24" :key="n" class="ember-particle" :style="{ '--i': n }"></span>
+        <span v-for="n in 12" :key="n" class="ember-particle" :style="{ '--i': n }"></span>
       </div>
-
-      <!-- ▒▒▒ Выжженное поле ▒▒▒ -->
-      <div class="hero-scorched-earth" aria-hidden="true">
-        <!-- Трещины в обугленной земле, в которых тлеют угли -->
-        <div class="scorched-cracks"></div>
-        <!-- Тлеющие угли в трещинах -->
-        <span v-for="n in 8" :key="`gl-${n}`" class="ground-glow" :style="{ '--i': n }"></span>
-      </div>
-
-      <!-- ▒▒▒ Горизонт огня — языки пламени по линии земли ▒▒▒ -->
-      <div class="hero-fire-horizon" aria-hidden="true">
-        <svg viewBox="0 0 1600 80" preserveAspectRatio="none" class="fire-svg">
-          <defs>
-            <linearGradient id="flameGrad" x1="0" y1="1" x2="0" y2="0">
-              <stop offset="0%"  stop-color="var(--ember-deep)"  stop-opacity="0.95"/>
-              <stop offset="40%" stop-color="var(--ember-flame)" stop-opacity="0.85"/>
-              <stop offset="75%" stop-color="var(--ember-glow)"  stop-opacity="0.6"/>
-              <stop offset="100%" stop-color="var(--ember-spark)" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <!-- Базовая полоса огня по всей длине -->
-          <path class="fire-base" d="M0,80 L0,55 Q60,20 120,50 T240,45 T360,40 T480,55 T600,30 T720,50 T840,35 T960,45 T1080,30 T1200,50 T1320,35 T1440,55 T1560,40 L1600,55 L1600,80 Z" fill="url(#flameGrad)"/>
-        </svg>
-        <!-- Большие языки пламени поверх -->
-        <span v-for="n in 7" :key="`fl-${n}`" class="hero-flame" :style="{ '--i': n }"></span>
-      </div>
-
-      <!-- ▒▒▒ Восходящий дым ▒▒▒ -->
-      <div class="hero-smoke" aria-hidden="true">
-        <span v-for="n in 4" :key="`sm-${n}`" class="smoke-column" :style="{ '--i': n }"></span>
-      </div>
-
-      <!-- Свисающий баннер Орды — рваный, с подпалинами и опадающими искрами -->
+      <!-- Свисающий баннер Орды -->
       <div class="hero-banner-wrap" aria-hidden="true">
         <div class="hero-banner">
           <span class="banner-rope"></span>
           <span class="banner-cloth">
-            <!-- Подпалины — выгоревшие дыры -->
-            <span class="banner-burn banner-burn--1"></span>
-            <span class="banner-burn banner-burn--2"></span>
-            <!-- Сигил -->
             <span class="banner-sigil">⚔</span>
-            <!-- Тлеющий огонь по нижнему краю -->
-            <span class="banner-fire" aria-hidden="true">
-              <svg viewBox="0 0 80 30" preserveAspectRatio="none">
-                <path class="banner-fire-path" d="M0,30 Q8,8 16,20 T32,15 T48,18 T64,12 T80,20 L80,30 Z" fill="url(#flameGrad)"/>
-              </svg>
-            </span>
-            <!-- Опадающие искры от знамени -->
-            <span v-for="n in 6" :key="`bem-${n}`" class="banner-ember" :style="{ '--i': n }"></span>
           </span>
         </div>
       </div>
@@ -453,31 +409,16 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
   position: relative;
   width: 80px;
   height: 110px;
-  background:
-    /* Тёмные подпалины — radial gradients поверх основного огненного градиента */
-    radial-gradient(ellipse 14px 8px at 30% 35%, rgba(8, 6, 10, 0.55), transparent 70%),
-    radial-gradient(ellipse 10px 14px at 70% 60%, rgba(8, 6, 10, 0.5), transparent 70%),
-    radial-gradient(ellipse 8px 6px at 25% 70%, rgba(8, 6, 10, 0.45), transparent 70%),
-    var(--grad-ember-banner);
-  /* Рваный нижний край — прерывистая ломаная вместо ровного V */
-  clip-path: polygon(
-    0 0, 100% 0, 100% 65%,
-    92% 75%, 88% 70%, 80% 82%, 73% 76%, 65% 88%,
-    58% 80%, 50% 95%, 42% 82%, 35% 90%, 27% 78%,
-    20% 86%, 13% 76%, 6% 82%, 0 72%
-  );
+  background: var(--grad-ember-banner);
+  clip-path: polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
     inset 0 3px 0 rgba(255, 201, 121, 0.2),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.45),
-    0 8px 16px rgba(0, 0, 0, 0.5),
-    /* Тлеющая ember-аура по контуру — пульсирует */
-    0 0 18px rgba(226, 67, 16, 0.55);
-  animation:
-    bannerSway 5s ease-in-out infinite,
-    bannerEmberGlow 3.2s ease-in-out infinite;
+    inset 0 -3px 0 rgba(0, 0, 0, 0.35),
+    0 8px 16px rgba(0, 0, 0, 0.5);
+  animation: bannerSway 5s ease-in-out infinite;
   transform-origin: top center;
 }
 .banner-sigil {
@@ -486,241 +427,6 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
   color: var(--ember-gold);
   text-shadow: 0 0 12px rgba(255, 201, 121, 0.9);
   margin-top: -16px;
-  position: relative;
-  z-index: 2;
-}
-
-/* ── Подпалины (выгоревшие участки) — поверх ткани, добавляют рельеф ── */
-.banner-burn {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(8, 6, 10, 0.7), transparent 70%);
-  pointer-events: none;
-  mix-blend-mode: multiply;
-}
-.banner-burn--1 { width: 22px; height: 16px; top: 28%; left: 20%; }
-.banner-burn--2 { width: 14px; height: 22px; top: 50%; right: 15%; }
-
-/* ── Огонь по нижнему краю знамени ── */
-.banner-fire {
-  position: absolute;
-  bottom: -14px;
-  left: 0;
-  right: 0;
-  height: 30px;
-  pointer-events: none;
-  filter: drop-shadow(0 0 8px rgba(226, 67, 16, 0.7));
-  z-index: 1;
-}
-.banner-fire svg { width: 100%; height: 100%; display: block; }
-.banner-fire-path {
-  animation: bannerFlameFlicker 1.6s ease-in-out infinite;
-  transform-origin: 50% 100%;
-}
-
-/* ── Опадающие искры от знамени ── */
-.banner-ember {
-  position: absolute;
-  bottom: -18px;
-  left: calc(10% + var(--i) * 15%);
-  width: 3px; height: 3px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--ember-gold), var(--ember-flame));
-  box-shadow: 0 0 6px rgba(255, 122, 43, 0.9);
-  opacity: 0;
-  animation: bannerEmberFall 4s ease-in infinite;
-  animation-delay: calc(var(--i) * -0.65s);
-}
-
-/* ====================================================================
-   ▒▒▒ ВЫЖЖЕННОЕ ПОЛЕ — обугленная земля по нижней части хиро ▒▒▒
-   ==================================================================== */
-.hero-scorched-earth {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 22vh;
-  min-height: 160px;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg,
-      transparent 0%,
-      rgba(20, 10, 6, 0.5) 35%,
-      rgba(8, 4, 2, 0.92) 75%,
-      #050302 100%);
-}
-.scorched-cracks {
-  position: absolute;
-  inset: 0;
-  background-image:
-    repeating-linear-gradient(
-      72deg,
-      transparent 0,
-      transparent 22px,
-      rgba(226, 67, 16, 0.18) 22px,
-      rgba(226, 67, 16, 0.22) 23px,
-      transparent 23px,
-      transparent 60px
-    ),
-    repeating-linear-gradient(
-      114deg,
-      transparent 0,
-      transparent 30px,
-      rgba(138, 31, 24, 0.14) 30px,
-      rgba(138, 31, 24, 0.18) 31px,
-      transparent 31px,
-      transparent 80px
-    );
-  opacity: 0.55;
-  mix-blend-mode: screen;
-}
-.ground-glow {
-  position: absolute;
-  bottom: calc(8% + (var(--i) * 1.5%));
-  left: calc(5% + (var(--i) * 11%));
-  width: 16px; height: 4px;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, var(--ember-glow), transparent 70%);
-  filter: blur(1.5px);
-  animation: groundGlowPulse 2.5s ease-in-out infinite;
-  animation-delay: calc(var(--i) * -0.35s);
-}
-
-/* ====================================================================
-   ▒▒▒ ГОРИЗОНТ ОГНЯ — языки пламени по линии земли ▒▒▒
-   ==================================================================== */
-.hero-fire-horizon {
-  position: absolute;
-  bottom: 16vh;
-  left: 0; right: 0;
-  height: 80px;
-  z-index: -1;
-  pointer-events: none;
-  filter: drop-shadow(0 -6px 18px rgba(226, 67, 16, 0.55));
-}
-.fire-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
-}
-.fire-base {
-  animation: fireBaseFlicker 3.5s ease-in-out infinite;
-  transform-origin: 50% 100%;
-}
-.hero-flame {
-  position: absolute;
-  bottom: 30px;
-  left: calc(8% + (var(--i) * 13%));
-  width: 22px;
-  height: 60px;
-  background: radial-gradient(ellipse 50% 70% at 50% 100%,
-    var(--ember-spark) 0%,
-    var(--ember-glow) 25%,
-    var(--ember-flame) 55%,
-    rgba(138, 31, 24, 0.5) 80%,
-    transparent 100%);
-  border-radius: 50% 50% 30% 30% / 70% 70% 30% 30%;
-  filter: blur(0.8px);
-  opacity: 0.85;
-  animation: heroFlameFlicker 1.4s ease-in-out infinite;
-  animation-delay: calc(var(--i) * -0.2s);
-  transform-origin: 50% 100%;
-  mix-blend-mode: screen;
-}
-
-/* ====================================================================
-   ▒▒▒ ВОСХОДЯЩИЙ ДЫМ ▒▒▒
-   ==================================================================== */
-.hero-smoke {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 70vh;
-  z-index: -1;
-  pointer-events: none;
-  overflow: hidden;
-}
-.smoke-column {
-  position: absolute;
-  bottom: 12vh;
-  left: calc(15% + (var(--i) * 22%));
-  width: 80px; height: 60vh;
-  background: linear-gradient(180deg,
-    transparent 0%,
-    rgba(80, 70, 65, 0.18) 25%,
-    rgba(60, 50, 45, 0.28) 55%,
-    rgba(40, 30, 25, 0.35) 100%);
-  filter: blur(14px);
-  opacity: 0;
-  transform-origin: 50% 100%;
-  animation: smokeRise 14s ease-out infinite;
-  animation-delay: calc(var(--i) * -3.5s);
-  mix-blend-mode: screen;
-}
-
-/* ====================================================================
-   ▒▒▒ KEYFRAMES для всего «горящего» ▒▒▒
-   ==================================================================== */
-@keyframes bannerEmberGlow {
-  0%, 100% {
-    box-shadow:
-      inset 0 3px 0 rgba(255, 201, 121, 0.2),
-      inset 0 -3px 0 rgba(0, 0, 0, 0.45),
-      0 8px 16px rgba(0, 0, 0, 0.5),
-      0 0 18px rgba(226, 67, 16, 0.55);
-  }
-  50% {
-    box-shadow:
-      inset 0 3px 0 rgba(255, 201, 121, 0.3),
-      inset 0 -3px 0 rgba(0, 0, 0, 0.45),
-      0 8px 16px rgba(0, 0, 0, 0.5),
-      0 0 28px rgba(255, 122, 43, 0.75);
-  }
-}
-@keyframes bannerFlameFlicker {
-  0%, 100% { transform: scaleY(1)    scaleX(1);    opacity: 0.85; }
-  35%      { transform: scaleY(1.18) scaleX(0.92); opacity: 1;    }
-  70%      { transform: scaleY(0.9)  scaleX(1.06); opacity: 0.7;  }
-}
-@keyframes bannerEmberFall {
-  0%   { opacity: 0; transform: translate(0, 0) scale(1); }
-  15%  { opacity: 1; }
-  100% { opacity: 0;
-         transform: translate(calc(var(--i) * 4px - 12px), 70px) scale(0.4); }
-}
-@keyframes groundGlowPulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50%      { opacity: 0.95; transform: scale(1.15); }
-}
-@keyframes fireBaseFlicker {
-  0%, 100% { transform: scaleY(1);    opacity: 0.85; }
-  40%      { transform: scaleY(1.08); opacity: 1;    }
-  70%      { transform: scaleY(0.94); opacity: 0.78; }
-}
-@keyframes heroFlameFlicker {
-  0%, 100% { transform: scaleY(1)    scaleX(1);    opacity: 0.8; }
-  30%      { transform: scaleY(1.22) scaleX(0.88); opacity: 1;   }
-  55%      { transform: scaleY(0.88) scaleX(1.1);  opacity: 0.65;}
-  80%      { transform: scaleY(1.12) scaleX(0.95); opacity: 0.95;}
-}
-@keyframes smokeRise {
-  0%   { opacity: 0;    transform: translateY(20px) scaleX(1)   skewX(0deg); }
-  20%  { opacity: 0.55; }
-  60%  { opacity: 0.4;  transform: translateY(-30vh) scaleX(1.4) skewX(8deg); }
-  100% { opacity: 0;    transform: translateY(-60vh) scaleX(1.8) skewX(-6deg); }
-}
-
-/* Подспорье: hero-content с лёгким ореолом за текстом, чтоб огонь под ним
-   не мешал читаемости. Halo через text-shadow и subtle tint. */
-.hero-content {
-  /* Существующее → не трогаем стили из основного блока, добавляем теневой
-     слой через ::before для ореола под текстом. */
-}
-
-/* prefers-reduced-motion: гасим анимации, оставляем статичную картинку */
-@media (prefers-reduced-motion: reduce) {
-  .hero-flame, .smoke-column, .ground-glow,
-  .fire-base, .banner-fire-path, .banner-ember,
-  .banner-cloth { animation: none !important; }
 }
 
 /* Hero content */
