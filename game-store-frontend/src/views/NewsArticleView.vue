@@ -25,7 +25,7 @@ useHead(computed(() => {
       { property: 'og:title', content: title },
       { property: 'og:description', content: desc },
       { property: 'og:image', content: img },
-      { name: 'robots', content: 'index, follow' },
+      { name: 'robots', content: 'index, follow' }, 
     ],
   };
 })); 
@@ -33,7 +33,7 @@ useHead(computed(() => {
 const onScroll = () => {
   const el = document.documentElement;
   const total = el.scrollHeight - el.clientHeight;
-  readProgress.value = total > 0 ? Math.min(100, Math.round((el.scrollTop / total) * 100)) : 0;
+  readProgress.value = total > 0 ? Math.min(100, Math.round((el.scrollTop / total) * 100)) : 0; 
 };
 
 const setupReveal = () => {
