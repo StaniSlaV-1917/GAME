@@ -48,14 +48,15 @@ primary_region = "ams"
   [[http_service.checks]]
     interval = "30s"
     timeout = "5s"
-    grace_period = "10s"
+    grace_period = "30s"          # Apache+Laravel cold-start ~10-20с
     method = "GET"
-    path = "/up"                  # стандартный Laravel health endpoint
+    path = "/up"
     protocol = "http"
 
 # ── Размер машины ──
+# 512MB вместо 256 — на 256 Apache+Laravel живут впритык, при cold-start OOM.
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  memory = "512mb"
   cpu_kind = "shared"
   cpus = 1
