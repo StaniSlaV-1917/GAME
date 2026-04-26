@@ -56,16 +56,35 @@ foreach (['pdo_mysql', 'pdo_pgsql'] as $ext) {
 }
 
 // ── Регистрируем target-соединение ───────────────────────────
+// Парсим URL вручную и передаём host/port/user/pass отдельно — Laravel'овский
+// парсер URL для pgsql иногда не подхватывает sslmode корректно, и Supabase
+// pooler рвёт коннект на первом же запросе после non-TLS-handshake.
+$parsed = parse_url($dbUrl);
+if (!$parsed || empty($parsed['host'])) {
+    fwrite(STDERR, "❌ Не смог распарсить SUPABASE_URL. Проверь формат:\n");
+    fwrite(STDERR, "   postgresql://USER:PASS@HOST:PORT/DBNAME\n");
+    exit(1);
+}
+parse_str($parsed['query'] ?? '', $queryParams);
+
 config(['database.connections.supabase' => [
     'driver'         => 'pgsql',
-    'url'            => $dbUrl,
+    'host'           => $parsed['host'],
+    'port'           => $parsed['port'] ?? 5432,
+    'database'       => ltrim($parsed['path'] ?? '/postgres', '/'),
+    'username'       => urldecode($parsed['user'] ?? ''),
+    'password'       => urldecode($parsed['pass'] ?? ''),
     'charset'        => 'utf8',
     'prefix'         => '',
     'prefix_indexes' => true,
     'search_path'    => 'public',
-    'sslmode'        => 'require',
+    'sslmode'        => $queryParams['sslmode'] ?? 'require',
 ]]);
 DB::purge('supabase');
+
+// Поднимаем socket-таймаут — pooler Supabase иногда долго отвечает первым
+// раз после установки TLS, дефолтный 60s может не хватить на холодный handshake.
+ini_set('default_socket_timeout', '120');
 
 // ── Список таблиц в порядке зависимостей FK ──────────────────
 // Родители перед детьми — тогда даже без отключения FK-проверок
