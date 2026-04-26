@@ -13,11 +13,11 @@ jobs:
       - uses: actions/checkout@v3
       - name: Create .env file
         run: |
-          echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" > game-store-frontend/.env
+          echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > game-store-frontend/.env
       - run: cd game-store-frontend && npm install && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_GAME_45428688 }}'
           channelId: live
-          projectId: game-45428688
+          projectId: game-45428688-fe94e
