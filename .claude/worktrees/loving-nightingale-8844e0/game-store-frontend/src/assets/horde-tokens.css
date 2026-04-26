@@ -1,0 +1,342 @@
+/* ============================================================
+   ASHENFORGE · Design Tokens
+   ----------------------------------------------------------
+   Философия: кованое железо + догорающие угли + знамёна Орды.
+   Все переменные — единый источник правды для всего UI.
+   ============================================================ */
+
+:root {
+  /* ==========================================================
+     SURFACE · tiered backgrounds (deepest → topmost)
+     ========================================================== */
+  --ash-void:        #08060a;   /* ночное небо над Оргриммаром */
+  --ash-obsidian:    #12100d;   /* фон страницы */
+  --ash-coal:        #1b1611;   /* первичная поверхность */
+  --ash-stone:       #241d17;   /* карточка (по умолчанию) */
+  --ash-ironrust:    #2f251e;   /* поднятая карточка */
+  --ash-bloodrock:   #3a2a22;   /* hover surface */
+  --ash-forge:       #4a3024;   /* активная / раскалённая поверхность */
+
+  /* ==========================================================
+     METAL · borders, rivets, frames
+     ========================================================== */
+  --iron-void:       #1a1410;   /* самый тёмный металл, тени в кладке */
+  --iron-dark:       #3d3129;   /* тонкие линии, подкладка */
+  --iron-mid:        #5a463a;   /* основные бордеры */
+  --iron-warm:       #7a5d48;   /* hover бордер */
+  --bronze-dark:     #8b6636;   /* тёмная бронза */
+  --bronze:          #a07348;   /* заклёпки, декор */
+  --brass:           #c79a5e;   /* блики на металле, подсветка рун */
+  --gold-faint:      #d4b56a;   /* золотой акцент, редкий */
+
+  /* ==========================================================
+     EMBER · fire, blood, primary accents
+     ========================================================== */
+  --ember-abyss:     #2a0a08;   /* глубокий тлеющий фон */
+  --ember-deep:      #5a1412;   /* рана, мрачный красный */
+  --ember-blood:     #8a1f18;   /* знамя Орды, кроваво-красный */
+  --ember-heart:     #c2281a;   /* основной Horde red */
+  --ember-flame:     #e24310;   /* яркий огонь */
+  --ember-glow:      #ff7a2b;   /* раскалённый уголь */
+  --ember-spark:     #ffa758;   /* искра */
+  --ember-gold:      #ffc979;   /* золотой отблеск пламени */
+
+  /* ==========================================================
+     TEXT · bone / parchment hierarchy
+     ========================================================== */
+  --text-bright:     #fff6df;   /* высший контраст, заголовки hero */
+  --text-bone:       #f2e5c9;   /* основной текст */
+  --text-parchment:  #d8c49a;   /* вторичный текст, описания */
+  --text-ash:        #9a8672;   /* третичный, мета-инфо */
+  --text-smoke:      #6b5a4c;   /* disabled, приглушённое */
+  --text-void:       #3d3129;   /* placeholder и слабейшее */
+
+  /* ==========================================================
+     SEMANTIC
+     ========================================================== */
+  --orc-moss:        #4a6b2a;   /* кожа орка, очень редко */
+  --orc-green:       #7fa63d;   /* active orc accent */
+  --orc-emerald:     #a3c755;   /* bright success */
+  --danger-blood:    #b01e16;   /* danger/error */
+  --danger-flame:    #e04020;   /* bright danger */
+  --warn-ember:      #e2842c;   /* warning */
+  --warn-gold:       #ffb54a;   /* bright warning */
+  --info-frost:      #4a7395;   /* frost magic blue, очень редко */
+  --info-ice:        #7db3d4;   /* bright info */
+  --success-mossy:   #6b8e32;   /* success base */
+
+  /* ==========================================================
+     GRADIENTS
+     ========================================================== */
+  --grad-ember:       linear-gradient(135deg, #e24310 0%, #c2281a 50%, #8a1f18 100%);
+  --grad-ember-hot:   linear-gradient(135deg, #ffa758 0%, #ff7a2b 35%, #e24310 70%, #c2281a 100%);
+  --grad-ember-banner:linear-gradient(180deg, #8a1f18 0%, #c2281a 50%, #5a1412 100%);
+  --grad-iron:        linear-gradient(180deg, #3d3129 0%, #241d17 100%);
+  --grad-iron-bright: linear-gradient(180deg, #5a463a 0%, #2f251e 100%);
+  --grad-bronze:      linear-gradient(135deg, #c79a5e 0%, #a07348 50%, #8b6636 100%);
+  --grad-sunset:      linear-gradient(180deg, #2a0a08 0%, #5a1412 25%, #c2281a 55%, #e24310 80%, #ffa758 100%);
+  --grad-dusk:        linear-gradient(180deg, #08060a 0%, #12100d 40%, #2a0a08 100%);
+  --grad-forge:       radial-gradient(ellipse 60% 80% at 50% 100%, #ff7a2b 0%, #c2281a 20%, #5a1412 45%, transparent 70%);
+  --grad-ember-text:  linear-gradient(180deg, #ffc979 0%, #ff7a2b 40%, #e24310 80%, #c2281a 100%);
+
+  /* ==========================================================
+     SHADOWS & GLOWS
+     ========================================================== */
+  --glow-ember:         0 0 24px rgba(226, 67, 16, 0.35);
+  --glow-ember-strong:  0 0 36px rgba(226, 67, 16, 0.55), 0 0 12px rgba(255, 122, 43, 0.45);
+  --glow-ember-soft:    0 0 18px rgba(226, 67, 16, 0.22);
+  --glow-brass:         0 0 16px rgba(199, 154, 94, 0.35);
+  --glow-brass-strong:  0 0 24px rgba(199, 154, 94, 0.55), 0 0 8px rgba(212, 181, 106, 0.4);
+  --glow-blood:         0 0 20px rgba(194, 40, 26, 0.4);
+
+  --shadow-cast:        0 12px 32px rgba(0, 0, 0, 0.65);
+  --shadow-deep:        0 24px 64px rgba(0, 0, 0, 0.85);
+  --shadow-subtle:      0 4px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lift:        0 20px 48px rgba(0, 0, 0, 0.7), 0 4px 12px rgba(0, 0, 0, 0.5);
+
+  --inset-forge:        inset 0 0 24px rgba(226, 67, 16, 0.1);
+  --inset-forge-hot:    inset 0 0 32px rgba(226, 67, 16, 0.2);
+  --inset-iron-top:     inset 0 1px 0 rgba(199, 154, 94, 0.15);
+  --inset-iron-bottom:  inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+
+  /* ==========================================================
+     TYPOGRAPHY
+     ========================================================== */
+  --font-display:  'Cinzel', 'Trajan Pro', 'Times New Roman', serif;
+  --font-tribal:   'Uncial Antiqua', 'Cinzel Decorative', serif;
+  --font-body:     'Spectral', 'Georgia', Cambria, serif;
+  --font-ui:       'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono:     'JetBrains Mono', ui-monospace, 'Courier New', monospace;
+
+  /* Type scale */
+  --fs-xs:    0.72rem;
+  --fs-sm:    0.82rem;
+  --fs-base:  0.95rem;
+  --fs-md:    1.05rem;
+  --fs-lg:    1.2rem;
+  --fs-xl:    1.5rem;
+  --fs-2xl:   2rem;
+  --fs-3xl:   2.6rem;
+  --fs-4xl:   3.4rem;
+  --fs-display: clamp(3rem, 7vw, 5.8rem);
+
+  /* Weights */
+  --fw-regular:  400;
+  --fw-medium:   500;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+  --fw-black:    900;
+
+  /* Letter spacing */
+  --ls-tight:    -0.02em;
+  --ls-normal:   0;
+  --ls-wide:     0.08em;
+  --ls-wider:    0.16em;
+  --ls-widest:   0.28em;
+
+  /* ==========================================================
+     SPACING
+     ========================================================== */
+  --sp-1:   4px;
+  --sp-2:   8px;
+  --sp-3:   12px;
+  --sp-4:   16px;
+  --sp-5:   20px;
+  --sp-6:   24px;
+  --sp-8:   32px;
+  --sp-10:  40px;
+  --sp-12:  48px;
+  --sp-16:  64px;
+  --sp-20:  80px;
+  --sp-24:  96px;
+  --sp-32:  128px;
+
+  /* ==========================================================
+     RADII · угловатый стиль, рундинг минимальный
+     ========================================================== */
+  --r-sharp:  0;
+  --r-xs:     2px;
+  --r-sm:     3px;
+  --r-md:     5px;
+  --r-lg:     8px;
+  --r-pill:   999px;
+
+  /* ==========================================================
+     MOTION · ease curves & durations
+     ========================================================== */
+  --ease-forge:  cubic-bezier(0.22, 0.68, 0, 1.2);      /* удар молота с лёгким overshoot */
+  --ease-smoke:  cubic-bezier(0.4, 0, 0.2, 1);          /* дым — плавно */
+  --ease-ember:  cubic-bezier(0.19, 1, 0.22, 1);        /* вспышка — быстрый старт, плавный хвост */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:     cubic-bezier(0.7, 0, 0.84, 0);
+
+  --dur-instant: 0.1s;
+  --dur-fast:    0.18s;
+  --dur-med:     0.28s;
+  --dur-slow:    0.5s;
+  --dur-slower:  0.85s;
+
+  /* ==========================================================
+     Z-INDEX
+     ========================================================== */
+  --z-bg:      -1;
+  --z-content: 1;
+  --z-raised:  10;
+  --z-sticky:  50;
+  --z-header:  100;
+  --z-overlay: 500;
+  --z-modal:   1000;
+  --z-toast:   9999;
+  --z-cursor:  99999;
+
+  /* ==========================================================
+     LAYOUT
+     ========================================================== */
+  --page-max:    1400px;
+  --content-max: 1200px;
+  --narrow-max:  860px;
+  --header-h:    72px;
+
+  /* ==========================================================
+     FORGED FRAME · clip-path shapes для карточек/плашек
+     ========================================================== */
+  /* Угловой срез — 10px с каждого угла */
+  --clip-forged-sm: polygon(
+    10px 0%, calc(100% - 10px) 0%,
+    100% 10px, 100% calc(100% - 10px),
+    calc(100% - 10px) 100%, 10px 100%,
+    0% calc(100% - 10px), 0% 10px
+  );
+  /* Угловой срез — 16px */
+  --clip-forged-md: polygon(
+    16px 0%, calc(100% - 16px) 0%,
+    100% 16px, 100% calc(100% - 16px),
+    calc(100% - 16px) 100%, 16px 100%,
+    0% calc(100% - 16px), 0% 16px
+  );
+  /* Знамя — косой вырез снизу */
+  --clip-banner: polygon(
+    0 0, 100% 0,
+    100% calc(100% - 20px),
+    60% 100%, 50% calc(100% - 10px), 40% 100%,
+    0 calc(100% - 20px)
+  );
+  /* Щит — верхняя плашка с острыми верхами */
+  --clip-shield-top: polygon(
+    20px 0, calc(100% - 20px) 0,
+    100% 100%, 0 100%
+  );
+}
+
+/* ============================================================
+   UTILITIES — общие классы, которые используют токены
+   ============================================================ */
+
+/* Forged frame — угловатая рамка как на знамёнах Орды */
+.forged-frame {
+  position: relative;
+  clip-path: var(--clip-forged-md);
+}
+
+.forged-frame-sm {
+  position: relative;
+  clip-path: var(--clip-forged-sm);
+}
+
+/* Бронзовые заклёпки в углах блока — декоративный псевдо-элемент */
+.with-rivets {
+  position: relative;
+}
+.with-rivets::before,
+.with-rivets::after {
+  content: '';
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, var(--brass) 0%, var(--bronze) 50%, var(--iron-void) 100%);
+  box-shadow: var(--glow-brass), inset -1px -1px 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 2;
+}
+.with-rivets::before { top: 10px; left: 10px; }
+.with-rivets::after  { top: 10px; right: 10px; }
+
+/* Tribal divider — декоративная линия с шипом */
+.tribal-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--bronze);
+}
+.tribal-divider::before,
+.tribal-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bronze-dark) 20%, var(--bronze) 50%, var(--bronze-dark) 80%, transparent);
+}
+
+/* Ember glow text — раскалённый текст для акцентов */
+.text-ember {
+  background: var(--grad-ember-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 12px rgba(226, 67, 16, 0.3));
+}
+
+/* Engraved text — "высеченный" стиль для заголовков */
+.text-engraved {
+  color: var(--text-bright);
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.8),
+    0 2px 2px rgba(0, 0, 0, 0.9),
+    0 0 24px rgba(226, 67, 16, 0.15);
+  letter-spacing: var(--ls-wide);
+}
+
+/* Stone texture fallback — малозаметный шум на больших поверхностях */
+.stone-surface {
+  background-image:
+    radial-gradient(ellipse at top, var(--ash-bloodrock) 0%, transparent 60%),
+    linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  background-repeat: no-repeat;
+}
+
+/* ==========================================================
+   KEYFRAMES — общие анимации
+   ========================================================== */
+
+@keyframes emberPulse {
+  0%, 100% { opacity: 0.85; filter: brightness(1); }
+  50%      { opacity: 1;    filter: brightness(1.15); }
+}
+
+@keyframes emberFlicker {
+  0%, 100%        { opacity: 1; }
+  20%, 22%, 55%   { opacity: 0.85; }
+  10%, 60%        { opacity: 0.95; }
+}
+
+@keyframes smokeRise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes forgeClang {
+  0%   { transform: translateY(0) scale(1); }
+  30%  { transform: translateY(-3px) scale(1.01); }
+  60%  { transform: translateY(1px) scale(0.995); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+@keyframes bannerSway {
+  0%, 100% { transform: rotate(0deg); }
+  50%      { transform: rotate(0.8deg); }
+}
+
+@keyframes runeGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(199, 154, 94, 0.4)); }
+  50%      { filter: drop-shadow(0 0 12px rgba(255, 122, 43, 0.7)); }
+}
