@@ -16,3 +16,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/sanctum/csrf-cookie', function () {
     return response()->noContent();
 });
+
+// Healthcheck для Fly.io (см. fly.toml — http_service.checks)
+Route::get('/up', function () {
+    return response()->json(['status' => 'ok'], 200);
+});

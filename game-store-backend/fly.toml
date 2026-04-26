@@ -1,0 +1,61 @@
+# fly.toml — конфигурация Fly.io для Laravel-бэка
+# Деплоится из game-store-backend/ (Working directory в форме Fly).
+# Имя приложения должно совпадать с тем, что выдала Fly при создании.
+
+app = "game-l6voba"
+primary_region = "ams"
+
+[build]
+  dockerfile = "Dockerfile"
+
+# ── Переменные окружения (не секретные) ──
+# Секреты (APP_KEY, DATABASE_URL и т.п.) ставятся через `flyctl secrets set ...`
+# или в форме Fly раздел "Переменные окружения".
+[env]
+  APP_NAME = "GameStore"
+  APP_ENV = "production"
+  APP_DEBUG = "false"
+  APP_URL = "https://game-l6voba.fly.dev"
+  LOG_CHANNEL = "stderr"
+  LOG_LEVEL = "warning"
+  DB_CONNECTION = "pgsql"
+  SESSION_DRIVER = "database"
+  CACHE_DRIVER = "database"
+  QUEUE_CONNECTION = "database"
+  BROADCAST_DRIVER = "log"
+  FILESYSTEM_DISK = "local"
+  # Sanctum: список доменов, которые могут получать sanctum-cookie.
+  # Фронт на Firebase Hosting — добавим его сюда.
+  SANCTUM_STATEFUL_DOMAINS = "game-45428688-fe94e.web.app,game-l6voba.fly.dev"
+  SESSION_DOMAIN = ".fly.dev"
+  SESSION_SECURE_COOKIE = "true"
+
+# ── Release command ──
+# Запускается ПОСЛЕ старта Postgres-сайдкара и до публикации новой версии.
+# Если миграции упадут — деплой откатится.
+[deploy]
+  release_command = "sh -c 'php artisan migrate --force && php artisan storage:link || true && php artisan config:cache && php artisan route:cache && php artisan view:cache'"
+
+# ── HTTP-сервис ──
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"     # засыпает после простоя — экономит часы
+  auto_start_machines = true      # просыпается на первом запросе
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/up"                  # стандартный Laravel health endpoint
+    protocol = "http"
+
+# ── Размер машины ──
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+  cpu_kind = "shared"
+  cpus = 1

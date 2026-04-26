@@ -1,0 +1,37 @@
+# Vendor восстанавливается через `composer install` в контейнере
+/vendor
+
+# Локальные .env (секреты — через flyctl secrets set)
+.env
+.env.*
+!.env.example
+
+# Node-зависимости (фронт-сборка делается в game-store-frontend на Firebase)
+/node_modules
+/public/build
+/public/hot
+/public/storage
+
+# Логи / кэши Laravel
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/framework/cache/*
+!/storage/framework/cache/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+
+# Тесты в production-образе не нужны
+/tests
+phpunit.xml
+
+# Git / IDE
+/.git
+/.github
+/.idea
+/.vscode
+
+# Прочее
+*.log
+.DS_Store
