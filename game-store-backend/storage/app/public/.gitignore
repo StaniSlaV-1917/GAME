@@ -1,2 +1,6 @@
 *
 !.gitignore
+!gallery/
+!gallery/**
+!images/
+!images/**

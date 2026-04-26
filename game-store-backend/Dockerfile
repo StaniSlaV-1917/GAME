@@ -64,6 +64,14 @@ RUN composer install --no-dev --no-interaction --no-progress --optimize-autoload
     chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache && \
     chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Миграции, storage:link и кэши конфига/роутов/views делаются из
-# release_command в fly.toml — после инжекции Fly secrets, до старта веба.
+# ── storage:link в build-time ──
+# Без этого symlink'а /storage/* URL'ы возвращают 404, потому что
+# Apache ищет файлы в public/storage/, которой не существует.
+# release_command делает symlink в эфемерной машине, app-машины
+# его не видят. Поэтому делаем здесь — попадает в финальный образ.
+# Если симлинк уже есть (от COPY), || true чтобы не упасть.
+RUN ln -sfn /var/www/html/storage/app/public /var/www/html/public/storage || true
+
+# Миграции и кэши конфига/роутов/views делаются из release_command
+# в fly.toml — там уже есть env-переменные из Fly secrets.
 EXPOSE 8080

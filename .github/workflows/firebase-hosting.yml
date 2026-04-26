@@ -14,6 +14,7 @@ jobs:
       - name: Create .env file
         run: |
           echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > game-store-frontend/.env
+          echo "VITE_MEDIA_BASE_URL=${{ secrets.VITE_MEDIA_BASE_URL }}" >> game-store-frontend/.env
       - run: cd game-store-frontend && npm install && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
