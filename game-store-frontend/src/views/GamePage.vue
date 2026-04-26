@@ -1476,8 +1476,11 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 /* ==========================================================
    RESPONSIVE
    ========================================================== */
+@media (max-width: 1100px) {
+  .content-grid { gap: 28px; }
+}
 @media (max-width: 1024px) {
-  .content-grid { grid-template-columns: 1fr; }
+  .content-grid { grid-template-columns: 1fr; gap: 24px; }
   .sidebar-col { position: static; }
 }
 @media (max-width: 768px) {
@@ -1489,10 +1492,19 @@ watch(gameId, (id) => { if (id) loadGame(id); });
   .action-row { flex-direction: column; }
   .mod-header { padding-right: 0; }
   .mod-featured-ribbon { position: static; margin-bottom: 8px; clip-path: none; align-self: flex-start; border-radius: var(--r-xs); }
+  .tabs-nav { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; scrollbar-width: thin; }
+  .tab-btn { flex-shrink: 0; }
+}
+@media (max-width: 600px) {
+  .buy-block { padding: 20px; gap: 20px; }
+  .game-title { font-size: 1.55rem; }
 }
 @media (max-width: 480px) {
   .screenshots-grid { grid-template-columns: 1fr; }
   .mod-meta { gap: 10px; }
   .tab-btn { padding: 12px 14px; font-size: 0.82rem; }
+  .buy-block { padding: 16px; }
+  .game-title { font-size: 1.35rem; }
+  .cover-wrap { max-width: 220px; }
 }
 </style>

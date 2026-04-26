@@ -933,6 +933,11 @@ onUnmounted(() => revealObs?.disconnect());
   .how-connector { display: none; }
   .how-card { margin: 0; }
 }
+@media (max-width: 768px) {
+  .ab-hero { padding: 80px 22px 70px; }
+  .mission-block { gap: 32px; }
+  .stats-grid { gap: 0; }
+}
 @media (max-width: 640px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .stat-item { border-right: none; border-bottom: 1px solid var(--iron-dark); padding: 16px; }
@@ -941,7 +946,14 @@ onUnmounted(() => revealObs?.disconnect());
   .values-grid { grid-template-columns: 1fr; }
   .how-grid { grid-template-columns: 1fr; }
   .cta-block { padding: 46px 24px; }
-  .ab-hero { padding: 72px 24px 60px; }
+  .ab-hero { padding: 72px 20px 60px; }
   .mv-card.accent { grid-column: auto; }
+}
+@media (max-width: 480px) {
+  .ab-hero { padding: 60px 16px 50px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  .stat-item, .stat-item:nth-child(odd) { border-right: none; }
+  .cta-block { padding: 36px 18px; }
+  .cta-title { font-size: 1.5rem; }
 }
 </style>

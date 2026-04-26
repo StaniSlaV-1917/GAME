@@ -15,44 +15,50 @@
       <!-- Внутренняя рамка с forged clip-path -->
       <div class="card-frame">
 
-        <RouterLink class="card-main-link" :to="{ name: 'game', params: { id: game.id } }" :aria-label="game.title"></RouterLink>
+        <!-- Image: кликабельная зона ведёт на страницу игры -->
+        <RouterLink
+          class="card-img-link"
+          :to="{ name: 'game', params: { id: game.id } }"
+          :aria-label="game.title"
+        >
+          <div class="card-img-wrap" :style="{ '--thumb': `url(${imageUrl})` }">
+            <img :src="imageUrl" :alt="game.title" width="270" height="180" loading="lazy" class="card-img" />
+            <div class="img-gradient"></div>
+            <div class="img-vignette"></div>
 
-        <!-- Image -->
-        <div class="card-img-wrap" :style="{ '--thumb': `url(${imageUrl})` }">
-          <img :src="imageUrl" :alt="game.title" width="270" height="180" loading="lazy" class="card-img" />
-          <div class="img-gradient"></div>
-          <div class="img-vignette"></div>
+            <!-- Badges — треугольные знамёна -->
+            <div class="card-badges">
+              <span v-if="game.is_featured" class="badge b-hot">
+                <span class="badge-icon">⚔</span>
+                <span>Хит</span>
+              </span>
+              <span v-if="game.is_new" class="badge b-new">
+                <span class="badge-icon">✦</span>
+                <span>Новое</span>
+              </span>
+              <span v-if="game.discount_percent" class="badge b-disc">
+                <span>−{{ game.discount_percent }}%</span>
+              </span>
+            </div>
 
-          <!-- Badges — треугольные знамёна -->
-          <div class="card-badges">
-            <span v-if="game.is_featured" class="badge b-hot">
-              <span class="badge-icon">⚔</span>
-              <span>Хит</span>
-            </span>
-            <span v-if="game.is_new" class="badge b-new">
-              <span class="badge-icon">✦</span>
-              <span>Новое</span>
-            </span>
-            <span v-if="game.discount_percent" class="badge b-disc">
-              <span>−{{ game.discount_percent }}%</span>
-            </span>
+            <!-- External link — железный знак (превентивно гасим клик, чтобы не уходил в RouterLink) -->
+            <a class="ext-link" :href="game.stopgame_url_code" target="_blank" rel="noopener" title="Обзор на StopGame" @click.stop>
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+
+            <!-- Platform chip — кованая плашка -->
+            <div class="platform-chip" v-if="game.platform">
+              <span class="chip-dot"></span>
+              <span>{{ game.platform }}</span>
+            </div>
           </div>
-
-          <!-- External link — железный знак -->
-          <a class="ext-link" :href="game.stopgame_url_code" target="_blank" rel="noopener" title="Обзор на StopGame" @click.stop>
-            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </a>
-
-          <!-- Platform chip — кованая плашка -->
-          <div class="platform-chip" v-if="game.platform">
-            <span class="chip-dot"></span>
-            <span>{{ game.platform }}</span>
-          </div>
-        </div>
+        </RouterLink>
 
         <!-- Info -->
         <div class="card-info">
-          <h2 class="card-title">{{ game.title }}</h2>
+          <RouterLink :to="{ name: 'game', params: { id: game.id } }" class="card-title-link">
+            <h2 class="card-title">{{ game.title }}</h2>
+          </RouterLink>
           <p class="card-genre">{{ game.genre }}</p>
 
           <!-- Rating -->
@@ -263,11 +269,14 @@ const handleMouseLeave = () => {
   z-index: 0;
 }
 
-.card-main-link {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  text-indent: -9999px;
+/* RouterLink-обёртка вокруг картинки — не должна сама ничего стилизовать,
+   просто оборачивает .card-img-wrap чтобы клик по картинке шёл на страницу. */
+.card-img-link {
+  display: block;
+  position: relative;
+  z-index: 1;
+  text-decoration: none;
+  color: inherit;
 }
 
 /* ==========================================================
@@ -279,7 +288,6 @@ const handleMouseLeave = () => {
   overflow: hidden;
   background: var(--ash-void);
   border-bottom: 1px solid var(--iron-dark);
-  z-index: 1;
 }
 /* Blurred duplicate как фон — чтобы letterbox не был пустым */
 .card-img-wrap::before {
@@ -454,6 +462,17 @@ const handleMouseLeave = () => {
   z-index: 1;
 }
 
+.card-title-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: color var(--dur-fast) var(--ease-smoke);
+}
+.card-title-link:hover .card-title {
+  color: var(--ember-spark);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), 0 0 12px rgba(255, 167, 88, 0.45);
+}
+
 .card-title {
   margin: 0;
   font-family: var(--font-display);
@@ -466,6 +485,7 @@ const handleMouseLeave = () => {
   overflow: hidden;
   text-overflow: ellipsis;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  transition: color var(--dur-fast) var(--ease-smoke), text-shadow var(--dur-fast) var(--ease-smoke);
 }
 .card-genre {
   margin: 0;
@@ -672,11 +692,34 @@ const handleMouseLeave = () => {
 /* ==========================================================
    RESPONSIVE
    ========================================================== */
-@media (max-width: 480px) {
-  .card-info { padding: 14px 14px 12px; }
+@media (max-width: 768px) {
+  .card-img-wrap { height: 190px; }
+  .card-info { padding: 14px 16px 13px; gap: 5px; }
   .card-title { font-size: 1rem; }
-  .price-val { font-size: 1.15rem; }
-  .buy-btn { padding: 8px 12px; font-size: 0.72rem; }
+}
+@media (max-width: 540px) {
+  .card-img-wrap { height: 170px; }
+  .card-info { padding: 12px 14px 12px; }
+  .card-title { font-size: 0.96rem; }
+  .card-genre { font-size: 0.78rem; }
+  .price-val { font-size: 1.1rem; }
+  .buy-btn { padding: 8px 11px; font-size: 0.72rem; gap: 4px; }
   .details-btn { width: 32px; height: 32px; }
+  .badge { font-size: 0.62rem; padding: 4px 8px; }
+  .platform-chip { font-size: 0.6rem; padding: 3px 7px; }
+}
+@media (max-width: 380px) {
+  .card-img-wrap { height: 150px; }
+  /* Кнопки рядом не помещаются — складываем bottom-row в столбец */
+  .card-bottom { flex-direction: column; align-items: stretch; gap: 8px; }
+  .price-block { align-items: center; }
+  .card-actions { justify-content: center; }
+  .buy-btn { flex: 1; justify-content: center; }
+}
+/* Touch-устройства: tilt-эффект убираем, чтобы избежать ломаных трансформов */
+@media (hover: none) {
+  .game-card-inner { transform: none !important; }
+  .game-card-inner:hover { filter: none; }
+  .ext-link { opacity: 1; transform: none; }
 }
 </style>

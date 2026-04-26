@@ -761,9 +761,18 @@ const handleFocus = (v) => wrapperEl.value?.classList.toggle('is-focused', v);
 .err-fade-enter-active, .err-fade-leave-active { transition: all 0.22s ease; }
 .err-fade-enter-from, .err-fade-leave-to { opacity: 0; transform: translateY(-6px); }
 
+@media (max-width: 768px) {
+  .fa-slab { padding: 38px 30px 28px; }
+  .slab-title { font-size: 1.7rem; }
+}
 @media (max-width: 480px) {
-  .fa-slab { padding: 32px 28px 24px; }
+  .fa-slab { padding: 30px 22px 22px; }
   .mode-switcher button { font-size: 0.72rem; padding: 9px 6px; letter-spacing: 0.8px; }
-  .slab-title { font-size: 1.55rem; }
+  .slab-title { font-size: 1.5rem; }
+  .field input { font-size: 16px; /* iOS: убирает auto-zoom при focus */ }
+}
+@media (max-width: 380px) {
+  .fa-slab { padding: 24px 16px 18px; }
+  .slab-title { font-size: 1.3rem; }
 }
 </style>

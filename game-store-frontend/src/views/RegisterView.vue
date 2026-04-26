@@ -440,8 +440,17 @@ const submit = async () => {
 .err-fade-enter-active, .err-fade-leave-active { transition: all 0.22s ease; }
 .err-fade-enter-from, .err-fade-leave-to { opacity: 0; transform: translateY(-6px); }
 
+@media (max-width: 768px) {
+  .fa-slab { padding: 38px 30px 28px; }
+  .slab-title { font-size: 1.7rem; }
+}
 @media (max-width: 480px) {
-  .fa-slab { padding: 32px 28px 24px; }
-  .slab-title { font-size: 1.55rem; }
+  .fa-slab { padding: 30px 22px 22px; }
+  .slab-title { font-size: 1.5rem; }
+  .field input { font-size: 16px; }
+}
+@media (max-width: 380px) {
+  .fa-slab { padding: 24px 16px 18px; }
+  .slab-title { font-size: 1.3rem; }
 }
 </style>

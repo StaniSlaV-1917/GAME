@@ -636,10 +636,18 @@ onUnmounted(() => revealObs?.disconnect());
 }
 
 /* ══ Responsive ══ */
+@media (max-width: 1024px) {
+  .news-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+}
 @media (max-width: 768px) {
   .featured-content { padding: 24px; }
   .featured-title { font-size: 1.4rem; }
   .feat-rivet--bl, .feat-rivet--br { display: none; }
+  .news-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
 }
-@media (max-width: 520px) { .news-grid { grid-template-columns: 1fr; } }
+@media (max-width: 520px) {
+  .news-grid { grid-template-columns: 1fr; gap: 16px; }
+  .featured-content { padding: 18px; }
+  .featured-title { font-size: 1.2rem; }
+}
 </style>

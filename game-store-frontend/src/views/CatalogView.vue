@@ -771,16 +771,37 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
 /* ==========================================================
    RESPONSIVE
    ========================================================== */
+@media (max-width: 1100px) {
+  .games-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 18px; }
+}
 @media (max-width: 980px) {
-  .filters-bar { flex-direction: column; align-items: stretch; }
+  .filters-bar { flex-direction: column; align-items: stretch; gap: 14px; }
   .sort-wrap { justify-content: flex-end; }
   .genre-chips { justify-content: center; }
+  .catalog-hero { min-height: 36vh; padding: 70px 22px 60px; }
+}
+@media (max-width: 768px) {
+  .games-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+  .catalog-body { padding: var(--sp-6) var(--sp-5) var(--sp-16); }
 }
 @media (max-width: 640px) {
-  .catalog-hero { padding: 60px 20px 50px; }
-  .catalog-body { padding: var(--sp-6) var(--sp-4) var(--sp-16); }
+  .catalog-hero { padding: 60px 18px 50px; min-height: 30vh; }
+  .catalog-body { padding: var(--sp-5) var(--sp-4) var(--sp-14); }
+  .games-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
   .genre-chip { padding: 7px 12px; font-size: 0.72rem; }
   .chip-marker { width: 5px; height: 5px; }
   .empty-box { padding: 60px 24px; }
+  .filters-bar { padding: 14px 14px; }
+  .skel-card { height: 320px; }
+  .skel-img { height: 170px; }
+}
+@media (max-width: 480px) {
+  .catalog-hero { padding: 50px 16px 42px; }
+  .catalog-body { padding: var(--sp-4) var(--sp-3) var(--sp-12); }
+  /* Чтобы карточки не были слишком узкими — две колонки фикс */
+  .games-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+}
+@media (max-width: 380px) {
+  .games-grid { grid-template-columns: 1fr; gap: 14px; }
 }
 </style>

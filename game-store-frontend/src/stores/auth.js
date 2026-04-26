@@ -127,6 +127,18 @@ export const useAuthStore = defineStore('auth', () => {
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+
+    // КРИТИЧНО: чистим корзину при logout — иначе залогиненная корзина
+    // прежнего пользователя остаётся в localStorage и "перетекает"
+    // следующему/неавторизованному пользователю, что вводит в заблуждение
+    // (карточки в каталоге показывают «В добыче» хотя никто не вошёл).
+    try {
+      const cartStore = useCartStore();
+      cartStore.items = [];
+    } catch (e) {
+      console.error('Cart cleanup on logout failed:', e);
+    }
+    localStorage.removeItem('gameStoreCart');
   }
 
   async function sendPasswordResetCode(email) {

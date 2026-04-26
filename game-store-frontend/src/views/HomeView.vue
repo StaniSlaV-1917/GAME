@@ -266,8 +266,11 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
 }
 
 @keyframes bannerDrop {
-  from { transform: translateY(-24px); opacity: 0; }
-  to   { transform: translateY(0); opacity: 1; }
+  /* ВАЖНО: в keyframe transform должен включать translateX(-50%) — иначе
+     анимация затирает базовое центрирование .hero-banner-wrap и знамя
+     уезжает вправо на половину своей ширины. */
+  from { transform: translate(-50%, -24px); opacity: 0; }
+  to   { transform: translate(-50%, 0);     opacity: 1; }
 }
 
 @keyframes fadeUp {
@@ -1086,28 +1089,56 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
 .faq-slide-leave-to { max-height: 0; opacity: 0; }
 
 /* ==========================================================
-   RESPONSIVE
+   RESPONSIVE — подробная сетка под все размеры
    ========================================================== */
+@media (max-width: 1100px) {
+  .hero-section { padding: 150px 22px 100px; }
+  .hero-stats { gap: 22px; }
+}
 @media (max-width: 980px) {
+  .hero-section { min-height: 80vh; padding: 140px 22px 90px; }
   .hero-title { font-size: clamp(2.4rem, 9vw, 4.5rem); }
   .hero-tagline { font-size: 1.1rem; }
+  .hero-subtitle { font-size: 0.96rem; }
   .platform-item { padding: 0 22px; }
+  .hero-stats { flex-wrap: wrap; justify-content: center; gap: 18px 0; }
+  .hstat-sep { display: none; }
 }
 @media (max-width: 768px) {
-  .hero-section { padding: 120px 20px 80px; }
+  .hero-section { padding: 120px 20px 80px; min-height: 72vh; }
   .hero-stats { gap: 0; }
   .hstat { padding: 12px 18px; }
-  .hstat-sep { display: none; }
-  .steps-grid { grid-template-columns: 1fr 1fr; }
+  .steps-grid { grid-template-columns: 1fr 1fr; gap: 18px; }
   .step-connector { display: none; }
   .hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 320px; }
-  .hero-btn { justify-content: center; }
-  .hero-banner { transform: scale(0.8); }
+  .hero-btn { justify-content: center; padding: 14px 22px; font-size: 0.92rem; }
+  .hero-badge { font-size: 0.74rem; padding: 6px 14px; }
+  /* scale применяем к .banner-cloth (внутри banner), а не к .hero-banner —
+     иначе перекрывается выравнивание родителя */
+  .banner-cloth { transform: scale(0.85); transform-origin: top center; }
+  .features-grid { grid-template-columns: 1fr 1fr; gap: 18px; }
+}
+@media (max-width: 600px) {
+  .hero-section { padding: 105px 18px 70px; min-height: auto; }
+  .hero-title { font-size: clamp(2.2rem, 11vw, 3.6rem); }
+  .hero-tagline { font-size: 0.98rem; }
+  .hero-subtitle { font-size: 0.88rem; line-height: 1.55; }
+  .hstat-num { font-size: 1.6rem; }
+  .hstat-label { font-size: 0.7rem; }
 }
 @media (max-width: 480px) {
+  .hero-section { padding: 96px 14px 60px; }
   .steps-grid { grid-template-columns: 1fr; }
   .features-grid { grid-template-columns: 1fr; }
   .hero-title { font-size: clamp(2.2rem, 12vw, 3.5rem); }
   .hero-banner-wrap { display: none; }
+  .hero-stats { padding: 14px 8px; flex-direction: column; gap: 14px; }
+  .hstat { padding: 6px 0; }
+}
+@media (max-width: 380px) {
+  .hero-section { padding: 88px 10px 50px; }
+  .hero-title { font-size: clamp(2rem, 13vw, 3rem); }
+  .hero-actions { max-width: 100%; }
+  .hero-btn { padding: 12px 14px; font-size: 0.84rem; gap: 6px; }
 }
 </style>

@@ -1990,21 +1990,46 @@ onMounted(loadInitialData);
 .ap-item.selected .ap-item-check { opacity: 1; }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+  .stats-grid { gap: 16px; }
+  .reviews-grid { gap: 18px; }
+}
+@media (max-width: 900px) {
+  .hero-stats { gap: 18px; }
+  .hs-num { font-size: 1.4rem; }
+  .hs-label { font-size: 0.7rem; }
+}
 @media (max-width: 768px) {
-  .hero-inner { flex-direction: column; text-align: center; align-items: center; }
-  .hero-name-row { justify-content: center; }
-  .hero-stats { width: 100%; justify-content: center; }
-  .tab-bar { overflow-x: auto; scrollbar-width: none; }
+  .hero-inner { flex-direction: column; text-align: center; align-items: center; gap: 18px; }
+  .hero-name-row { justify-content: center; flex-wrap: wrap; }
+  .hero-stats { width: 100%; justify-content: center; flex-wrap: wrap; gap: 12px 18px; }
+  .tab-bar { overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
   .tab-bar::-webkit-scrollbar { display: none; }
-  .tab-btn { padding: 15px 14px; font-size: 0.76rem; letter-spacing: 1px; }
+  .tab-btn { padding: 15px 14px; font-size: 0.76rem; letter-spacing: 1px; flex-shrink: 0; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
   .reviews-grid { grid-template-columns: 1fr; }
   .settings-grid { grid-template-columns: 1fr; }
+  .hs-sep { display: none; }
+}
+
+@media (max-width: 600px) {
+  .hero-section { padding: 60px 18px 40px; }
+  .hero-name { font-size: clamp(1.6rem, 6vw, 2.2rem); }
+  .stats-grid { gap: 12px; }
+  .stat-card { padding: 18px 16px; }
 }
 
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr; }
-  .ofc-header { gap: 10px; }
-  .hs-sep { display: none; }
+  .ofc-header { gap: 10px; flex-wrap: wrap; }
+  .hero-section { padding: 50px 14px 32px; }
+  .avatar-frame { width: 100px; height: 100px; }
+  .tab-btn { padding: 13px 12px; font-size: 0.72rem; }
+  .order-full-card { padding: 16px; }
+}
+
+@media (max-width: 380px) {
+  .hero-name { font-size: 1.4rem; }
+  .hero-tagline { font-size: 0.85rem; }
 }
 </style>

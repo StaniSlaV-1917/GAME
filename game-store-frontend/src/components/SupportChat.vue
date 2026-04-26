@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, nextTick, watch } from 'vue';
+import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { storeToRefs } from 'pinia';
 import api from '../api/axios';
@@ -9,6 +9,8 @@ const { user, isLoggedIn } = storeToRefs(authStore);
 
 // ── State ──────────────────────────────────────────────────────────────────
 const isOpen = ref(false);
+const attractMode = ref(false);   // вкладка-стрелка "приглашает" — слегка выезжает
+const tabHover = ref(false);      // при наведении вкладка приоткрывается
 const chatBodyRef = ref(null);
 
 // Conversation state
@@ -38,7 +40,6 @@ const TREE = {
     ],
   },
 
-  // ── Orders ──
   orders: {
     text: 'Что именно не так с заказом?',
     options: [
@@ -51,7 +52,6 @@ const TREE = {
     ],
   },
 
-  // ── Games ──
   games: {
     text: 'Что именно произошло с игрой?',
     options: [
@@ -64,7 +64,6 @@ const TREE = {
     ],
   },
 
-  // ── Account ──
   account: {
     text: 'С чем возникли трудности в аккаунте?',
     options: [
@@ -77,7 +76,6 @@ const TREE = {
     ],
   },
 
-  // ── Tech ──
   tech: {
     text: 'Опиши техническую проблему:',
     options: [
@@ -89,7 +87,6 @@ const TREE = {
     ],
   },
 
-  // ── Other ──
   other: {
     text: 'Хорошо! Напиши своё обращение — мы передадим его команде поддержки.',
     options: [
@@ -124,6 +121,7 @@ const openChat = () => {
     startConversation();
   }
   isOpen.value = true;
+  attractMode.value = false;  // выкл. "пощёчину" — пользователь уже зашёл
 };
 
 const closeChat = () => {
@@ -179,7 +177,6 @@ const handleOption = (opt) => {
     return;
   }
 
-  // Navigate deeper in the tree
   addUserMessage(opt.label);
   const node = TREE[opt.next];
   if (node) {
@@ -192,7 +189,6 @@ const handleOption = (opt) => {
   }
 };
 
-// ── Last bot message options (only the last message shows clickable options) ──
 const lastBotMessageWithOptions = computed(() => {
   for (let i = messages.value.length - 1; i >= 0; i--) {
     if (messages.value[i].from === 'bot' && messages.value[i].options) {
@@ -242,18 +238,72 @@ watch(
 
 // Auto-scroll when new messages arrive
 watch(() => messages.value.length, () => scrollToBottom());
+
+// ── Auto-attract: вкладка иногда сама высовывается, чтобы напомнить о себе ──
+// Логика: первое "приглашение" через 45 сек после загрузки, далее раз в ~120 сек.
+// Если чат открыт — не дёргаемся.
+let firstAttractTimer = null;
+let attractInterval = null;
+let attractEndTimer = null;
+
+const triggerAttract = () => {
+  if (isOpen.value) return;
+  attractMode.value = true;
+  clearTimeout(attractEndTimer);
+  attractEndTimer = setTimeout(() => {
+    attractMode.value = false;
+  }, 2400); // выезжает на ~2.4 сек, потом возвращается
+};
+
+onMounted(() => {
+  // Первый "поклон" вкладки через 45 секунд
+  firstAttractTimer = setTimeout(() => {
+    triggerAttract();
+    // Далее изредка (раз в 120-180 сек, рандомизированно), но только если чат закрыт
+    attractInterval = setInterval(() => {
+      if (!isOpen.value) triggerAttract();
+    }, 150000);
+  }, 45000);
+});
+
+onUnmounted(() => {
+  clearTimeout(firstAttractTimer);
+  clearTimeout(attractEndTimer);
+  clearInterval(attractInterval);
+});
 </script>
 
 <template>
-  <!-- Floating trigger button -->
   <Teleport to="body">
     <div class="support-chat-root">
 
-      <!-- Chat panel -->
+      <!-- ──────────────── Edge tab — стрелка-вкладка из правого края ──────────────── -->
+      <button
+        v-if="!isOpen"
+        class="edge-tab"
+        :class="{ 'is-attract': attractMode, 'is-hover': tabHover }"
+        @click="openChat"
+        @mouseenter="tabHover = true"
+        @mouseleave="tabHover = false"
+        title="Поддержка"
+        aria-label="Открыть чат поддержки"
+      >
+        <span class="edge-tab-arrow" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </span>
+        <span class="edge-tab-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+        </span>
+        <span class="edge-tab-label">ПОДДЕРЖКА</span>
+        <span class="edge-tab-pulse" aria-hidden="true"></span>
+      </button>
+
+      <!-- ──────────────── Chat panel ──────────────── -->
       <Transition name="chat-panel">
         <div v-if="isOpen" class="chat-panel" role="dialog" aria-label="Чат поддержки">
 
-          <!-- Header -->
           <div class="chat-header">
             <div class="chat-header-left">
               <div class="chat-avatar">
@@ -274,7 +324,6 @@ watch(() => messages.value.length, () => scrollToBottom());
             </div>
           </div>
 
-          <!-- Breadcrumb path -->
           <div v-if="problemPath.length" class="chat-path">
             <span v-for="(p, i) in problemPath" :key="i" class="path-part">
               <span v-if="i > 0" class="path-sep">›</span>
@@ -282,7 +331,6 @@ watch(() => messages.value.length, () => scrollToBottom());
             </span>
           </div>
 
-          <!-- Messages body -->
           <div class="chat-body" ref="chatBodyRef">
             <TransitionGroup name="msg">
               <div
@@ -297,7 +345,6 @@ watch(() => messages.value.length, () => scrollToBottom());
                 <div class="msg-bubble" :class="{ 'bubble-bot': msg.from === 'bot', 'bubble-user': msg.from === 'user' }">
                   <span class="bubble-text">{{ msg.text }}</span>
 
-                  <!-- Options — only on last bot message with options -->
                   <div
                     v-if="msg.options && msg.id === lastBotMessageWithOptions && stage === 'tree'"
                     class="msg-options"
@@ -316,7 +363,6 @@ watch(() => messages.value.length, () => scrollToBottom());
               </div>
             </TransitionGroup>
 
-            <!-- Contact form -->
             <Transition name="form-slide">
               <div v-if="stage === 'form'" class="contact-form-wrap">
                 <div class="contact-form">
@@ -350,7 +396,6 @@ watch(() => messages.value.length, () => scrollToBottom());
               </div>
             </Transition>
 
-            <!-- Done state extra actions -->
             <Transition name="form-slide">
               <div v-if="stage === 'done'" class="done-actions">
                 <button class="cf-submit" @click="resetChat">Новое обращение</button>
@@ -360,127 +405,134 @@ watch(() => messages.value.length, () => scrollToBottom());
         </div>
       </Transition>
 
-      <!-- Floating button -->
-      <Transition name="fab">
-        <button
-          class="chat-fab"
-          @click="isOpen ? closeChat() : openChat()"
-          :class="{ open: isOpen }"
-          :aria-label="isOpen ? 'Закрыть чат' : 'Открыть чат поддержки'"
-          title="Поддержка"
-        >
-          <Transition name="fab-icon" mode="out-in">
-            <span v-if="!isOpen" key="open" class="fab-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
-            </span>
-            <span v-else key="close" class="fab-icon fab-close">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </span>
-          </Transition>
-          <span class="fab-label">Поддержка</span>
-        </button>
-      </Transition>
-
     </div>
   </Teleport>
 </template>
 
 <style scoped>
 /* ==========================================================
-   SUPPORT CHAT · Ashenforge — плавающий кованый щит поддержки
+   SUPPORT CHAT · Edge-tab + sliding panel
    ========================================================== */
 
-/* ── Root ── */
 .support-chat-root {
   position: fixed;
-  bottom: 28px;
-  right: 28px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 14px;
+  inset: 0;
   pointer-events: none;
+  z-index: 9999;
 }
 .support-chat-root > * { pointer-events: all; }
 
-/* ── FAB button ── */
-.chat-fab {
-  position: relative;
+/* ──────────────────────────────────────────────────────────
+   EDGE TAB — кованая вкладка-стрелка из правой стенки
+   ────────────────────────────────────────────────────────── */
+.edge-tab {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  /* По умолчанию большая часть скрыта за краем — торчит только полоска со стрелкой */
+  transform: translate(calc(100% - 26px), -50%);
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 22px 0 16px;
-  height: 54px;
+  padding: 12px 18px 12px 12px;
+  height: 52px;
   border: 1px solid var(--ember-heart);
+  border-right: none;
   background: var(--grad-ember);
   color: var(--text-bright);
   font-family: var(--font-display);
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
   cursor: pointer;
-  overflow: hidden;
+  border-radius: 8px 0 0 8px;
   box-shadow:
     var(--inset-iron-top),
     inset 0 -2px 3px rgba(0, 0, 0, 0.35),
-    0 8px 24px rgba(226, 67, 16, 0.45),
+    -6px 0 18px rgba(0, 0, 0, 0.45),
     var(--glow-ember);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
-  transition: transform 0.25s var(--ease-forge), box-shadow 0.25s var(--ease-smoke);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  transition: transform 0.45s var(--ease-forge), box-shadow 0.3s var(--ease-smoke);
   user-select: none;
-  clip-path: var(--clip-forged-sm);
 }
-.chat-fab::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg,
-    transparent 0%, rgba(255, 201, 121, 0.4) 50%, transparent 100%);
-  transform: translateX(-120%);
-  transition: transform 0.7s var(--ease-smoke);
-  pointer-events: none;
-}
-.chat-fab:hover {
-  transform: translateY(-3px);
+/* Hover — выезжает целиком + иконка/лейбл видны */
+.edge-tab:hover,
+.edge-tab.is-hover {
+  transform: translate(0, -50%);
   box-shadow:
     var(--inset-iron-top),
     inset 0 -2px 3px rgba(0, 0, 0, 0.35),
-    0 12px 34px rgba(226, 67, 16, 0.55),
+    -10px 0 28px rgba(226, 67, 16, 0.5),
     var(--glow-ember-strong);
 }
-.chat-fab:hover::after { transform: translateX(120%); }
-.chat-fab.open {
-  background: linear-gradient(180deg,
-    var(--ash-ironrust) 0%,
-    var(--ash-coal) 100%);
-  border-color: var(--bronze-dark);
-  color: var(--text-parchment);
-  box-shadow: var(--inset-iron-top), var(--shadow-cast);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+/* Auto-attract — вкладка сама приоткрывается на ~2.4 сек, мягким двойным "вздохом" */
+.edge-tab.is-attract {
+  animation: edgeTabAttract 2.4s var(--ease-forge) both;
 }
-.fab-icon {
-  position: relative;
-  z-index: 1;
-  line-height: 1;
-  display: flex;
+@keyframes edgeTabAttract {
+  0%   { transform: translate(calc(100% - 26px), -50%); }
+  18%  { transform: translate(0, -50%); }
+  42%  { transform: translate(calc(100% - 60px), -50%); }
+  62%  { transform: translate(0, -50%); }
+  100% { transform: translate(calc(100% - 26px), -50%); }
+}
+
+.edge-tab-arrow {
+  display: inline-flex;
   align-items: center;
-  transition: transform 0.2s var(--ease-forge);
+  justify-content: center;
+  width: 16px;
+  color: var(--text-bright);
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+  transition: transform 0.3s var(--ease-forge);
 }
-.fab-label {
-  position: relative;
-  z-index: 1;
+.edge-tab:hover .edge-tab-arrow,
+.edge-tab.is-hover .edge-tab-arrow {
+  transform: translateX(-2px);
 }
 
-/* FAB transition */
-.fab-icon-enter-active, .fab-icon-leave-active { transition: opacity 0.16s var(--ease-smoke), transform 0.16s var(--ease-forge); }
-.fab-icon-enter-from { opacity: 0; transform: rotate(-90deg) scale(0.7); }
-.fab-icon-leave-to   { opacity: 0; transform: rotate(90deg) scale(0.7); }
+.edge-tab-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--text-bright);
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
 
-/* ── Chat panel — каменный свиток ── */
+.edge-tab-label {
+  white-space: nowrap;
+  font-family: var(--font-display);
+}
+
+/* Пульсирующий ореол для привлечения внимания (постоянно, но мягко) */
+.edge-tab-pulse {
+  position: absolute;
+  inset: -3px;
+  border-radius: 10px 0 0 10px;
+  border: 1px solid var(--ember-glow);
+  opacity: 0;
+  pointer-events: none;
+  animation: edgePulse 3.2s var(--ease-smoke) infinite;
+}
+@keyframes edgePulse {
+  0%   { opacity: 0;    transform: scale(0.96); }
+  35%  { opacity: 0.55; transform: scale(1.04); }
+  70%  { opacity: 0;    transform: scale(1.08); }
+  100% { opacity: 0;    transform: scale(1.08); }
+}
+
+/* ──────────────────────────────────────────────────────────
+   CHAT PANEL — выезжает справа, прижата к нижне-правому углу
+   ────────────────────────────────────────────────────────── */
 .chat-panel {
-  position: relative;
+  position: absolute;
+  bottom: 28px;
+  right: 28px;
   width: 380px;
   max-height: 600px;
   overflow: hidden;
@@ -498,21 +550,20 @@ watch(() => messages.value.length, () => scrollToBottom());
     0 0 60px rgba(226, 67, 16, 0.18);
 }
 
-/* Panel transition */
 .chat-panel-enter-active {
-  transition: opacity 0.3s var(--ease-smoke), transform 0.3s var(--ease-forge);
+  transition: opacity 0.32s var(--ease-smoke), transform 0.32s var(--ease-forge);
 }
 .chat-panel-leave-active {
   transition: opacity 0.22s var(--ease-smoke), transform 0.22s var(--ease-smoke);
 }
 .chat-panel-enter-from {
   opacity: 0;
-  transform: translateY(20px) scale(0.96);
+  transform: translateX(40px) scale(0.96);
   transform-origin: bottom right;
 }
 .chat-panel-leave-to {
   opacity: 0;
-  transform: translateY(16px) scale(0.97);
+  transform: translateX(40px) scale(0.97);
   transform-origin: bottom right;
 }
 
@@ -751,7 +802,6 @@ watch(() => messages.value.length, () => scrollToBottom());
   transform: translateX(0);
 }
 
-/* ── Message transition ── */
 .msg-enter-active { transition: opacity 0.25s var(--ease-smoke), transform 0.25s var(--ease-forge); }
 .msg-enter-from   { opacity: 0; transform: translateY(8px); }
 
@@ -877,7 +927,6 @@ watch(() => messages.value.length, () => scrollToBottom());
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Form slide transition */
 .form-slide-enter-active { transition: opacity 0.3s var(--ease-smoke), transform 0.3s var(--ease-forge); }
 .form-slide-enter-from   { opacity: 0; transform: translateY(10px); }
 
@@ -890,12 +939,18 @@ watch(() => messages.value.length, () => scrollToBottom());
 
 /* ── Responsive ── */
 @media (max-width: 480px) {
-  .support-chat-root { bottom: 16px; right: 16px; }
+  .edge-tab {
+    padding: 10px 14px 10px 10px;
+    height: 46px;
+    font-size: 0.7rem;
+    gap: 7px;
+  }
+  .edge-tab-label { display: none; }
   .chat-panel {
+    bottom: 16px;
+    right: 16px;
     width: calc(100vw - 32px);
     max-height: 70vh;
   }
-  .fab-label { display: none; }
-  .chat-fab { padding: 0 14px; }
 }
 </style>

@@ -29,58 +29,31 @@ watch(() => route.path, () => {
 const scrolled = ref(false);
 const mobileMenuOpen = ref(false);
 
-// ── Nav dropdowns ──
-const genresDropdownOpen = ref(false);
-const adminDropdownOpen = ref(false);
-let genresHoverTimer = null;
-let adminHoverTimer = null;
-
-const openGenresDropdown = () => {
-  clearTimeout(genresHoverTimer);
-  genresDropdownOpen.value = true;
+// ── Theme dropdown ──
+const themeDropdownOpen = ref(false);
+let themeHoverTimer = null;
+const openThemeDropdown = () => {
+  clearTimeout(themeHoverTimer);
+  themeDropdownOpen.value = true;
 };
-const closeGenresDropdown = () => {
-  genresHoverTimer = setTimeout(() => { genresDropdownOpen.value = false; }, 150);
-};
-const openAdminDropdown = () => {
-  clearTimeout(adminHoverTimer);
-  adminDropdownOpen.value = true;
-};
-const closeAdminDropdown = () => {
-  adminHoverTimer = setTimeout(() => { adminDropdownOpen.value = false; }, 150);
+const closeThemeDropdown = () => {
+  themeHoverTimer = setTimeout(() => { themeDropdownOpen.value = false; }, 200);
 };
 
-const genres = [
-  { key: 'Action',    label: 'Action',      icon: '⚔' },
-  { key: 'RPG',       label: 'RPG',         icon: '✦' },
-  { key: 'Strategy',  label: 'Стратегии',   icon: '◈' },
-  { key: 'Adventure', label: 'Приключения', icon: '⚑' },
-  { key: 'Sports',    label: 'Спорт',       icon: '⚡' },
-  { key: 'Horror',    label: 'Хоррор',      icon: '☾' },
-  { key: 'Simulator', label: 'Симуляторы',  icon: '⚙' },
-  { key: 'Racing',    label: 'Гонки',       icon: '➤' },
+const themeOptions = [
+  { value: 'dark',   icon: '☾', label: 'Ночь Кузницы',   desc: 'Тёмная Орда (текущая)' },
+  { value: 'light',  icon: '☀', label: 'День Осады',      desc: 'Песок и терракота' },
+  { value: 'legacy', icon: '◈', label: 'Древний свод',    desc: 'Старая тёмно-синяя' },
 ];
+const themeIconFor = (value) => themeOptions.find(t => t.value === value)?.icon || '☾';
 
-// ── Global search ──
-const searchOpen = ref(false);
+// ── Global search (всегда развёрнут в шапке) ──
 const searchQuery = ref('');
 const searchResults = ref([]);
 const searchLoading = ref(false);
 const searchInputRef = ref(null);
 let allGamesCache = null;
 let searchTimer = null;
-
-const openSearch = async () => {
-  searchOpen.value = true;
-  await new Promise(r => setTimeout(r, 50));
-  searchInputRef.value?.focus();
-};
-
-const closeSearch = () => {
-  searchOpen.value = false;
-  searchQuery.value = '';
-  searchResults.value = [];
-};
 
 const doSearch = async (q) => {
   clearTimeout(searchTimer);
@@ -107,7 +80,8 @@ const doSearch = async (q) => {
 watch(searchQuery, (q) => doSearch(q));
 
 const goToGame = (id) => {
-  closeSearch();
+  searchQuery.value = '';
+  searchResults.value = [];
   router.push({ name: 'game', params: { id } });
 };
 
@@ -187,8 +161,9 @@ onUnmounted(() => {
 <template>
   <div id="app-wrapper">
 
-    <!-- Custom cursor (desktop only) — грубый кулак с торчащим пальцем-указателем,
-         на кончике — чёрный коготь. Никаких вращений/пульсаций/искр.
+    <!-- Custom cursor (desktop only) — орочья рука с указательным пальцем.
+         Зелёная кожа, тёмные когти, кованая повязка на запястье с заклёпкой.
+         Кончик когтя указательного пальца — точка клика (10.5, 0 в SVG-coords).
          Teleport в <body>, чтобы курсор был сиблингом чатов/модалок
          (которые тоже телепортируются), иначе backdrop-filter-модалки
          создают свой stacking-context и курсор оказывается под ними. -->
@@ -198,25 +173,67 @@ onUnmounted(() => {
         class="orc-cursor"
         :class="{ 'is-hover': cursorHover, 'is-clicking': cursorClicking }"
         ref="cursorRing"
-        viewBox="-3 -5 38 46"
-        width="30"
-        height="38"
+        viewBox="0 0 48 48"
+        width="44"
+        height="44"
+        overflow="visible"
         aria-hidden="true"
         focusable="false"
       >
-        <path class="oc-claw" d="M 8 0 L 12 0 L 10 -4 Z" />
-        <path
-          class="oc-hand"
-          d="M 8 0
-             L 12 0
-             L 12 18
-             L 16 18  L 16 14  L 20 14  L 20 18
-             L 24 18  L 24 14  L 28 14
-             L 28 34
-             L 24 38  L 10 38  L 4 34
-             L 4 22   L 8 22
-             Z"
-        />
+        <!-- Весь визуал курсора повёрнут на -25° вокруг кончика когтя (10.5, 0) —
+             рука держится «под боком» как в классических RTS-курсорах:
+             палец указывает влево-вверх, тело руки уходит вправо-вниз.
+             Точка клика (кончик когтя) остаётся в SVG-координате (10.5, 0). -->
+        <g transform="rotate(-25 10.5 0)">
+          <!-- Главный силуэт: палец + кулак с тремя костяшками + предплечье.
+               Идём по часовой от верха пальца. -->
+          <path
+            class="oc-hand"
+            d="M 8 4
+               L 13 4
+               L 13 13
+               L 17 13   L 17 11   L 20 11   L 20 13
+               L 22 13   L 22 10   L 25 10   L 25 13
+               L 28 13
+               L 28 42
+               L 4 42
+               L 4 13
+               L 8 13
+               Z"
+          />
+
+          <!-- Светлая полоска вдоль пальца — намёк на цилиндрическую форму -->
+          <line class="oc-highlight" x1="9.6" y1="5" x2="9.6" y2="12.5" />
+
+          <!-- Тёмные тени между костяшками (рисуют пальцы кулака) -->
+          <line class="oc-shadow" x1="17" y1="13" x2="17" y2="20" />
+          <line class="oc-shadow" x1="22" y1="13" x2="22" y2="20" />
+          <line class="oc-shadow" x1="13" y1="13" x2="13" y2="20" />
+
+          <!-- Тёмная тень снизу-справа кулака (объём) -->
+          <path class="oc-volume" d="M 24 14 L 28 14 L 28 30 L 26 30 Z" />
+
+          <!-- Кованая повязка на запястье -->
+          <path class="oc-wrap" d="M 3 30 L 29 30 L 29 38 L 3 38 Z" />
+
+          <!-- Декоративные стежки по краям повязки -->
+          <line class="oc-stitch" x1="3.5" y1="30.8" x2="28.5" y2="30.8" />
+          <line class="oc-stitch" x1="3.5" y1="37.2" x2="28.5" y2="37.2" />
+
+          <!-- Заклёпка по центру повязки -->
+          <circle class="oc-rivet" cx="16" cy="34" r="1.7" />
+          <circle class="oc-rivet-shine" cx="15.4" cy="33.4" r="0.5" />
+
+          <!-- Татуировка-шеврон на тыльной стороне ладони -->
+          <path class="oc-tattoo" d="M 9 17 L 13 21 L 17 17 M 11 17 L 13 19 L 15 17" />
+
+          <!-- Коготь указательного пальца (главный — кончик курсора) -->
+          <path class="oc-claw oc-claw--index" d="M 8 4 L 13 4 L 10.5 0 Z" />
+
+          <!-- Когти на видимых костяшках -->
+          <path class="oc-claw oc-claw--small" d="M 17 11 L 20 11 L 18.5 8 Z" />
+          <path class="oc-claw oc-claw--small" d="M 22 10 L 25 10 L 23.5 7 Z" />
+        </g>
       </svg>
     </Teleport>
 
@@ -246,168 +263,95 @@ onUnmounted(() => {
           </span>
         </RouterLink>
 
-        <!-- Desktop nav -->
+        <!-- Desktop nav (без dropdown-ов — просто ссылки) -->
         <nav class="main-nav" aria-label="Главное меню">
           <RouterLink to="/" class="nav-link"><span>Главная</span></RouterLink>
           <RouterLink to="/news" class="nav-link"><span>Хроники</span></RouterLink>
-
-          <!-- Оружейная с dropdown-ом жанров -->
-          <div
-            class="nav-link-wrap"
-            @mouseenter="openGenresDropdown"
-            @mouseleave="closeGenresDropdown"
-          >
-            <RouterLink to="/catalog" class="nav-link has-dropdown">
-              <span>Оружейная</span>
-              <span class="nav-chevron" :class="{ open: genresDropdownOpen }">▾</span>
-            </RouterLink>
-            <Transition name="dropdown">
-              <div
-                v-if="genresDropdownOpen"
-                class="nav-dropdown genres-dropdown"
-                @mouseenter="openGenresDropdown"
-                @mouseleave="closeGenresDropdown"
-              >
-                <div class="dropdown-head">
-                  <span class="dropdown-eyebrow">Школы боя</span>
-                </div>
-                <div class="dropdown-grid genres-grid">
-                  <RouterLink
-                    v-for="g in genres"
-                    :key="g.key"
-                    :to="{ path: '/catalog', query: { genre: g.key } }"
-                    class="dropdown-item"
-                  >
-                    <span class="dd-icon">{{ g.icon }}</span>
-                    <span class="dd-label">{{ g.label }}</span>
-                  </RouterLink>
-                </div>
-                <div class="dropdown-foot">
-                  <RouterLink to="/catalog" class="dd-see-all">
-                    Весь арсенал
-                    <span>→</span>
-                  </RouterLink>
-                </div>
-              </div>
-            </Transition>
-          </div>
-
+          <RouterLink to="/catalog" class="nav-link"><span>Оружейная</span></RouterLink>
           <RouterLink to="/about" class="nav-link"><span>О клане</span></RouterLink>
-
-          <!-- Совет — dropdown с админскими разделами (только для админов) -->
-          <div
-            v-if="user?.is_admin"
-            class="nav-link-wrap"
-            @mouseenter="openAdminDropdown"
-            @mouseleave="closeAdminDropdown"
-          >
-            <RouterLink to="/admin" class="nav-link admin-link has-dropdown">
-              <span>Совет</span>
-              <span class="nav-chevron" :class="{ open: adminDropdownOpen }">▾</span>
-            </RouterLink>
-            <Transition name="dropdown">
-              <div
-                v-if="adminDropdownOpen"
-                class="nav-dropdown admin-dropdown"
-                @mouseenter="openAdminDropdown"
-                @mouseleave="closeAdminDropdown"
-              >
-                <div class="dropdown-head">
-                  <span class="dropdown-eyebrow">Совет старейшин</span>
-                </div>
-                <div class="dropdown-col">
-                  <RouterLink to="/admin" class="dropdown-item">
-                    <span class="dd-icon">◈</span>
-                    <span class="dd-label">Панель управления</span>
-                  </RouterLink>
-                  <RouterLink to="/admin/games" class="dropdown-item">
-                    <span class="dd-icon">⚔</span>
-                    <span class="dd-label">Игры</span>
-                  </RouterLink>
-                  <RouterLink to="/admin/news" class="dropdown-item">
-                    <span class="dd-icon">✉</span>
-                    <span class="dd-label">Хроники</span>
-                  </RouterLink>
-                  <RouterLink to="/admin/orders" class="dropdown-item">
-                    <span class="dd-icon">☷</span>
-                    <span class="dd-label">Заказы</span>
-                  </RouterLink>
-                  <RouterLink to="/admin/users" class="dropdown-item">
-                    <span class="dd-icon">☗</span>
-                    <span class="dd-label">Воины</span>
-                  </RouterLink>
-                  <RouterLink to="/admin/employees" class="dropdown-item">
-                    <span class="dd-icon">⚑</span>
-                    <span class="dd-label">Команда</span>
-                  </RouterLink>
-                  <RouterLink to="/admin/reviews" class="dropdown-item">
-                    <span class="dd-icon">★</span>
-                    <span class="dd-label">Рецензии</span>
-                  </RouterLink>
-                  <RouterLink to="/admin/support" class="dropdown-item">
-                    <span class="dd-icon">☎</span>
-                    <span class="dd-label">Поддержка</span>
-                  </RouterLink>
-                </div>
-              </div>
-            </Transition>
-          </div>
+          <RouterLink v-if="user?.is_admin" to="/admin" class="nav-link admin-link"><span>Совет</span></RouterLink>
         </nav>
 
-        <!-- Global search — "Вестник" -->
-        <div class="search-wrap" :class="{ open: searchOpen }">
-          <Transition name="search-expand">
-            <div v-if="searchOpen" class="search-bar-wrap">
-              <span class="search-icon-small" aria-hidden="true">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </span>
-              <input
-                ref="searchInputRef"
-                v-model="searchQuery"
-                class="search-input"
-                placeholder="Искать игру, жанр, платформу..."
-                @keydown.escape="closeSearch"
-              />
-              <button class="search-close-btn" @click="closeSearch" title="Закрыть">✕</button>
+        <!-- Global search — "Вестник" (всегда развёрнут, не за иконкой) -->
+        <div class="search-wrap is-always-open">
+          <div class="search-bar-wrap">
+            <span class="search-icon-small" aria-hidden="true">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </span>
+            <input
+              ref="searchInputRef"
+              v-model="searchQuery"
+              class="search-input"
+              placeholder="Искать игру, жанр, платформу..."
+              @keydown.escape="searchQuery = ''"
+            />
+            <button v-if="searchQuery" class="search-close-btn" @click="searchQuery = ''" title="Очистить">✕</button>
 
-              <!-- Dropdown results -->
-              <Transition name="dropdown">
-                <div v-if="searchQuery && (searchResults.length || searchLoading)" class="search-dropdown">
-                  <div v-if="searchLoading" class="search-loading">
-                    <span class="search-spinner"></span> Разведка ведётся…
-                  </div>
-                  <template v-else>
-                    <div
-                      v-for="g in searchResults" :key="g.id"
-                      class="search-result-item"
-                      @click="goToGame(g.id)"
-                    >
-                      <img :src="resolveMediaUrl(g.image)" :alt="g.title" class="sr-img" loading="lazy" width="44" height="44" />
-                      <div class="sr-info">
-                        <span class="sr-title">{{ g.title }}</span>
-                        <span class="sr-genre">{{ g.genre }}</span>
-                      </div>
-                      <span class="sr-price">{{ Number(g.price).toFixed(0) }} ₽</span>
-                    </div>
-                    <div v-if="!searchResults.length" class="search-empty">Разведчики не нашли ничего.</div>
-                  </template>
+            <!-- Dropdown results -->
+            <Transition name="dropdown">
+              <div v-if="searchQuery && (searchResults.length || searchLoading)" class="search-dropdown">
+                <div v-if="searchLoading" class="search-loading">
+                  <span class="search-spinner"></span> Разведка ведётся…
                 </div>
-              </Transition>
-            </div>
-          </Transition>
-
-          <button v-if="!searchOpen" class="action-btn search-btn" @click="openSearch" title="Поиск" aria-label="Открыть поиск">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          </button>
+                <template v-else>
+                  <div
+                    v-for="g in searchResults" :key="g.id"
+                    class="search-result-item"
+                    @click="goToGame(g.id)"
+                  >
+                    <img :src="resolveMediaUrl(g.image)" :alt="g.title" class="sr-img" loading="lazy" width="44" height="44" />
+                    <div class="sr-info">
+                      <span class="sr-title">{{ g.title }}</span>
+                      <span class="sr-genre">{{ g.genre }}</span>
+                    </div>
+                    <span class="sr-price">{{ Number(g.price).toFixed(0) }} ₽</span>
+                  </div>
+                  <div v-if="!searchResults.length" class="search-empty">Разведчики не нашли ничего.</div>
+                </template>
+              </div>
+            </Transition>
+          </div>
         </div>
 
         <!-- User actions -->
         <div class="user-actions">
-          <!-- Theme toggle — torch / sun -->
-          <button class="action-btn theme-btn" @click="themeStore.toggle()" :title="themeStore.isDark ? 'День Осады' : 'Ночь Кузницы'" aria-label="Сменить тему">
-            <span v-if="themeStore.isDark" class="theme-icon">☀</span>
-            <span v-else class="theme-icon">☾</span>
-          </button>
+          <!-- Theme dropdown — три варианта темы -->
+          <div
+            class="theme-wrap"
+            @mouseenter="openThemeDropdown"
+            @mouseleave="closeThemeDropdown"
+          >
+            <button
+              class="action-btn theme-btn-labeled"
+              @click="themeDropdownOpen = !themeDropdownOpen"
+              :aria-expanded="themeDropdownOpen"
+              aria-haspopup="true"
+              aria-label="Сменить тему"
+            >
+              <span class="theme-icon">{{ themeIconFor(themeStore.current) }}</span>
+              <span class="theme-label-text">Тема</span>
+              <span class="nav-chevron" :class="{ open: themeDropdownOpen }">▾</span>
+            </button>
+            <Transition name="dropdown">
+              <div v-if="themeDropdownOpen" class="theme-dropdown" role="menu">
+                <button
+                  v-for="t in themeOptions" :key="t.value"
+                  class="theme-opt"
+                  :class="{ active: themeStore.current === t.value }"
+                  @click="themeStore.setTheme(t.value); themeDropdownOpen = false"
+                  role="menuitemradio"
+                  :aria-checked="themeStore.current === t.value"
+                >
+                  <span class="theme-opt-icon">{{ t.icon }}</span>
+                  <span class="theme-opt-body">
+                    <span class="theme-opt-label">{{ t.label }}</span>
+                    <span class="theme-opt-desc">{{ t.desc }}</span>
+                  </span>
+                  <span v-if="themeStore.current === t.value" class="theme-opt-check">●</span>
+                </button>
+              </div>
+            </Transition>
+          </div>
 
           <RouterLink to="/cart" class="action-btn cart-btn" title="Добыча" aria-label="Корзина">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
@@ -451,8 +395,8 @@ onUnmounted(() => {
             <RouterLink to="/news" @click="mobileMenuOpen = false">Хроники</RouterLink>
             <RouterLink to="/catalog" @click="mobileMenuOpen = false">Оружейная</RouterLink>
             <RouterLink to="/about" @click="mobileMenuOpen = false">О клане</RouterLink>
-            <RouterLink to="/soviet" @click="mobileMenuOpen = false">☭ СССР</RouterLink>
             <RouterLink to="/cart" @click="mobileMenuOpen = false">Добыча</RouterLink>
+            <RouterLink to="/soviet" @click="mobileMenuOpen = false">☭</RouterLink>
             <RouterLink v-if="user?.is_admin" to="/admin" @click="mobileMenuOpen = false">Совет старейшин</RouterLink>
           </nav>
           <div class="mobile-auth">
@@ -566,10 +510,12 @@ onUnmounted(() => {
             </div>
 
             <div class="footer-platforms">
-              <span class="fp-badge">Steam</span>
-              <span class="fp-badge">Epic</span>
-              <span class="fp-badge">GOG</span>
-              <span class="fp-badge">Battle.net</span>
+              <a href="https://store.steampowered.com/" target="_blank" rel="noopener" class="fp-badge">Steam</a>
+              <a href="https://store.epicgames.com/" target="_blank" rel="noopener" class="fp-badge">Epic</a>
+              <a href="https://www.gog.com/" target="_blank" rel="noopener" class="fp-badge">GOG</a>
+              <a href="https://www.blizzard.com/" target="_blank" rel="noopener" class="fp-badge">Battle.net</a>
+              <a href="https://ubisoftconnect.com/" target="_blank" rel="noopener" class="fp-badge">Ubisoft</a>
+              <a href="https://www.ea.com/" target="_blank" rel="noopener" class="fp-badge">EA</a>
             </div>
           </div>
         </div>
@@ -785,11 +731,13 @@ onUnmounted(() => {
    NAV
    ========================================================== */
 .main-nav {
-  margin-left: var(--sp-8);
+  /* Уплотнённый отступ от лого — на 1280–1440 с 5 пунктами + поиском
+     32px было перебором. */
+  margin-left: var(--sp-5);
   display: flex;
   align-items: center;
-  gap: 2px;
-  flex: 1;
+  gap: 0;
+  flex: 0 1 auto;
 }
 .nav-link {
   position: relative;
@@ -797,9 +745,11 @@ onUnmounted(() => {
   font-size: 0.82rem;
   font-weight: var(--fw-semibold);
   text-transform: uppercase;
-  letter-spacing: var(--ls-wide);
+  letter-spacing: 0.06em;
   color: var(--text-parchment);
-  padding: 10px 16px;
+  /* Уплотнённый padding — на дефолте у нас 5 пунктов nav + поиск + 4 кнопки.
+     Если оставить 10px 16px, на 1366×768 при 100% зума всё рядом не помещается. */
+  padding: 10px 12px;
   text-decoration: none;
   white-space: nowrap;
   border: 1px solid transparent;
@@ -1073,14 +1023,153 @@ onUnmounted(() => {
 }
 .action-btn:hover::before { opacity: 1; }
 
-.theme-btn .theme-icon {
+/* ==========================================================
+   THEME DROPDOWN — кнопка-вывеска с тремя вариантами темы
+   ========================================================== */
+.theme-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.theme-btn-labeled {
+  width: auto;
+  min-width: 0;
+  height: 40px;
+  padding: 0 11px;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.05em;
+}
+.theme-btn-labeled .theme-icon {
   font-size: 1.05rem;
+  line-height: 1;
   color: var(--brass);
   filter: drop-shadow(0 0 4px rgba(199, 154, 94, 0.5));
+  transition: color var(--dur-fast), filter var(--dur-fast);
 }
-.theme-btn:hover .theme-icon {
+.theme-btn-labeled:hover .theme-icon {
   color: var(--ember-gold);
   filter: drop-shadow(0 0 8px rgba(255, 201, 121, 0.8));
+}
+.theme-btn-labeled .theme-label-text {
+  color: var(--text-parchment);
+  text-transform: uppercase;
+}
+.theme-btn-labeled:hover .theme-label-text { color: var(--text-bright); }
+.theme-btn-labeled .nav-chevron {
+  font-size: 0.7rem;
+  color: var(--brass);
+  transition: transform var(--dur-fast) var(--ease-smoke);
+}
+.theme-btn-labeled .nav-chevron.open { transform: rotate(-180deg); }
+
+.theme-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 280px;
+  padding: 8px;
+  background: linear-gradient(180deg,
+    rgba(28, 24, 22, 0.98) 0%,
+    rgba(18, 16, 14, 0.98) 100%);
+  border: 1px solid var(--iron-dark);
+  border-radius: var(--r-md);
+  box-shadow:
+    var(--shadow-cast),
+    0 0 0 1px rgba(199, 154, 94, 0.06),
+    var(--inset-iron-top);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  z-index: var(--z-dropdown, 50);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.theme-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 22px;
+  width: 10px;
+  height: 10px;
+  background: rgba(28, 24, 22, 0.98);
+  border-left: 1px solid var(--iron-dark);
+  border-top: 1px solid var(--iron-dark);
+  transform: rotate(45deg);
+}
+.theme-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--text-parchment);
+  font-family: var(--font-ui);
+  font-size: 0.86rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--dur-fast) var(--ease-smoke);
+}
+.theme-opt:hover {
+  background: linear-gradient(180deg,
+    rgba(226, 67, 16, 0.08) 0%,
+    rgba(138, 31, 24, 0.06) 100%);
+  border-color: var(--iron-warm);
+  color: var(--text-bright);
+}
+.theme-opt.active {
+  background: linear-gradient(180deg,
+    rgba(226, 67, 16, 0.14) 0%,
+    rgba(138, 31, 24, 0.1) 100%);
+  border-color: rgba(226, 67, 16, 0.45);
+  box-shadow: inset 0 0 12px rgba(226, 67, 16, 0.18);
+}
+.theme-opt-icon {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--brass);
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  border: 1px solid var(--iron-dark);
+  border-radius: var(--r-sm);
+  filter: drop-shadow(0 0 4px rgba(199, 154, 94, 0.4));
+}
+.theme-opt.active .theme-opt-icon {
+  color: var(--ember-gold);
+  border-color: rgba(255, 122, 43, 0.5);
+  filter: drop-shadow(0 0 8px rgba(255, 201, 121, 0.8));
+}
+.theme-opt-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.theme-opt-label {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
+  color: inherit;
+}
+.theme-opt-desc {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+.theme-opt-check {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  color: var(--ember-bright);
+  text-shadow: 0 0 8px rgba(255, 122, 43, 0.8);
 }
 
 /* ==========================================================
@@ -1138,32 +1227,45 @@ onUnmounted(() => {
 }
 .profile-name {
   font-family: var(--font-ui);
-  font-size: 0.86rem;
+  font-size: 0.82rem;
   font-weight: var(--fw-semibold);
-  max-width: 120px;
+  max-width: 92px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 /* ==========================================================
-   LOGOUT
+   LOGOUT — компактная иконка-кнопка по дефолту, без подписи.
    ========================================================== */
 .logout-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 8px 10px;
   border-radius: var(--r-sm);
   border: 1px solid var(--iron-dark);
   background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
   color: var(--text-ash);
   font-family: var(--font-ui);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: var(--fw-medium);
   cursor: pointer;
   transition: all var(--dur-fast) var(--ease-smoke);
   white-space: nowrap;
+}
+/* Подпись «Уйти» по дефолту скрыта — иконка дверки понятна без слов,
+   и иначе на 1366×768 при 100% зума хедер не помещает всё в строку.
+   На очень широких мониторах (≥1440px) возвращаем подпись + добавляем
+   немного дыхания остальным элементам. */
+.logout-label { display: none; }
+@media (min-width: 1440px) {
+  .logout-label { display: inline; }
+  .logout-btn { padding: 8px 14px; font-size: 0.82rem; }
+  .search-input { width: 280px; padding: 10px 40px 10px 36px; font-size: 0.9rem; }
+  .nav-link { padding: 10px 14px; font-size: 0.84rem; }
+  .profile-name { max-width: 110px; font-size: 0.84rem; }
 }
 .logout-btn:hover {
   color: var(--ember-spark);
@@ -1540,12 +1642,16 @@ onUnmounted(() => {
   border: 1px solid var(--iron-dark);
   padding: 4px 10px;
   border-radius: var(--r-xs);
+  text-decoration: none;
+  cursor: pointer;
   transition: all var(--dur-fast) var(--ease-smoke);
 }
 .fp-badge:hover {
-  color: var(--brass);
-  border-color: var(--bronze-dark);
-  box-shadow: var(--glow-brass);
+  color: var(--ember-gold);
+  border-color: var(--ember-heart);
+  background: linear-gradient(180deg, var(--ash-bloodrock), var(--ash-coal));
+  box-shadow: var(--glow-ember-soft);
+  transform: translateY(-1px);
 }
 
 /* Divider */
@@ -1621,14 +1727,14 @@ onUnmounted(() => {
   z-index: 2;
 }
 .search-input {
-  width: 280px;
-  padding: 10px 40px 10px 36px;
+  width: 240px;
+  padding: 9px 38px 9px 34px;
   border-radius: var(--r-sm);
   border: 1px solid var(--iron-mid);
   background: linear-gradient(180deg, var(--ash-obsidian) 0%, var(--ash-coal) 100%);
   color: var(--text-bone);
   font-family: var(--font-ui);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   outline: none;
   transition: all var(--dur-fast) var(--ease-smoke);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
@@ -1779,9 +1885,9 @@ onUnmounted(() => {
 .dropdown-leave-to { opacity: 0; transform: translateY(-8px); }
 
 /* ==========================================================
-   CURSOR · "Orc fist" — кулак с торчащим пальцем и когтем.
-   Один SVG-силуэт, без вращений/пульсаций. Только две тихих
-   реакции — потепление на hover и короткий "сжатие" на click.
+   CURSOR · "Orc hand" — орочья рука с указательным пальцем.
+   Зелёная кожа, чёрные когти, кованая повязка с заклёпкой.
+   Минимум анимаций: hover = тёплое свечение, click = сжатие.
    ========================================================== */
 .orc-cursor {
   position: fixed;
@@ -1791,59 +1897,137 @@ onUnmounted(() => {
   will-change: transform;
   opacity: 0;
   overflow: visible;
-  /* Якорь курсора — кончик пальца (левый верх SVG).
-     Сдвигаем, чтобы координата (0,0) приходилась на острие когтя. */
-  margin: -4px 0 0 -10px;
-  /* Плавное движение: быстрый translate от JS + чуть более медленная
-     реакция на hover (scale) — разделены в разных transition-свойствах
-     через вложенный <path>. */
+  /* Точка клика — кончик когтя указательного пальца (10.5, 0 в SVG).
+     SVG 48×48 → 44×44 на экране. Кончик когтя в display-координатах ~(9.6, 0).
+     Margin сдвигает SVG влево, чтобы кончик когтя совпал с курсором мыши. */
+  margin: 0 0 0 -10px;
   transition: opacity 0.25s var(--ease-smoke);
 }
 html.cursor-ready .orc-cursor { opacity: 1; }
 
-/* ── Силуэт кулака ── */
+/* ── Кожа (силуэт ладони и предплечья) — зелёный орк ── */
 .oc-hand {
-  fill: var(--ash-bloodrock);
+  fill: var(--orc-green);
   stroke: var(--iron-void);
-  stroke-width: 2;
+  stroke-width: 1.4;
   stroke-linejoin: miter;
   stroke-linecap: square;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
-  transition: fill 0.18s var(--ease-smoke), stroke 0.18s var(--ease-smoke), transform 0.18s var(--ease-forge);
+  transition: fill 0.18s var(--ease-smoke), transform 0.18s var(--ease-forge);
   transform-box: view-box;
-  transform-origin: 10px 0;
+  transform-origin: 10.5px 0;
 }
 
-/* ── Коготь ── */
+/* ── Светлая полоска вдоль пальца — намёк на цилиндр ── */
+.oc-highlight {
+  stroke: var(--orc-emerald);
+  stroke-width: 1;
+  stroke-linecap: round;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+/* ── Тёмные тени между костяшками — намекают на пальцы кулака ── */
+.oc-shadow {
+  stroke: var(--orc-moss);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* ── Боковая тень — объём кулака ── */
+.oc-volume {
+  fill: var(--orc-moss);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ── Кованая повязка на запястье ── */
+.oc-wrap {
+  fill: var(--iron-void);
+  stroke: var(--bronze-dark);
+  stroke-width: 0.7;
+  pointer-events: none;
+}
+
+/* ── Декоративные стежки по краям повязки ── */
+.oc-stitch {
+  stroke: var(--bronze);
+  stroke-width: 0.4;
+  stroke-dasharray: 1 1;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* ── Заклёпка ── */
+.oc-rivet {
+  fill: var(--brass);
+  stroke: var(--iron-void);
+  stroke-width: 0.5;
+  filter: drop-shadow(0 0 1px rgba(199, 154, 94, 0.6));
+  transition: fill 0.18s var(--ease-smoke), filter 0.18s var(--ease-smoke);
+  pointer-events: none;
+}
+.oc-rivet-shine {
+  fill: var(--ember-gold);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+/* ── Татуировка-шеврон на тыльной стороне ладони ── */
+.oc-tattoo {
+  fill: none;
+  stroke: var(--iron-void);
+  stroke-width: 0.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.55;
+  transition: stroke 0.18s var(--ease-smoke), opacity 0.18s var(--ease-smoke);
+  pointer-events: none;
+}
+
+/* ── Когти (все три) — чёрные, острые ── */
 .oc-claw {
   fill: var(--iron-void);
   stroke: var(--iron-void);
-  stroke-width: 1;
+  stroke-width: 0.6;
   stroke-linejoin: miter;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.7));
   transition: fill 0.18s var(--ease-smoke), transform 0.18s var(--ease-forge);
   transform-box: view-box;
-  transform-origin: 10px 0;
+  transform-origin: 10.5px 0;
 }
 
-/* ── Hover на интерактивном: кулак теплеет до бронзы, коготь блестит ── */
+/* ── Hover на интерактивном: кожа подсвечивается тлеющим красно-оранжевым,
+       заклёпка вспыхивает, когти угольно-чернеют ── */
 .orc-cursor.is-hover .oc-hand {
-  fill: var(--bronze);
-  stroke: var(--iron-void);
-  transform: scale(1.08);
+  fill: var(--orc-emerald);
+  filter: drop-shadow(0 2px 4px rgba(226, 67, 16, 0.45))
+          drop-shadow(0 0 6px rgba(255, 122, 43, 0.32));
+  transform: scale(1.06);
 }
 .orc-cursor.is-hover .oc-claw {
-  fill: var(--ash-obsidian);
-  transform: scale(1.08);
+  fill: #0d0a08;
+  transform: scale(1.06);
+}
+.orc-cursor.is-hover .oc-rivet {
+  fill: var(--ember-gold);
+  filter: drop-shadow(0 0 3px rgba(255, 201, 121, 0.85));
+}
+.orc-cursor.is-hover .oc-tattoo {
+  stroke: var(--ember-deep);
+  opacity: 0.85;
 }
 
-/* ── Click: палец "сжимается" — чуть меньше и темнее ── */
+/* ── Click: рука сжимается — тише, темнее ── */
 .orc-cursor.is-clicking .oc-hand,
 .orc-cursor.is-clicking .oc-claw {
-  transform: scale(0.92);
+  transform: scale(0.93);
 }
 .orc-cursor.is-clicking .oc-hand {
-  fill: var(--ash-forge);
+  fill: var(--orc-moss);
+  filter: drop-shadow(0 1px 2px rgba(226, 67, 16, 0.5));
 }
 
 /* ── Reduce-motion: оставляем только смену цвета, никаких transform ── */
@@ -1856,40 +2040,96 @@ html.cursor-ready .orc-cursor { opacity: 1; }
 }
 
 /* ==========================================================
-   RESPONSIVE
+   RESPONSIVE — header / footer / global app shell
+   Цель: на любой ширине от 320px до desktop UI остаётся читаемым,
+   ничто не вылезает за край, ничто не прилипает к краям.
    ========================================================== */
+@media (max-width: 1380px) {
+  /* 1366×768 при 100% зума попадает сюда — без этого правила
+     при дефолтных padding'ах nav (10px 12px / 0.82rem) и search 240px
+     суммарная ширина выходит за рамки и кнопка Logout уезжает за край. */
+  .header-content { padding: 0 var(--sp-4); gap: 6px; }
+  .main-nav { margin-left: var(--sp-4); }
+  .nav-link { padding: 9px 10px; font-size: 0.78rem; }
+  .logo-word-sub { display: none; }
+  .search-input { width: 220px; }
+}
+
+@media (max-width: 1240px) {
+  /* Промежуточная ступень: профиль-имя прячется ещё ДО того, как
+     вообще nav уезжает в гамбургер — иначе на 1280×110% или 1366×120%
+     кнопка Logout выпадает за край. */
+  .profile-name { display: none; }
+  .profile-btn { padding: 4px 4px; }
+  .search-input { width: 180px; padding: 9px 32px 9px 30px; }
+  .nav-link { padding: 8px 8px; font-size: 0.74rem; letter-spacing: 0.04em; }
+  .main-nav { gap: 0; }
+}
+
 @media (max-width: 1100px) {
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .brand-col { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 24px; }
   .footer-tagline { flex: 1; min-width: 220px; }
-  .main-nav { margin-left: var(--sp-5); }
-  .nav-link { padding: 10px 12px; }
+  .main-nav { margin-left: var(--sp-3); }
+  .search-wrap { flex: 0 1 200px; }
+  /* Тема — на средней ширине прячем подпись, оставляем иконку + chevron */
+  .theme-btn-labeled .theme-label-text { display: none; }
+  .theme-btn-labeled { padding: 0 9px; gap: 5px; }
 }
 
 @media (max-width: 980px) {
-  .logo-word-sub { display: none; }
-  .search-input { width: 220px; }
+  /* logo-word-sub уже скрыт с 1280px */
+  .search-wrap { flex: 1 1 180px; min-width: 0; }
+  .search-input { width: 100%; }
 }
 
 @media (max-width: 900px) {
   .main-nav { display: none; }
   .hamburger { display: flex; }
-  .logout-label, .profile-name { display: none; }
+  /* .logout-label / .profile-name уже скрыты выше — здесь только nav→hamburger. */
   .footer-banners { display: none; }
+  .header-content { gap: 8px; }
+}
+
+@media (max-width: 720px) {
+  .header-content { padding: 0 var(--sp-4); }
+  .logo-word-main, .logo-word-accent { font-size: 1.1rem; }
+  .logo-sigil-wrap, .logo-sigil { width: 36px; height: 36px; }
+  /* Кнопки действий компактнее */
+  .action-btn { width: 36px; height: 36px; }
+  .theme-btn-labeled { width: 36px; padding: 0; gap: 0; }
+  .theme-btn-labeled .nav-chevron { display: none; }
+  .search-wrap { flex: 1 1 0; }
 }
 
 @media (max-width: 640px) {
-  .footer-grid { grid-template-columns: 1fr; }
+  .footer-grid { grid-template-columns: 1fr; gap: 28px; }
   .brand-col { flex-direction: column; }
-  .footer-bottom { flex-direction: column; text-align: center; }
+  .footer-bottom { flex-direction: column; text-align: center; gap: 10px; }
+  .footer-inner { padding-left: 18px; padding-right: 18px; }
+  .footer-platforms { justify-content: flex-start; }
   .auth-btn.ghost { display: none; }
-  .search-input { width: 180px; }
-  .search-dropdown { width: 280px; }
+  .search-dropdown { width: 100%; max-width: 320px; left: auto; right: 0; }
+  .theme-dropdown { right: -8px; min-width: 240px; }
 }
 
-@media (max-width: 400px) {
-  .header-content { padding: 0 var(--sp-4); }
+@media (max-width: 480px) {
+  .header-content { padding: 0 var(--sp-3); height: 60px; gap: 6px; }
   .logo-word { display: none; }
+  .auth-btn.solid { padding: 8px 12px; font-size: 0.75rem; }
+  .auth-btn.solid span { display: inline; }
+  .toast-container { right: 12px; left: 12px; bottom: 16px; }
+  .toast { max-width: 100%; }
+}
+
+@media (max-width: 380px) {
+  /* Iphone SE и подобные — крайние компромиссы */
+  .header-content { padding: 0 8px; gap: 4px; }
+  .logo-sigil-wrap, .logo-sigil { width: 32px; height: 32px; }
+  .action-btn { width: 32px; height: 32px; }
+  .theme-btn-labeled { width: 32px; }
+  /* Поиск всё-таки прячем за иконку, иначе кнопкам нет места */
+  .search-wrap { display: none; }
 }
 </style>
 

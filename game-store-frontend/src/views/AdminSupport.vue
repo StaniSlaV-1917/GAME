@@ -210,7 +210,11 @@ onMounted(loadTickets);
 </script>
 
 <style scoped>
-/* AdminSupport · Ashenforge — стража поддержки */
+/* AdminSupport · Ashenforge — стража поддержки.
+   Подключаем общие админ-стили (.admin-page-container, .admin-back-button,
+   .admin-page-title, .page-header, .admin-loading, .admin-empty, кованые
+   кнопки и т.п.) — иначе страница выпадает из общей стилистики Совета. */
+@import '../assets/admin.css';
 
 /* ── Filters ── */
 .filters-row {
@@ -221,9 +225,9 @@ onMounted(loadTickets);
   flex-wrap: wrap;
 }
 .search-input {
-  flex: 1;
-  min-width: 220px;
-  padding: 10px 14px;
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 11px 16px;
   border: 1px solid var(--iron-mid);
   background: linear-gradient(180deg, rgba(8, 6, 10, 0.7), rgba(18, 16, 13, 0.85));
   color: var(--text-bone);
@@ -241,30 +245,32 @@ onMounted(loadTickets);
 
 .status-filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .filter-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 13px;
+  padding: 8px 14px;
   border: 1px solid var(--iron-dark);
-  background: rgba(8, 6, 10, 0.45);
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
   color: var(--text-ash);
   font-family: var(--font-ui);
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   text-transform: uppercase;
   cursor: pointer;
   box-shadow: var(--inset-iron-top);
   transition: all 0.2s var(--ease-smoke);
 }
 .filter-btn:hover {
-  background: rgba(122, 93, 72, 0.12);
+  background: linear-gradient(180deg, var(--ash-ironrust) 0%, var(--ash-stone) 100%);
   color: var(--text-parchment);
+  border-color: var(--bronze-dark);
 }
 .filter-btn.active {
   background: linear-gradient(180deg, var(--ash-forge) 0%, var(--ash-bloodrock) 100%);
   border-color: var(--bronze);
   color: var(--ember-gold);
+  box-shadow: var(--inset-iron-top), 0 0 10px rgba(226, 67, 16, 0.25);
 }
 .filter-dot {
   width: 7px; height: 7px;
@@ -275,8 +281,10 @@ onMounted(loadTickets);
   background: rgba(8, 6, 10, 0.55);
   border: 1px solid var(--iron-dark);
   padding: 0 7px;
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--text-parchment);
+  min-width: 18px;
+  text-align: center;
 }
 
 /* ── Header badges ── */
@@ -361,21 +369,22 @@ onMounted(loadTickets);
   color: var(--text-ash);
 }
 .del-btn {
-  width: 30px; height: 30px;
+  width: 32px; height: 32px;
   border: 1px solid var(--iron-dark);
-  background: rgba(8, 6, 10, 0.45);
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
   color: var(--text-ash);
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   box-shadow: var(--inset-iron-top);
   transition: all 0.2s var(--ease-smoke);
 }
 .del-btn:hover {
-  background: rgba(138, 31, 24, 0.35);
-  color: #ffb4a8;
+  background: linear-gradient(180deg, #8a1f18 0%, #5a1412 100%);
+  color: #ffe0d8;
   border-color: #c2281a;
+  box-shadow: var(--inset-iron-top), 0 0 10px rgba(194, 40, 26, 0.4);
 }
 
 /* ── Sender row ── */
@@ -504,11 +513,46 @@ onMounted(loadTickets);
   flex-wrap: wrap;
 }
 
+/* ==========================================================
+   RESPONSIVE — сетка адаптируется на всём диапазоне
+   ========================================================== */
+@media (max-width: 1024px) {
+  .ticket-card { padding: 18px 20px; }
+  .ticket-head-right { flex-wrap: wrap; }
+}
+
+@media (max-width: 768px) {
+  .filters-row { gap: 10px; }
+  .status-filters { gap: 5px; width: 100%; overflow-x: auto; flex-wrap: nowrap; padding: 2px 0 6px; scrollbar-width: thin; }
+  .filter-btn { flex-shrink: 0; padding: 7px 12px; font-size: 0.72rem; }
+  .ticket-card { padding: 16px 18px; }
+  .header-badges { width: 100%; }
+  .badge { padding: 5px 10px; font-size: 0.7rem; letter-spacing: 1px; }
+}
+
 @media (max-width: 640px) {
-  .filters-row { flex-direction: column; align-items: stretch; }
-  .status-filters { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
-  .ticket-sender { flex-wrap: wrap; }
-  .ticket-status-wrap { width: 100%; }
-  .status-select { width: 100%; }
+  .ticket-head { gap: 8px; }
+  .ticket-head-right { width: 100%; justify-content: space-between; }
+  .ticket-meta { flex-wrap: wrap; }
+  .ticket-sender { flex-wrap: wrap; gap: 10px; }
+  .ticket-status-wrap { flex: 1 1 100%; }
+  .status-select { width: 100%; padding: 8px 12px; }
+  .ticket-body { padding: 11px 13px; font-size: 0.88rem; }
+  .note-textarea { padding: 10px 12px; font-size: 0.86rem; }
+}
+
+@media (max-width: 480px) {
+  .ticket-card {
+    padding: 14px 14px;
+    /* Полоса статуса остаётся видна, но не выпирает наружу — двигаем внутрь */
+  }
+  .ticket-card::before { left: 0; }
+  .ticket-id { font-size: 0.7rem; padding: 2px 8px; }
+  .ticket-path { font-size: 0.78rem; }
+  .ticket-date { font-size: 0.7rem; }
+  .sender-avatar { width: 32px; height: 32px; font-size: 0.82rem; }
+  .sender-name { font-size: 0.86rem; }
+  .sender-email { font-size: 0.74rem; }
+  .badge { font-size: 0.66rem; padding: 4px 8px; }
 }
 </style>

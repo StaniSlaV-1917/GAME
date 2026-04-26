@@ -107,42 +107,40 @@
         ></button>
       </div>
 
-      <!-- Управление -->
+      <!-- Управление: кнопка "Испытать удачу" видна только когда нет победителя.
+           Кнопки победителя переехали внутрь spotlight'а (см. ниже). -->
       <div class="carousel-controls">
-        <template v-if="!winnerGame">
-          <button
-            class="roulette-btn"
-            @click="startRoulette"
-            :disabled="isSpinning || !games.length"
-            :class="{ spinning: isSpinning }"
-          >
-            <span class="rb-label">{{ isSpinning ? 'Огонь раздут…' : 'Испытать удачу' }}</span>
-          </button>
-        </template>
-        <template v-else>
-          <div class="winner-actions">
-            <router-link :to="{ name: 'game', params: { id: winnerGame.id } }" class="winner-btn-buy">
-              <span class="wbb-label">Взять за {{ Number(winnerGame.price).toFixed(0) }} ₽</span>
-            </router-link>
-            <button class="winner-btn-reset" @click="resetRoulette">Ещё раз</button>
-          </div>
-        </template>
+        <button
+          v-if="!winnerGame"
+          class="roulette-btn"
+          @click="startRoulette"
+          :disabled="isSpinning || !games.length"
+          :class="{ spinning: isSpinning }"
+        >
+          <span class="rb-label">{{ isSpinning ? 'Огонь раздут…' : 'Испытать удачу' }}</span>
+        </button>
       </div>
     </div>
 
-    <!-- Подсветка победителя: SVG-лучи горна + кованая плита -->
+    <!-- Подсветка победителя: лучи вокруг картинки + кнопки в одном блоке -->
     <Transition name="winner-pop">
-      <div class="winner-spotlight" v-if="winnerGame && isOverlayVisible">
-        <svg class="winner-rays" viewBox="-120 -120 240 240" aria-hidden="true">
-          <g class="rays-spin">
-            <g v-for="i in 12" :key="`r${i}`" :transform="`rotate(${i * 30})`">
-              <path d="M 0 -42 L 6 -110 L -6 -110 Z" class="ray" />
-            </g>
-          </g>
-        </svg>
-        <div class="winner-card">
+      <div
+        class="winner-spotlight"
+        v-if="winnerGame && isOverlayVisible"
+        @click.self="resetRoulette"
+      >
+        <div class="winner-card" @click.stop>
           <div class="winner-badge">КОВАНЫЙ ПОБЕДИТЕЛЬ</div>
           <div class="winner-img-wrap">
+            <!-- Лучи горна теперь живут вокруг картинки, а не на весь экран —
+                 не уходят в инфинити вниз и не перекрывают кнопки -->
+            <svg class="winner-rays" viewBox="-100 -100 200 200" aria-hidden="true">
+              <g class="rays-spin">
+                <g v-for="i in 12" :key="`r${i}`" :transform="`rotate(${i * 30})`">
+                  <path d="M 0 -42 L 6 -98 L -6 -98 Z" class="ray" />
+                </g>
+              </g>
+            </svg>
             <span class="wc-rivet wc-rivet--tl" aria-hidden="true"></span>
             <span class="wc-rivet wc-rivet--tr" aria-hidden="true"></span>
             <span class="wc-rivet wc-rivet--bl" aria-hidden="true"></span>
@@ -153,7 +151,14 @@
             <h3 class="winner-title">{{ winnerGame.title }}</h3>
             <p class="winner-price">{{ Number(winnerGame.price).toFixed(0) }} ₽</p>
           </div>
-          <p class="winner-hint">Нажмите на фон — закрыть</p>
+          <!-- Кнопки победителя — внутри spotlight, на одном слое с картинкой -->
+          <div class="winner-actions">
+            <router-link :to="{ name: 'game', params: { id: winnerGame.id } }" class="winner-btn-buy">
+              <span class="wbb-label">Взять за {{ Number(winnerGame.price).toFixed(0) }} ₽</span>
+            </router-link>
+            <button class="winner-btn-reset" @click="resetRoulette">Крутить ещё</button>
+          </div>
+          <p class="winner-hint">Клик мимо — закрыть</p>
         </div>
       </div>
     </Transition>
@@ -742,8 +747,12 @@ onDeactivated(() => {
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 15px 44px;
+  /* Фиксируем ширину, чтобы при смене лейбла «Испытать удачу» ↔ «Огонь раздут…»
+     кнопка не сжималась/растягивалась и центр оставался стабильным */
+  min-width: 240px;
   font-family: var(--font-display);
   font-size: 1.04rem;
   font-weight: 700;
@@ -786,7 +795,20 @@ onDeactivated(() => {
   background: linear-gradient(180deg, var(--ash-forge) 0%, var(--ash-bloodrock) 100%);
   color: var(--ember-gold);
   border-color: var(--ember-flame);
-  animation: curGlowPulse 1.4s var(--ease-smoke) infinite;
+  /* ВАЖНО: НЕ используем curGlowPulse — он содержит translate(-50%, -50%)
+     для центрирования .stage-glow и применённый к flex-кнопке смещает её влево-вверх.
+     Вместо этого — пульсация box-shadow и filter, без transform. */
+  animation: rouletteSpinPulse 1.4s var(--ease-smoke) infinite;
+}
+@keyframes rouletteSpinPulse {
+  0%, 100% {
+    box-shadow: var(--inset-iron-top), inset 0 -2px 3px rgba(0, 0, 0, 0.35), var(--glow-ember);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: var(--inset-iron-top), inset 0 -2px 3px rgba(0, 0, 0, 0.35), var(--glow-ember-strong);
+    filter: brightness(1.15);
+  }
 }
 .rb-label { position: relative; z-index: 1; }
 
@@ -850,26 +872,29 @@ onDeactivated(() => {
   border-color: var(--bronze);
 }
 
-/* ===== WINNER SPOTLIGHT — 12 лучей горна + плита ===== */
+/* ===== WINNER SPOTLIGHT — лучи горна вокруг картинки + плита ===== */
 .winner-spotlight {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;                         /* во весь экран — клик мимо карточки = закрытие */
   z-index: 110;
-  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(600px, 95vw);
-  height: min(600px, 95vh);
+  pointer-events: auto;             /* клики ловим */
+  padding: 20px;
 }
 
+/* Лучи теперь живут ВОКРУГ картинки в .winner-img-wrap (см. ниже),
+   а не на весь экран. Селектор остаётся для совместимости стилей <svg>. */
 .winner-rays {
   position: absolute;
-  inset: 0;
-  width: 100%; height: 100%;
+  top: 50%;
+  left: 50%;
+  width: 480px;
+  height: 480px;
+  transform: translate(-50%, -50%);
   pointer-events: none;
+  z-index: 0;                       /* за картинкой */
 }
 .rays-spin {
   transform-origin: 50% 50%;
@@ -890,8 +915,18 @@ onDeactivated(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
   text-align: center;
+  max-width: min(540px, 95vw);
+}
+
+/* Кнопки победителя — внутри spotlight'а, под картинкой и над лучами */
+.winner-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
 }
 
 .winner-badge {
@@ -911,6 +946,8 @@ onDeactivated(() => {
 .winner-img-wrap {
   position: relative;
   width: 270px;
+  /* Позволяем лучам выходить за рамки картинки */
+  overflow: visible;
 }
 .wc-rivet {
   position: absolute;
@@ -928,6 +965,8 @@ onDeactivated(() => {
 .wc-rivet--bl { bottom: 10px; left: 10px; }
 .wc-rivet--br { bottom: 10px; right: 10px; }
 .winner-img {
+  position: relative;
+  z-index: 1;                       /* выше лучей (z-index: 0) */
   width: 270px;
   height: 372px;
   object-fit: cover;
@@ -972,6 +1011,10 @@ onDeactivated(() => {
 .winner-pop-leave-to   { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1100px) {
+  .game-card { width: 220px; }
+  .game-card.center { width: 260px; }
+}
 @media (max-width: 900px) {
   .carousel-stage { padding: 20px clamp(30px, 5vw, 60px); }
   .nav-arrow { width: 42px; height: 48px; }
@@ -981,6 +1024,16 @@ onDeactivated(() => {
   .card-link.is-center .card-img { height: 290px; }
   .winner-img-wrap, .winner-img { width: 240px; }
   .winner-img { height: 330px; }
+  .roulette-btn { padding: 13px 36px; font-size: 0.96rem; min-width: 220px; }
+}
+@media (max-width: 720px) {
+  .carousel-stage { padding: 18px clamp(20px, 4vw, 40px); }
+  .game-card { width: 180px; }
+  .game-card.center { width: 210px; }
+  .card-img { height: 240px; }
+  .card-link.is-center .card-img { height: 270px; }
+  .winner-card { padding: 18px; }
+  .winner-title { font-size: 1.4rem; }
 }
 @media (max-width: 600px) {
   .carousel-stage { padding: 16px 12px; }
@@ -991,6 +1044,19 @@ onDeactivated(() => {
   .card-link.is-center .card-img { height: 260px; }
   .winner-img-wrap, .winner-img { width: 210px; }
   .winner-img { height: 290px; }
+  .roulette-btn { padding: 12px 28px; font-size: 0.88rem; min-width: 200px; }
+}
+@media (max-width: 480px) {
+  .game-card { width: 150px; }
+  .game-card.center { width: 180px; }
+  .card-img { height: 200px; }
+  .card-link.is-center .card-img { height: 230px; }
+  .winner-img-wrap, .winner-img { width: 180px; }
+  .winner-img { height: 250px; }
+  .winner-title { font-size: 1.2rem; }
+  .roulette-btn { padding: 11px 22px; font-size: 0.82rem; min-width: 180px; letter-spacing: 1.2px; }
+  .winner-actions { flex-direction: column; width: 100%; }
+  .winner-btn-buy, .winner-btn-reset { width: 100%; justify-content: center; }
 }
 
 /* ===== reduced-motion ===== */
