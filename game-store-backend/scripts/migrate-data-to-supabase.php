@@ -4,27 +4,33 @@
  *   локальный MySQL (game_store_laravel) → Supabase Postgres
  *
  * Использование (из game-store-backend/):
- *   $env:DATABASE_URL="postgresql://postgres:ПАРОЛЬ@db.adoyjzsgtuhlzflizxrp.supabase.co:5432/postgres"
+ *   $env:SUPABASE_URL="postgresql://postgres.xxx:ПАРОЛЬ@aws-0-eu-central-1.pooler.supabase.com:6543/postgres"
  *   php scripts/migrate-data-to-supabase.php
  *
- * Или одной строкой в PowerShell:
- *   $env:DATABASE_URL="postgresql://...";  php scripts/migrate-data-to-supabase.php
+ * Особенности:
+ *   - Используем именно SUPABASE_URL (а НЕ DATABASE_URL), чтобы Laravel'овский
+ *     env('DATABASE_URL') в database.php не перехватил локальное mysql-соединение.
+ *   - Лучше использовать строку из Supabase pooler-а (порт 6543 transaction
+ *     mode, либо 5432 session mode) — direct connection (db.xxx.supabase.co)
+ *     IPv6-only и с Windows-машин обычно не резолвится.
+ *   - Не используем SET session_replication_role — pooler не любит
+ *     session-state. Вместо этого копируем в правильном FK-порядке.
  *
  * Что делает:
- *   1. Бутстрапит Laravel (использует уже настроенное подключение mysql из .env).
- *   2. Регистрирует второе соединение `supabase` через DATABASE_URL.
- *   3. На стороне Postgres отключает session_replication_role (FK-проверки),
- *      чтобы порядок вставки родителей/детей не имел значения.
- *   4. Для каждой таблицы:
- *      - Truncate target (старые данные с прода стираются — у нас БД пустая,
- *        так что не страшно)
- *      - Копирует чанками по 100 строк
- *      - Конвертирует bool-колонки (MySQL tinyint(1) 0/1 → Postgres true/false)
- *   5. После всех вставок сбрасывает sequence'ы под MAX(id).
+ *   1. Бутстрапит Laravel (mysql из .env).
+ *   2. Регистрирует второе соединение `supabase` через SUPABASE_URL.
+ *   3. Для каждой таблицы (родители → дети):
+ *      - Truncate target
+ *      - Копирует чанками по 100 строк, конвертирует bool tinyint(1) → bool
+ *   4. После — sequence reset под MAX(id).
  *
- * Что НЕ копирует (служебные на стороне Postgres, должны быть свежими):
- *   migrations, sessions, cache, cache_locks, jobs
+ * Не копируется: migrations, sessions, cache, cache_locks, jobs (служебные).
  */
+
+// Защита от того, что DATABASE_URL может быть выставлен в окружении
+// (тогда Laravel mysql-конфиг подцепит её и обманет нас, как в прошлом запуске).
+putenv('DATABASE_URL');
+unset($_ENV['DATABASE_URL'], $_SERVER['DATABASE_URL']);
 
 require __DIR__ . '/../vendor/autoload.php';
 $app = require_once __DIR__ . '/../bootstrap/app.php';
@@ -34,11 +40,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 // ── Проверки окружения ───────────────────────────────────────
-$dbUrl = getenv('DATABASE_URL') ?: ($_SERVER['DATABASE_URL'] ?? null);
+$dbUrl = getenv('SUPABASE_URL') ?: ($_SERVER['SUPABASE_URL'] ?? null);
 if (!$dbUrl) {
-    fwrite(STDERR, "❌ DATABASE_URL не задан. Запуск:\n");
-    fwrite(STDERR, "   \$env:DATABASE_URL=\"postgresql://postgres:ПАРОЛЬ@db.xxx.supabase.co:5432/postgres\"\n");
+    fwrite(STDERR, "❌ SUPABASE_URL не задан. Запуск:\n");
+    fwrite(STDERR, "   \$env:SUPABASE_URL=\"postgresql://postgres.xxx:ПАРОЛЬ@aws-0-XX.pooler.supabase.com:6543/postgres\"\n");
     fwrite(STDERR, "   php scripts/migrate-data-to-supabase.php\n");
+    fwrite(STDERR, "\nUrl бери из Supabase → Connect → Connection pooler.\n");
     exit(1);
 }
 foreach (['pdo_mysql', 'pdo_pgsql'] as $ext) {
@@ -61,6 +68,8 @@ config(['database.connections.supabase' => [
 DB::purge('supabase');
 
 // ── Список таблиц в порядке зависимостей FK ──────────────────
+// Родители перед детьми — тогда даже без отключения FK-проверок
+// constraints не падают.
 $tables = [
     'users',
     'employees',
@@ -79,22 +88,31 @@ $tables = [
     'password_reset_tokens',
 ];
 
-// ── Проверка соединения ──────────────────────────────────────
-echo "🔌 Подключаюсь к Supabase…\n";
-try {
-    DB::connection('supabase')->statement("SELECT 1");
-    echo "✅ Supabase OK\n";
-} catch (\Throwable $e) {
-    fwrite(STDERR, "❌ Не удалось подключиться к Supabase: " . $e->getMessage() . "\n");
-    exit(1);
-}
-
+// ── Проверка соединений ──────────────────────────────────────
 echo "🔌 Локальная MySQL…\n";
 try {
     DB::connection()->statement("SELECT 1");
-    echo "✅ Local MySQL OK (БД: " . DB::connection()->getDatabaseName() . ")\n\n";
+    $localDb = DB::connection()->getDatabaseName();
+    if ($localDb === 'postgres') {
+        fwrite(STDERR, "❌ Локальная mysql-сессия указывает на 'postgres' — где-то ещё перехвачен URL.\n");
+        fwrite(STDERR, "   Закрой это PowerShell-окно, открой новое и повтори:\n");
+        fwrite(STDERR, "      cd C:\\OSPanel\\domains\\Games\\game-store-backend\n");
+        fwrite(STDERR, "      \$env:SUPABASE_URL=\"...\"\n");
+        fwrite(STDERR, "      php scripts/migrate-data-to-supabase.php\n");
+        exit(1);
+    }
+    echo "✅ Local MySQL OK (БД: {$localDb})\n";
 } catch (\Throwable $e) {
     fwrite(STDERR, "❌ Не удалось подключиться к локальной MySQL: " . $e->getMessage() . "\n");
+    exit(1);
+}
+
+echo "🔌 Supabase…\n";
+try {
+    DB::connection('supabase')->statement("SELECT 1");
+    echo "✅ Supabase OK\n\n";
+} catch (\Throwable $e) {
+    fwrite(STDERR, "❌ Не удалось подключиться к Supabase: " . $e->getMessage() . "\n");
     exit(1);
 }
 
@@ -109,17 +127,16 @@ $rows = DB::connection('supabase')->select("
 foreach ($rows as $r) {
     $columnTypes[$r->table_name][$r->column_name] = $r->data_type;
 }
+echo "✅ Найдено таблиц: " . count($columnTypes) . "\n\n";
 
 // ── Перенос ──────────────────────────────────────────────────
-DB::connection('supabase')->statement("SET session_replication_role = 'replica'");
-
 $totalRows = 0;
 foreach ($tables as $table) {
     if (!Schema::hasTable($table)) {
         echo "⏭️  {$table}: нет в локальной MySQL, пропуск\n";
         continue;
     }
-    if (!Schema::connection('supabase')->hasTable($table)) {
+    if (!isset($columnTypes[$table])) {
         echo "⚠️  {$table}: нет в Supabase (миграция не прошла?), пропуск\n";
         continue;
     }
@@ -130,13 +147,10 @@ foreach ($tables as $table) {
         continue;
     }
 
-    // Truncate target
     DB::connection('supabase')->table($table)->truncate();
 
-    // Тянем все строки (для прототипа OK; для больших таблиц можно chunkById)
     $sourceRows = DB::table($table)->get()->map(function($r) use ($table, $columnTypes) {
         $arr = (array)$r;
-        // Конвертируем bool-колонки: MySQL tinyint(1) 0/1 → PHP bool → Postgres bool
         foreach ($arr as $col => &$val) {
             $type = $columnTypes[$table][$col] ?? null;
             if ($type === 'boolean' && is_numeric($val)) {
@@ -146,14 +160,12 @@ foreach ($tables as $table) {
         return $arr;
     })->toArray();
 
-    // Вставка чанками
     $copied = 0;
     foreach (array_chunk($sourceRows, 100) as $chunk) {
         DB::connection('supabase')->table($table)->insert($chunk);
         $copied += count($chunk);
     }
 
-    // Sequence bump (если есть колонка id с serial/bigserial)
     if (isset($columnTypes[$table]['id'])) {
         try {
             DB::connection('supabase')->statement("
@@ -172,7 +184,5 @@ foreach ($tables as $table) {
     $totalRows += $copied;
 }
 
-DB::connection('supabase')->statement("SET session_replication_role = 'origin'");
-
 echo "\n🎉 Готово. Перенесено всего: {$totalRows} строк.\n";
-echo "Откройте https://game-l6voba.fly.dev/api/games — там должны появиться ваши игры.\n";
+echo "Открой https://game-l6voba.fly.dev/api/games — там должны появиться твои игры.\n";
