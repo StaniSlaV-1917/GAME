@@ -10,9 +10,15 @@ class TrustProxies extends Middleware
     /**
      * The trusted proxies for this application.
      *
+     * Fly.io proxy терминирует HTTPS на edge и форвардит к приложению
+     * по HTTP, передавая X-Forwarded-Proto=https. Без 'trust everything'
+     * Laravel игнорирует заголовок и строит URL'ы со схемой http://, что
+     * приводит к Mixed Content на HTTPS-фронте (картинки новостей не
+     * грузятся, sanctum-cookies не выставляются и т.п.).
+     *
      * @var array<int, string>|string|null
      */
-    protected $proxies;
+    protected $proxies = '*';
 
     /**
      * The headers that should be used to detect proxies.
