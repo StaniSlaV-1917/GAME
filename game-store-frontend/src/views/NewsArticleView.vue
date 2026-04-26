@@ -28,7 +28,7 @@ useHead(computed(() => {
       { name: 'robots', content: 'index, follow' },
     ],
   };
-}));
+})); 
 
 const onScroll = () => {
   const el = document.documentElement;
