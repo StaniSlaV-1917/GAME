@@ -2182,23 +2182,26 @@ html.cursor-ready .orc-cursor { opacity: 1; }
   .main-nav { margin-left: var(--sp-3); }
   .nav-link { padding: 9px 10px; font-size: 0.78rem; }
   .logo-word-sub { display: none; }
-  .search-input { width: 220px; }
+  .search-input { width: 200px; padding: 9px 34px 9px 32px; }
   /* Mode-toggle: подписи прячутся, остаются только иконки ⚔ / 📜 */
   .mode-btn .mode-label { display: none; }
   .mode-btn { padding: 6px 9px; }
   .mode-toggle { margin-left: var(--sp-2); padding: 2px; }
+  /* Профиль-имя и подпись Темы тоже прячутся в этой зоне:
+     это закрывает 110% зум на 1366×768 (viewport ~1242) — там оба
+     элемента пока показывались и наезжали на Logout. */
+  .profile-name { display: none; }
+  .profile-btn { padding: 4px 4px; }
+  .theme-btn-labeled .theme-label-text { display: none; }
+  .theme-btn-labeled { padding: 0 9px; gap: 5px; }
 }
 
 @media (max-width: 1240px) {
-  /* Промежуточная ступень: профиль-имя прячется ещё ДО того, как
-     вообще nav уезжает в гамбургер — иначе на 1280×110% или 1366×120%
-     кнопка Logout выпадает за край. */
-  .profile-name { display: none; }
-  .profile-btn { padding: 4px 4px; }
-  .search-input { width: 180px; padding: 9px 32px 9px 30px; }
+  /* Дальнейшее уплотнение для очень тесных ширин (1100-1240).
+     profile-name / theme-label / mode-label уже скрыты с 1500. */
+  .search-input { width: 170px; padding: 9px 30px 9px 28px; }
   .nav-link { padding: 8px 8px; font-size: 0.74rem; letter-spacing: 0.04em; }
   .main-nav { gap: 0; }
-  /* Mode-toggle уже icon-only с 1380, здесь ещё уплотняем */
   .mode-btn { padding: 5px 7px; }
   .mode-icon { font-size: 0.85rem; }
 }
@@ -2207,11 +2210,9 @@ html.cursor-ready .orc-cursor { opacity: 1; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .brand-col { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 24px; }
   .footer-tagline { flex: 1; min-width: 220px; }
-  .main-nav { margin-left: var(--sp-3); }
-  .search-wrap { flex: 0 1 200px; }
-  /* Тема — на средней ширине прячем подпись, оставляем иконку + chevron */
-  .theme-btn-labeled .theme-label-text { display: none; }
-  .theme-btn-labeled { padding: 0 9px; gap: 5px; }
+  .main-nav { margin-left: var(--sp-2); }
+  .search-wrap { flex: 0 1 180px; }
+  /* Theme-label / profile-name уже скрыты с 1500 */
 }
 
 @media (max-width: 980px) {
