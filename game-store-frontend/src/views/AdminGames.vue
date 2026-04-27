@@ -40,13 +40,13 @@
         </thead>
         <tbody>
           <tr v-for="game in filteredGames" :key="game.id">
-            <td>#{{ game.id }}</td>
+            <td class="cell-id">#{{ game.id }}</td>
             <td>
-              <div style="font-weight: 600; color: #e5e7eb;">{{ game.title }}</div>
+              <div class="cell-title">{{ game.title }}</div>
             </td>
             <td>
-              <div>{{ game.platform }}</div>
-              <div style="font-size: 0.8rem; color: #9ca3af;">{{ game.genre }}</div>
+              <div class="cell-platform">{{ game.platform }}</div>
+              <div class="cell-genre">{{ game.genre }}</div>
             </td>
             <td>
               <div :class="{ 'old-price': game.discount_percent }">{{ Number(game.price).toFixed(2) }} ₽</div>
@@ -227,7 +227,59 @@ onMounted(loadGames);
 
 /* AdminGames — локальные добавки. Базовые стили (.admin-*, .status-badge,
    .admin-toast) приходят из admin.css в Ashenforge-палитре. */
-.page-header .actions { display: flex; gap: 1rem; align-items: center; }
+.page-header .actions { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+
+/* Ячейки таблицы */
+.cell-id {
+  font-family: var(--font-ui);
+  font-size: 0.82rem;
+  color: var(--text-ash);
+  letter-spacing: 0.5px;
+}
+.cell-title {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  color: var(--text-bright);
+  font-size: 0.96rem;
+  letter-spacing: 0.2px;
+}
+.cell-platform {
+  font-family: var(--font-ui);
+  font-size: 0.86rem;
+  color: var(--text-bone);
+}
+.cell-genre {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--text-ash);
+  font-style: italic;
+  margin-top: 2px;
+}
+
 .old-price { text-decoration: line-through; color: var(--text-ash); opacity: 0.7; }
 .old-price-sub { font-size: 0.8rem; color: var(--text-ash); font-family: var(--font-ui); }
+
+/* Mobile responsive — таблицу превращаем в карточки */
+@media (max-width: 768px) {
+  .page-header .actions { width: 100%; }
+  .admin-search-wrapper { flex: 1; }
+}
+@media (max-width: 640px) {
+  .admin-table thead { display: none; }
+  .admin-table, .admin-table tbody, .admin-table tr, .admin-table td { display: block; width: 100%; }
+  .admin-table tr {
+    border: 1px solid var(--iron-mid);
+    margin-bottom: 14px;
+    padding: 12px;
+    background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+    box-shadow: var(--inset-iron-top);
+  }
+  .admin-table td {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--iron-dark);
+    text-align: left;
+  }
+  .admin-table td:last-child { border-bottom: none; }
+  .admin-table .action-buttons .button-group { flex-direction: row; gap: 0.4rem; }
+}
 </style>
