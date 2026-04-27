@@ -15,6 +15,14 @@ jobs:
         run: |
           echo "VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}" > game-store-frontend/.env
           echo "VITE_MEDIA_BASE_URL=${{ secrets.VITE_MEDIA_BASE_URL }}" >> game-store-frontend/.env
+          # Reverb (WebSocket для real-time чатов и нотификаций — Phase 4).
+          # KEY/HOST/PORT/SCHEME — публичные, видны в JS-бандле клиентам,
+          # поэтому хардкод в workflow ОК. Auth для приватных каналов идёт
+          # через Sanctum-куку → /api/broadcasting/auth (бэк проверяет роль).
+          echo "VITE_REVERB_APP_KEY=9d90c414f6ea0e7479982b76ca917321" >> game-store-frontend/.env
+          echo "VITE_REVERB_HOST=game-l6voba.fly.dev" >> game-store-frontend/.env
+          echo "VITE_REVERB_PORT=8443" >> game-store-frontend/.env
+          echo "VITE_REVERB_SCHEME=https" >> game-store-frontend/.env
       - run: cd game-store-frontend && npm install && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

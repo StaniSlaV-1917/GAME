@@ -22,7 +22,16 @@ primary_region = "ams"
   SESSION_DRIVER = "database"
   CACHE_DRIVER = "database"
   QUEUE_CONNECTION = "database"
-  BROADCAST_DRIVER = "log"
+  BROADCAST_CONNECTION = "reverb"
+  # Старый алиас на всякий случай (Laravel <11)
+  BROADCAST_DRIVER = "reverb"
+  # Reverb сервер — слушает на 8081 внутри машины. Внешне через 8443 (TLS).
+  # См. блок [[services]] ниже про Reverb processes.
+  REVERB_HOST = "game-l6voba.fly.dev"
+  REVERB_PORT = "8443"
+  REVERB_SCHEME = "https"
+  REVERB_SERVER_HOST = "0.0.0.0"
+  REVERB_SERVER_PORT = "8081"
   # FILESYSTEM_DISK переключим с 'local' на 'r2' в Phase 1 / Batch E,
   # после того как мигрируем все существующие файлы (storage:link → R2).
   # Пока остаётся 'local' (Fly volume), R2 настроен в config/filesystems.php
@@ -52,7 +61,15 @@ primary_region = "ams"
 [deploy]
   release_command = "sh -c 'php artisan migrate --force && php artisan db:seed --class=RolesPermissionsSeeder --force && php artisan db:seed --class=UserRolesBackfillSeeder --force && php artisan storage:link || true && php artisan config:cache && php artisan route:cache && php artisan view:cache'"
 
-# ── HTTP-сервис ──
+# ── Многопроцессная конфигурация ──
+# Apache (HTTP API) и Reverb (WebSocket для realtime в Phase 4)
+# работают как ДВА отдельных процесса. Fly запустит каждый в своей машине.
+# Обе машины — auto_stop, никаких min_machines_running, $0/мес.
+[processes]
+  app = "apache2-foreground"
+  reverb = "php artisan reverb:start --host=0.0.0.0 --port=8081"
+
+# ── HTTP-сервис (Apache + Laravel API) ──
 [http_service]
   internal_port = 8080
   force_https = true
@@ -69,8 +86,31 @@ primary_region = "ams"
     path = "/up"
     protocol = "http"
 
+# ── Reverb WebSocket-сервис ──
+# Внешний порт 8443 (TLS) → внутренний 8081 на reverb-машине.
+# 8443 потому что 443 уже занят Apache. Frontend Echo подключается к
+#   wss://game-l6voba.fly.dev:8443/
+# Auto_stop как у Apache: WS-машина спит, юзер заходит в чат → wake-up
+# (cold-start ~5-15с), Echo переподключается. После 5 мин idle — sleep.
+[[services]]
+  internal_port = 8081
+  protocol = "tcp"
+  processes = ["reverb"]
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 8443
+    handlers = ["tls", "http"]
+
+  # Без health-check'а — Reverb не имеет /up endpoint'а, и попытка
+  # дёрнуть произвольный путь по WS-серверу через HTTP даст ошибку.
+  # Fly будет считать машину healthy если процесс не упал.
+
 # ── Размер машины ──
 # 512MB вместо 256 — на 256 Apache+Laravel живут впритык, при cold-start OOM.
+# Те же 512MB используются и для Reverb-машины.
 [[vm]]
   size = "shared-cpu-1x"
   memory = "512mb"
