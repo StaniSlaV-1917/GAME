@@ -35,11 +35,32 @@ const mobileMenuOpen = ref(false);
 const themeDropdownOpen = ref(false);
 let themeHoverTimer = null;
 const openThemeDropdown = () => {
+  if (isMobileViewport()) return;     // на мобиле dropdown не открываем
   clearTimeout(themeHoverTimer);
   themeDropdownOpen.value = true;
 };
 const closeThemeDropdown = () => {
   themeHoverTimer = setTimeout(() => { themeDropdownOpen.value = false; }, 200);
+};
+
+/**
+ * Определяет, находится ли юзер на мобильном viewport (≤720px).
+ * На мобиле клик по теме циклит между темами вместо открытия dropdown'а
+ * (который слишком громоздкий на маленьком экране).
+ */
+const isMobileViewport = () => window.matchMedia('(max-width: 720px)').matches;
+
+/**
+ * Обработчик клика по theme-кнопке. На десктопе — toggle dropdown,
+ * на мобиле — цикл dark → light → legacy → dark…
+ */
+const onThemeButtonClick = () => {
+  if (isMobileViewport()) {
+    themeStore.cycle();
+    themeDropdownOpen.value = false;  // на всякий случай если был открыт
+  } else {
+    themeDropdownOpen.value = !themeDropdownOpen.value;
+  }
 };
 
 const themeOptions = [
@@ -355,7 +376,7 @@ onUnmounted(() => {
           >
             <button
               class="action-btn theme-btn-labeled"
-              @click="themeDropdownOpen = !themeDropdownOpen"
+              @click="onThemeButtonClick"
               :aria-expanded="themeDropdownOpen"
               aria-haspopup="true"
               aria-label="Сменить тему"

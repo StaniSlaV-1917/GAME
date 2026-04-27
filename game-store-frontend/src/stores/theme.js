@@ -28,7 +28,18 @@ export const useThemeStore = defineStore('theme', () => {
   const isDark = computed(() => current.value === 'dark' || current.value === 'legacy');
   const toggle = () => setTheme(current.value === 'light' ? 'dark' : 'light');
 
+  /**
+   * Цикл по всем трём темам по порядку: dark → light → legacy → dark…
+   * Используется на мобиле где dropdown слишком громоздкий — один клик
+   * по иконке темы переключает на следующую тему.
+   */
+  const cycle = () => {
+    const idx = VALID.indexOf(current.value);
+    const next = VALID[(idx + 1) % VALID.length];
+    setTheme(next);
+  };
+
   apply();
 
-  return { current, isDark, setTheme, toggle };
+  return { current, isDark, setTheme, toggle, cycle };
 });
