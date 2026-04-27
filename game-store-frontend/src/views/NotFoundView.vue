@@ -22,40 +22,61 @@ const goHome = () => router.push('/');
       <div class="nf-grid"></div>
     </div>
 
-    <div class="nf-inner">
-      <span class="tribal-eyebrow">
-        <span class="eb-spike"></span>
-        Тропа потеряна
-        <span class="eb-spike"></span>
-      </span>
+    <div class="nf-slab">
+      <!-- Заклёпки в углах плиты -->
+      <span class="rivet rivet-tl" aria-hidden="true"></span>
+      <span class="rivet rivet-tr" aria-hidden="true"></span>
+      <span class="rivet rivet-bl" aria-hidden="true"></span>
+      <span class="rivet rivet-br" aria-hidden="true"></span>
 
-      <h1 class="nf-big" aria-label="404">
-        <span class="nf-digit">4</span>
-        <span class="nf-sigil" aria-hidden="true">
-          <svg viewBox="-32 -32 64 64" width="120" height="120" class="nf-sigil-svg">
-            <circle r="24" class="nf-ring" />
-            <g class="nf-ring-teeth">
-              <line v-for="i in 12" :key="i"
-                    x1="0" y1="-26" x2="0" y2="-22"
-                    :transform="`rotate(${(i - 1) * 30})`" />
-            </g>
-            <polygon class="nf-gear"
-              points="0,-13 4,-6.5 11.3,-6.5 7,0 11.3,6.5 4,6.5 0,13 -4,6.5 -11.3,6.5 -7,0 -11.3,-6.5 -4,-6.5" />
-            <circle r="4" class="nf-core" />
-          </svg>
+      <!-- Декоративные шипы по верху плиты -->
+      <div class="nf-spike-row" aria-hidden="true">
+        <span v-for="n in 5" :key="n" class="nf-deco-spike"></span>
+      </div>
+
+      <div class="nf-inner">
+        <span class="tribal-eyebrow">
+          <span class="eb-spike"></span>
+          Тропа потеряна
+          <span class="eb-spike"></span>
         </span>
-        <span class="nf-digit">4</span>
-      </h1>
 
-      <p class="nf-message">
-        Здесь нет ни кузницы, ни оружейной — только пепел и ветер.<br>
-        Возможно, эта тропа была перекована, а может — её никогда и не было.
-      </p>
+        <h1 class="nf-big" aria-label="404">
+          <span class="nf-digit">4</span>
+          <span class="nf-sigil" aria-hidden="true">
+            <svg viewBox="-32 -32 64 64" width="120" height="120" class="nf-sigil-svg">
+              <circle r="24" class="nf-ring" />
+              <g class="nf-ring-teeth">
+                <line v-for="i in 12" :key="i"
+                      x1="0" y1="-26" x2="0" y2="-22"
+                      :transform="`rotate(${(i - 1) * 30})`" />
+              </g>
+              <polygon class="nf-gear"
+                points="0,-13 4,-6.5 11.3,-6.5 7,0 11.3,6.5 4,6.5 0,13 -4,6.5 -11.3,6.5 -7,0 -11.3,-6.5 -4,-6.5" />
+              <circle r="4" class="nf-core" />
+            </svg>
+          </span>
+          <span class="nf-digit">4</span>
+        </h1>
 
-      <div class="nf-actions">
-        <button @click="goHome" class="forge-btn">
-          <span class="fb-label">Вернуться в оплот</span>
-        </button>
+        <!-- Tribal divider — как на game-card -->
+        <div class="nf-divider" aria-hidden="true">
+          <span></span>
+          <span class="nf-divider-spike"></span>
+          <span></span>
+        </div>
+
+        <p class="nf-message">
+          Здесь нет ни кузницы, ни оружейной — только пепел и ветер.<br>
+          Возможно, эта тропа была перекована, а может — её никогда и не было.
+        </p>
+
+        <div class="nf-actions">
+          <button @click="goHome" class="forge-btn">
+            <span class="fb-icon" aria-hidden="true">⚔</span>
+            <span class="fb-label">Вернуться в оплот</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -108,16 +129,106 @@ const goHome = () => router.push('/');
   50%      { transform: translate(20px, -24px); }
 }
 
-/* ── содержимое ── */
-.nf-inner {
+/* ── каменная плита ── */
+.nf-slab {
   position: relative;
   z-index: 2;
-  max-width: 680px;
+  max-width: 760px;
+  width: 100%;
+  padding: 56px 48px 44px;
+  background: linear-gradient(180deg,
+    var(--ash-ironrust) 0%,
+    var(--ash-stone) 45%,
+    var(--ash-coal) 100%);
+  border: 1px solid var(--bronze-dark);
+  clip-path: var(--clip-forged-md);
+  box-shadow:
+    inset 0 0 0 1px var(--iron-mid),
+    inset 0 0 0 3px var(--iron-void),
+    inset 0 1px 0 3px var(--iron-warm),
+    var(--shadow-deep),
+    var(--inset-forge);
   animation: nfFade 0.8s var(--ease-smoke) both;
 }
 @keyframes nfFade {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: none; }
+}
+
+/* ── заклёпки в углах плиты ── */
+.rivet {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 30%,
+      var(--brass) 0%,
+      var(--bronze) 45%,
+      var(--iron-void) 100%);
+  box-shadow:
+    inset -1px -1px 2px rgba(0, 0, 0, 0.7),
+    inset 1px 1px 1px rgba(255, 201, 121, 0.4),
+    0 0 6px rgba(199, 154, 94, 0.5);
+  z-index: 4;
+}
+.rivet-tl { top: 14px;    left: 14px; }
+.rivet-tr { top: 14px;    right: 14px; }
+.rivet-bl { bottom: 14px; left: 14px; }
+.rivet-br { bottom: 14px; right: 14px; }
+
+/* ── ряд декоративных шипов поверху плиты ── */
+.nf-spike-row {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 18px;
+  z-index: 3;
+}
+.nf-deco-spike {
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 12px solid var(--iron-warm);
+  filter: drop-shadow(0 -1px 2px rgba(199, 154, 94, 0.4));
+}
+
+/* ── содержимое ── */
+.nf-inner {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── tribal divider между сигилой и сообщением ── */
+.nf-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px auto 22px;
+  max-width: 320px;
+}
+.nf-divider > span:first-child,
+.nf-divider > span:last-child {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bronze-dark) 50%, transparent);
+}
+.nf-divider-spike {
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid var(--ember-deep);
+  filter: drop-shadow(0 0 4px rgba(194, 40, 26, 0.6));
+}
+
+/* Иконка в кнопке */
+.fb-icon {
+  position: relative;
+  z-index: 1;
+  font-size: 1.05rem;
+  filter: drop-shadow(0 0 4px rgba(255, 201, 121, 0.5));
 }
 
 .tribal-eyebrow {
@@ -289,8 +400,23 @@ const goHome = () => router.push('/');
 .forge-btn:active { transform: translateY(0); }
 .fb-label { position: relative; z-index: 1; }
 
+@media (max-width: 768px) {
+  .nf-slab { padding: 48px 32px 38px; }
+  .nf-spike-row { gap: 14px; }
+}
 @media (max-width: 480px) {
+  .nf-slab { padding: 40px 22px 30px; }
   .nf-big { gap: 2px; }
   .nf-message { font-size: 0.95rem; }
+  .nf-spike-row { gap: 10px; }
+  .nf-deco-spike { border-left-width: 5px; border-right-width: 5px; border-bottom-width: 10px; }
+  .rivet { width: 9px; height: 9px; }
+  .rivet-tl, .rivet-tr { top: 10px; }
+  .rivet-bl, .rivet-br { bottom: 10px; }
+  .rivet-tl, .rivet-bl { left: 10px; }
+  .rivet-tr, .rivet-br { right: 10px; }
+}
+@media (max-width: 380px) {
+  .nf-slab { padding: 32px 16px 24px; }
 }
 </style>

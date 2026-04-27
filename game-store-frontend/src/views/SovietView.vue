@@ -178,6 +178,14 @@ onUnmounted(() => {
 <template>
   <div class="soviet-page">
 
+    <!-- Кованая ссылка возврата — единственный Ashenforge-элемент,
+         чтобы страница была встроена в навигацию сайта.
+         Контент-часть остаётся в самобытной советской эстетике. -->
+    <router-link to="/" class="soviet-back-link">
+      <span class="sbl-arrow" aria-hidden="true">←</span>
+      <span class="sbl-text">Назад в Оплот</span>
+    </router-link>
+
     <!-- HERO SECTION -->
     <section class="hero">
       <div class="hero-scanlines"></div>
@@ -454,10 +462,70 @@ onUnmounted(() => {
 <style scoped>
 /* ===== BASE ===== */
 .soviet-page {
+  position: relative;
   background: #080808;
   color: #e8e0d0;
   font-family: 'Georgia', serif;
   overflow-x: hidden;
+}
+
+/* ===== Кованая ссылка возврата — мост между Ashenforge-сайтом и
+        самобытной советской страницей ===== */
+.soviet-back-link {
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  font-family: var(--font-display, Cinzel, Georgia), serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--text-parchment, #d8c49a);
+  background: linear-gradient(180deg,
+    rgba(36, 29, 23, 0.92) 0%,
+    rgba(27, 22, 17, 0.92) 100%);
+  border: 1px solid var(--iron-mid, #5a463a);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(199, 154, 94, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 4px 14px rgba(0, 0, 0, 0.55);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.soviet-back-link:hover {
+  color: var(--ember-gold, #ffc979);
+  border-color: var(--bronze, #a07348);
+  background: linear-gradient(180deg,
+    rgba(58, 42, 34, 0.95) 0%,
+    rgba(36, 29, 23, 0.95) 100%);
+  transform: translateX(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(199, 154, 94, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 6px 18px rgba(226, 67, 16, 0.35);
+}
+.sbl-arrow {
+  font-size: 1rem;
+  color: var(--bronze, #a07348);
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.soviet-back-link:hover .sbl-arrow {
+  transform: translateX(-3px);
+  color: var(--ember-spark, #ffa758);
+}
+
+@media (max-width: 480px) {
+  .soviet-back-link { top: 12px; left: 12px; padding: 7px 12px; font-size: 0.7rem; }
+  .sbl-text { display: none; }
+  .sbl-arrow { font-size: 0.95rem; }
 }
 
 /* ===== HERO ===== */
