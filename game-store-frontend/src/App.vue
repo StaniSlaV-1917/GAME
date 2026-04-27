@@ -2172,12 +2172,19 @@ html.cursor-ready .orc-cursor { opacity: 1; }
 @media (max-width: 1380px) {
   /* 1366×768 при 100% зума попадает сюда — без этого правила
      при дефолтных padding'ах nav (10px 12px / 0.82rem) и search 240px
-     суммарная ширина выходит за рамки и кнопка Logout уезжает за край. */
+     суммарная ширина выходит за рамки и кнопка Logout уезжает за край.
+     После добавления mode-toggle (Phase 1 / Batch A) — он также сжимается
+     здесь до иконок, иначе 4 пункта nav + 2 mode-кнопки + поиск + 4 action-btn
+     не помещаются в 1366px content area. */
   .header-content { padding: 0 var(--sp-4); gap: 6px; }
-  .main-nav { margin-left: var(--sp-4); }
+  .main-nav { margin-left: var(--sp-3); }
   .nav-link { padding: 9px 10px; font-size: 0.78rem; }
   .logo-word-sub { display: none; }
   .search-input { width: 220px; }
+  /* Mode-toggle: подписи прячутся, остаются только иконки ⚔ / 📜 */
+  .mode-btn .mode-label { display: none; }
+  .mode-btn { padding: 6px 9px; }
+  .mode-toggle { margin-left: var(--sp-2); padding: 2px; }
 }
 
 @media (max-width: 1240px) {
@@ -2189,9 +2196,9 @@ html.cursor-ready .orc-cursor { opacity: 1; }
   .search-input { width: 180px; padding: 9px 32px 9px 30px; }
   .nav-link { padding: 8px 8px; font-size: 0.74rem; letter-spacing: 0.04em; }
   .main-nav { gap: 0; }
-  /* Mode-toggle сжимается до иконок */
-  .mode-btn .mode-label { display: none; }
-  .mode-btn { padding: 6px 9px; }
+  /* Mode-toggle уже icon-only с 1380, здесь ещё уплотняем */
+  .mode-btn { padding: 5px 7px; }
+  .mode-icon { font-size: 0.85rem; }
 }
 
 @media (max-width: 1100px) {
