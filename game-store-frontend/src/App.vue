@@ -657,6 +657,9 @@ onUnmounted(() => {
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   border-bottom: 1px solid var(--iron-dark);
+  /* overflow-x: hidden — физический предохранитель: даже если CSS-правила
+     по какой-то причине не сработали, контент не вылезет за пределы окна */
+  overflow-x: hidden;
   transition:
     background var(--dur-med) var(--ease-smoke),
     box-shadow var(--dur-med) var(--ease-smoke);
@@ -705,6 +708,13 @@ onUnmounted(() => {
   padding: 0 var(--sp-6);
   height: var(--header-h);
   gap: var(--sp-2);
+  /* Гарантируем что контент никогда не выходит за viewport, даже если
+     наши compact-правила не сработали по какой-то причине (стейл кэш,
+     неучтённый шрифт). user-actions с margin-left:auto всё равно
+     прижимается к правому краю, остальные flex-children сжимаются. */
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ==========================================================
@@ -863,6 +873,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 0;
   flex: 0 1 auto;
+  min-width: 0;          /* позволяет flexbox'у фактически сжимать содержимое */
+  overflow: hidden;      /* содержимое внутри не будет торчать наружу */
 }
 .nav-link {
   position: relative;
@@ -1835,6 +1847,8 @@ onUnmounted(() => {
   position: relative;
   display: flex;
   align-items: center;
+  flex: 0 1 240px;       /* может сжиматься от 240 до 0 при недостатке места */
+  min-width: 0;
 }
 
 .search-bar-wrap {
