@@ -56,6 +56,31 @@ return [
             'throw' => false,
         ],
 
+        // ── Cloudflare R2 ─────────────────────────────────────────────────
+        // S3-совместимое объектное хранилище: 10GB storage + бесплатный
+        // egress навсегда (главное преимущество над Supabase Storage с
+        // лимитом 2GB egress/мес). Используется для аватарок, картинок
+        // игр, обложек постов, медиа-аттачей в чатах (Phase 4-6).
+        //
+        // R2 не использует регионы (region: 'auto'), endpoint выглядит как
+        // https://<account_id>.r2.cloudflarestorage.com
+        //
+        // R2_PUBLIC_URL — публичный домен бакета (custom domain или
+        // pub-XXX.r2.dev), нужен чтобы Storage::url() возвращал публичный
+        // URL картинки, а не подписанный S3-URL.
+        'r2' => [
+            'driver' => 's3',
+            'key'    => env('R2_KEY'),
+            'secret' => env('R2_SECRET'),
+            'region' => 'auto',
+            'bucket' => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'url'    => env('R2_PUBLIC_URL'),         // для Storage::url()
+            'use_path_style_endpoint' => false,        // R2 = virtual-hosted style
+            'visibility' => 'public',
+            'throw'  => false,
+        ],
+
     ],
 
     /*

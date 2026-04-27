@@ -23,12 +23,28 @@ primary_region = "ams"
   CACHE_DRIVER = "database"
   QUEUE_CONNECTION = "database"
   BROADCAST_DRIVER = "log"
+  # FILESYSTEM_DISK переключим с 'local' на 'r2' в Phase 1 / Batch E,
+  # после того как мигрируем все существующие файлы (storage:link → R2).
+  # Пока остаётся 'local' (Fly volume), R2 настроен в config/filesystems.php
+  # и готов к использованию когда выставим секреты.
   FILESYSTEM_DISK = "local"
   # Sanctum: список доменов, которые могут получать sanctum-cookie.
   # Фронт на Firebase Hosting — добавим его сюда.
   SANCTUM_STATEFUL_DOMAINS = "game-45428688-fe94e.web.app,game-l6voba.fly.dev"
   SESSION_DOMAIN = ".fly.dev"
   SESSION_SECURE_COOKIE = "true"
+
+  # ── Cloudflare R2 (Phase 1 / Batch D) ─────────────────────────────────
+  # Сами секреты (R2_KEY, R2_SECRET) ставятся через
+  #   flyctl secrets set R2_KEY=... R2_SECRET=... --app game-l6voba
+  # и НЕ должны попадать в этот файл (он в git).
+  # Здесь только "не-секретные" значения: бакет и endpoint.
+  # R2_BUCKET и R2_ENDPOINT обновятся реальными значениями после того,
+  # как пользователь создаст бакет в Cloudflare. Пока placeholder'ы:
+  R2_BUCKET = "gamestore-media"
+  # R2_ENDPOINT и R2_PUBLIC_URL заполнятся через flyctl secrets когда
+  # будут реальные ключи (endpoint содержит account_id который мы не
+  # светим в публичном файле).
 
 # ── Release command ──
 # Запускается ПОСЛЕ старта Postgres-сайдкара и до публикации новой версии.
