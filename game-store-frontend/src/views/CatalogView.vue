@@ -470,13 +470,13 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
    FILTER BAR
    ========================================================== */
 .filters-bar-wrap {
-  position: sticky;
-  top: var(--header-h);
-  z-index: 40;
+  /* Раньше было position: sticky + top: var(--header-h) — фильтр прилипал
+     к шапке на всю прокрутку каталога. На десктопе занимал немного места
+     и был удобен, но юзер просил убрать (на мобиле занимал пол-экрана,
+     на десктопе тоже мешал). Теперь — обычная секция в потоке. */
   background: linear-gradient(180deg,
     rgba(18, 16, 13, 0.92) 0%,
     rgba(27, 22, 17, 0.92) 100%);
-  backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--iron-dark);
   box-shadow: var(--shadow-subtle);
 }
@@ -779,9 +779,7 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
   .sort-wrap { justify-content: flex-end; }
   .genre-chips { justify-content: center; }
   .catalog-hero { min-height: 36vh; padding: 70px 22px 60px; }
-  /* На мобиле sticky-фильтры съедают пол-экрана при прокрутке —
-     отключаем "прилипание", фильтры скроллятся вместе со страницей. */
-  .filters-bar-wrap { position: static; }
+  /* sticky убран глобально — мобильный override больше не нужен */
 }
 @media (max-width: 768px) {
   .games-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
