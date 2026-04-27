@@ -1385,7 +1385,10 @@ onUnmounted(() => {
    На очень широких мониторах (≥1440px) возвращаем подпись + добавляем
    немного дыхания остальным элементам. */
 .logout-label { display: none; }
-@media (min-width: 1440px) {
+/* «Премиум»-стили возвращают подписи и больший padding только на действительно
+   широких мониторах (≥1600px). Между 1381–1599 действует компакт по дефолту,
+   иначе на 1440-laptop'ах хедер переполнялся. */
+@media (min-width: 1600px) {
   .logout-label { display: inline; }
   .logout-btn { padding: 8px 14px; font-size: 0.82rem; }
   .search-input { width: 280px; padding: 10px 40px 10px 36px; font-size: 0.9rem; }
@@ -2169,13 +2172,12 @@ html.cursor-ready .orc-cursor { opacity: 1; }
    Цель: на любой ширине от 320px до desktop UI остаётся читаемым,
    ничто не вылезает за край, ничто не прилипает к краям.
    ========================================================== */
-@media (max-width: 1380px) {
-  /* 1366×768 при 100% зума попадает сюда — без этого правила
-     при дефолтных padding'ах nav (10px 12px / 0.82rem) и search 240px
-     суммарная ширина выходит за рамки и кнопка Logout уезжает за край.
-     После добавления mode-toggle (Phase 1 / Batch A) — он также сжимается
-     здесь до иконок, иначе 4 пункта nav + 2 mode-кнопки + поиск + 4 action-btn
-     не помещаются в 1366px content area. */
+@media (max-width: 1500px) {
+  /* Compact-зона расширена до 1500px — иначе на 1440-мониторах
+     (популярный размер: WQHD-ноуты, MacBook 14"/16" при 100% scale)
+     дефолтные стили (nav-link 10px 12px / search 240 / mode-toggle с подписями)
+     суммарно дают ~1420px ширины, не помещаются в content area 1440-32-scrollbar.
+     Правило ловит ноуты 1366×768, 1440×900, MacBook 13" Retina эффективная 1440. */
   .header-content { padding: 0 var(--sp-4); gap: 6px; }
   .main-nav { margin-left: var(--sp-3); }
   .nav-link { padding: 9px 10px; font-size: 0.78rem; }
