@@ -657,9 +657,13 @@ onUnmounted(() => {
   backdrop-filter: blur(20px) saturate(140%);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   border-bottom: 1px solid var(--iron-dark);
-  /* overflow-x: hidden — физический предохранитель: даже если CSS-правила
-     по какой-то причине не сработали, контент не вылезет за пределы окна */
-  overflow-x: hidden;
+  /* Здесь раньше был overflow-x: hidden — убрал, потому что по CSS-спеке
+     при overflow-x ≠ visible вторая ось становится auto, что превращает
+     theme-dropdown и search-dropdown (position: absolute, top: 100%)
+     в скроллируемые элементы внутри шапки. Дропдауны должны выпадать
+     поверх контента сайта, а не висеть в скролле хедера.
+     Защита от переполнения ширины обеспечивается компакт-правилами
+     ниже + min-width: 0 и overflow: hidden на .main-nav. */
   transition:
     background var(--dur-med) var(--ease-smoke),
     box-shadow var(--dur-med) var(--ease-smoke);
