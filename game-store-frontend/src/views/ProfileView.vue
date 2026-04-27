@@ -5,6 +5,7 @@ import { RouterLink } from 'vue-router';
 import api from '../api/axios';
 import { useAuthStore } from '../stores/auth';
 import { useToast } from '../composables/useToast';
+import { warmupPing } from '../utils/warmup';
 
 const authStore = useAuthStore();
 const toast = useToast();
@@ -220,7 +221,10 @@ const changePassword = async () => {
   }
 };
 
-onMounted(loadInitialData);
+onMounted(() => {
+  warmupPing(); // edit-формы и аватар-аплоад делают PUT, бэк должен быть тёплым
+  loadInitialData();
+});
 </script>
 
 <template>

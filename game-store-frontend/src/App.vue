@@ -5,6 +5,7 @@ import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
 import { useCartStore } from './stores/cart';
+import { useModeStore } from './stores/mode';
 import { storeToRefs } from 'pinia';
 import api from './api/axios';
 import ParticlesBackground from './components/ParticlesBackground.vue';
@@ -17,6 +18,7 @@ const { toasts, remove: removeToast } = useToast();
 
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
+const modeStore = useModeStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
 const router = useRouter();
 const route = useRoute();
@@ -251,8 +253,8 @@ onUnmounted(() => {
 
       <div class="header-content">
 
-        <!-- Logo: sigil + wordmark -->
-        <RouterLink to="/" class="logo-link" @click="mobileMenuOpen = false" aria-label="GameStore — на главную">
+        <!-- Logo: sigil + wordmark. Клик → home выбранного режима (shop=/, forum=/feed) -->
+        <RouterLink :to="modeStore.homeRoute" class="logo-link" @click="mobileMenuOpen = false" aria-label="GameStore — главная">
           <span class="logo-sigil-wrap">
             <img alt="" class="logo-sigil" :src="hordeSigilUrl" width="44" height="44" />
             <span class="logo-sigil-glow" aria-hidden="true"></span>
@@ -263,12 +265,42 @@ onUnmounted(() => {
           </span>
         </RouterLink>
 
-        <!-- Desktop nav (без dropdown-ов — просто ссылки) -->
+        <!-- Mode toggle: МАГАЗИН ↔ ФОРУМ -->
+        <div class="mode-toggle" role="tablist" aria-label="Режим сайта">
+          <button
+            class="mode-btn"
+            :class="{ active: modeStore.isShop }"
+            @click="modeStore.setMode('shop')"
+            role="tab"
+            :aria-selected="modeStore.isShop"
+            type="button"
+          >
+            <span class="mode-icon" aria-hidden="true">⚔</span>
+            <span class="mode-label">Магазин</span>
+          </button>
+          <button
+            class="mode-btn"
+            :class="{ active: modeStore.isForum }"
+            @click="modeStore.setMode('forum')"
+            role="tab"
+            :aria-selected="modeStore.isForum"
+            type="button"
+          >
+            <span class="mode-icon" aria-hidden="true">📜</span>
+            <span class="mode-label">Форум</span>
+          </button>
+        </div>
+
+        <!-- Desktop nav — пункты зависят от текущего режима -->
         <nav class="main-nav" aria-label="Главное меню">
-          <RouterLink to="/" class="nav-link"><span>Главная</span></RouterLink>
-          <RouterLink to="/news" class="nav-link"><span>Хроники</span></RouterLink>
-          <RouterLink to="/catalog" class="nav-link"><span>Оружейная</span></RouterLink>
-          <RouterLink to="/about" class="nav-link"><span>О клане</span></RouterLink>
+          <RouterLink
+            v-for="item in modeStore.navItems"
+            :key="item.to"
+            :to="item.to"
+            class="nav-link"
+          >
+            <span>{{ item.label }}</span>
+          </RouterLink>
           <RouterLink v-if="user?.is_admin" to="/admin" class="nav-link admin-link"><span>Совет</span></RouterLink>
         </nav>
 
@@ -390,12 +422,36 @@ onUnmounted(() => {
       <!-- Mobile menu — "свиток" -->
       <Transition name="mobile-menu">
         <div class="mobile-menu" v-if="mobileMenuOpen">
+          <!-- Mode toggle на мобиле — внутри меню -->
+          <div class="mobile-mode-toggle" role="tablist" aria-label="Режим сайта">
+            <button
+              class="mode-btn"
+              :class="{ active: modeStore.isShop }"
+              @click="modeStore.setMode('shop')"
+              type="button"
+            >
+              <span class="mode-icon" aria-hidden="true">⚔</span>
+              <span class="mode-label">Магазин</span>
+            </button>
+            <button
+              class="mode-btn"
+              :class="{ active: modeStore.isForum }"
+              @click="modeStore.setMode('forum')"
+              type="button"
+            >
+              <span class="mode-icon" aria-hidden="true">📜</span>
+              <span class="mode-label">Форум</span>
+            </button>
+          </div>
+
           <nav class="mobile-nav">
-            <RouterLink to="/" @click="mobileMenuOpen = false">Главная</RouterLink>
-            <RouterLink to="/news" @click="mobileMenuOpen = false">Хроники</RouterLink>
-            <RouterLink to="/catalog" @click="mobileMenuOpen = false">Оружейная</RouterLink>
-            <RouterLink to="/about" @click="mobileMenuOpen = false">О клане</RouterLink>
-            <RouterLink to="/cart" @click="mobileMenuOpen = false">Добыча</RouterLink>
+            <RouterLink
+              v-for="item in modeStore.navItems"
+              :key="item.to"
+              :to="item.to"
+              @click="mobileMenuOpen = false"
+            >{{ item.label }}</RouterLink>
+            <RouterLink v-if="modeStore.isShop" to="/cart" @click="mobileMenuOpen = false">Добыча</RouterLink>
             <RouterLink to="/soviet" @click="mobileMenuOpen = false">☭</RouterLink>
             <RouterLink v-if="user?.is_admin" to="/admin" @click="mobileMenuOpen = false">Совет старейшин</RouterLink>
           </nav>
@@ -462,35 +518,33 @@ onUnmounted(() => {
             </div>
           </div>
 
-          <!-- Genres -->
+          <!-- Магазин — пункты shop-режима -->
           <div class="footer-col">
             <h4 class="footer-col-title">
               <span class="col-title-spike"></span>
-              Школы боя
-            </h4>
-            <div class="footer-links">
-              <RouterLink to="/catalog?genre=Action">Action</RouterLink>
-              <RouterLink to="/catalog?genre=RPG">RPG</RouterLink>
-              <RouterLink to="/catalog?genre=Strategy">Стратегии</RouterLink>
-              <RouterLink to="/catalog?genre=Adventure">Приключения</RouterLink>
-              <RouterLink to="/catalog?genre=Sports">Спорт</RouterLink>
-              <RouterLink to="/catalog?genre=Horror">Ужас</RouterLink>
-            </div>
-          </div>
-
-          <!-- Navigation -->
-          <div class="footer-col">
-            <h4 class="footer-col-title">
-              <span class="col-title-spike"></span>
-              Путь
+              Магазин
             </h4>
             <div class="footer-links">
               <RouterLink to="/">Главная</RouterLink>
-              <RouterLink to="/news">Хроники</RouterLink>
               <RouterLink to="/catalog">Оружейная</RouterLink>
-              <RouterLink to="/about">О клане</RouterLink>
+              <RouterLink to="/news">Хроники</RouterLink>
               <RouterLink to="/cart">Добыча</RouterLink>
-              <RouterLink to="/soviet">☭</RouterLink>
+              <RouterLink to="/about">О клане</RouterLink>
+            </div>
+          </div>
+
+          <!-- Сообщество — пункты forum-режима (ведут на stub-страницы Phase 1) -->
+          <div class="footer-col">
+            <h4 class="footer-col-title">
+              <span class="col-title-spike"></span>
+              Сообщество
+            </h4>
+            <div class="footer-links">
+              <RouterLink to="/feed">Лента</RouterLink>
+              <RouterLink to="/posts">Посты</RouterLink>
+              <RouterLink to="/mods">Моды</RouterLink>
+              <RouterLink to="/community">Союзники</RouterLink>
+              <RouterLink to="/soviet">☭ СССР</RouterLink>
             </div>
           </div>
 
@@ -730,6 +784,77 @@ onUnmounted(() => {
 /* ==========================================================
    NAV
    ========================================================== */
+/* ==========================================================
+   MODE TOGGLE — сегментированный pill «Магазин ↔ Форум»
+   ========================================================== */
+.mode-toggle {
+  display: inline-flex;
+  align-items: stretch;
+  margin-left: var(--sp-3);
+  padding: 3px;
+  border: 1px solid var(--iron-mid);
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, var(--ash-obsidian) 0%, var(--ash-coal) 100%);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6), var(--inset-iron-top);
+  flex-shrink: 0;
+}
+.mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--text-ash);
+  font-family: var(--font-display);
+  font-size: 0.74rem;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-smoke);
+  white-space: nowrap;
+}
+.mode-btn:hover {
+  color: var(--text-bone);
+}
+.mode-btn.active {
+  background: linear-gradient(180deg, var(--ember-blood) 0%, var(--ember-deep) 100%);
+  border-color: var(--ember-heart);
+  color: var(--text-bright);
+  box-shadow:
+    var(--inset-iron-top),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    var(--glow-ember-soft);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+.mode-icon {
+  font-size: 0.92rem;
+  line-height: 1;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+}
+.mode-btn.active .mode-icon {
+  filter: drop-shadow(0 0 4px rgba(255, 201, 121, 0.7));
+}
+
+/* Mobile mode toggle — внутри гамбургер-меню */
+.mobile-mode-toggle {
+  display: flex;
+  gap: 6px;
+  margin: 0 0 16px;
+  padding: 4px;
+  border: 1px solid var(--iron-mid);
+  border-radius: var(--r-pill);
+  background: linear-gradient(180deg, var(--ash-obsidian) 0%, var(--ash-coal) 100%);
+}
+.mobile-mode-toggle .mode-btn {
+  flex: 1;
+  justify-content: center;
+  padding: 9px 14px;
+  font-size: 0.78rem;
+}
+
 .main-nav {
   /* Уплотнённый отступ от лого — на 1280–1440 с 5 пунктами + поиском
      32px было перебором. */
@@ -2064,6 +2189,9 @@ html.cursor-ready .orc-cursor { opacity: 1; }
   .search-input { width: 180px; padding: 9px 32px 9px 30px; }
   .nav-link { padding: 8px 8px; font-size: 0.74rem; letter-spacing: 0.04em; }
   .main-nav { gap: 0; }
+  /* Mode-toggle сжимается до иконок */
+  .mode-btn .mode-label { display: none; }
+  .mode-btn { padding: 6px 9px; }
 }
 
 @media (max-width: 1100px) {
@@ -2089,6 +2217,8 @@ html.cursor-ready .orc-cursor { opacity: 1; }
   /* .logout-label / .profile-name уже скрыты выше — здесь только nav→hamburger. */
   .footer-banners { display: none; }
   .header-content { gap: 8px; }
+  /* Mode-toggle на десктопе исчезает — на мобиле он внутри hamburger-меню */
+  .mode-toggle { display: none; }
 }
 
 @media (max-width: 720px) {

@@ -1,9 +1,13 @@
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { useRouter, useRoute, RouterLink } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import { useAuthStore } from '../stores/auth';
 import { useToast } from '../composables/useToast';
+import { warmupPing } from '../utils/warmup';
+
+// Будим Fly-машину перед auth-запросом
+onMounted(() => warmupPing());
 
 useHead({
   title: 'Вход в аккаунт — GameStore',

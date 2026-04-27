@@ -43,10 +43,9 @@
 
         <div class="carousel-viewport">
           <div v-if="!games.length" class="loading-placeholder">
-            <div class="loading-dots">
-              <span></span><span></span><span></span>
-            </div>
-            <p>Раздуваем горн…</p>
+            <!-- ForgeLoader появляется через 600ms — если данные успели,
+                 то лоадер не моргнёт. Идеально для cold-start Fly. -->
+            <ForgeLoader :delay="600" message="Раздуваем горн…" hint="Куётся карусель воина" />
           </div>
 
           <!-- Track с 3D-перспективой -->
@@ -170,6 +169,7 @@ import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } fro
 import { RouterLink } from 'vue-router';
 import axios from '@/api/axios';
 import { resolveMediaUrl as resolveImageUrl } from '../utils/media';
+import ForgeLoader from './ForgeLoader.vue';
 
 const games = ref([]);
 const centerIndex = ref(0);

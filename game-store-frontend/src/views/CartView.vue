@@ -6,6 +6,7 @@ import api from '../api/axios';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import { resolveMediaUrl } from '../utils/media';
+import { warmupPing } from '../utils/warmup';
 
 useHead({
   title: 'Добыча — GameStore',
@@ -140,7 +141,10 @@ const animateTotal = (target) => {
 
 watch(cartTotal, (val) => animateTotal(val), { immediate: true });
 
-onMounted(loadCart);
+onMounted(() => {
+  warmupPing(); // будим Fly-машину: юзер скоро жмёт «Оформить»
+  loadCart();
+});
 onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 </script>
 

@@ -14,6 +14,9 @@ import GamePage from '../views/GamePage.vue';
 import NotFoundView from '../views/NotFoundView.vue';
 import NewsView from '../views/NewsView.vue';
 
+// Forum stubs (Phase 1) — единый компонент для всех заглушек
+const ForumStubView = () => import('../views/ForumStubView.vue');
+
 // Админские / менеджерские страницы (lazy)
 const AdminDashboard = () => import('../views/AdminDashboard.vue');
 const AdminGames = () => import('../views/AdminGames.vue');
@@ -35,6 +38,33 @@ const routes = [
   { path: '/catalog', name: 'catalog', component: CatalogView },
   { path: '/about', name: 'about', component: AboutView }, // <<< НОВЫЙ МАРШРУТ
   { path: '/soviet', name: 'soviet', component: SovietView },
+
+  // ─── Forum stubs (Phase 1) — заглушки разделов форума,
+  //     контент будет в Phase 2-6 по плану v2.0 ───
+  {
+    path: '/feed',
+    name: 'feed',
+    component: ForumStubView,
+    meta: { stub: { title: 'Лента сообщества', eyebrow: 'Phase 2', icon: '📜' } },
+  },
+  {
+    path: '/posts',
+    name: 'posts',
+    component: ForumStubView,
+    meta: { stub: { title: 'Посты и обсуждения', eyebrow: 'Phase 2', icon: '⚒' } },
+  },
+  {
+    path: '/mods',
+    name: 'mods',
+    component: ForumStubView,
+    meta: { stub: { title: 'Каталог модов', eyebrow: 'Phase 6', icon: '🛡' } },
+  },
+  {
+    path: '/community',
+    name: 'community',
+    component: ForumStubView,
+    meta: { stub: { title: 'Сообщество', eyebrow: 'Phase 3', icon: '🜨' } },
+  },
 
   // <<< ИЗМЕНЕНИЕ ЗДЕСЬ
   { 

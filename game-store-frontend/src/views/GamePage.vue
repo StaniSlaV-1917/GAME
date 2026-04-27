@@ -8,6 +8,7 @@ import { useAuthStore } from '../stores/auth';
 import ReviewList from '../components/ReviewList.vue';
 import ReviewForm from '../components/ReviewForm.vue';
 import { resolveMediaUrl } from '../utils/media';
+import { warmupPing } from '../utils/warmup';
 
 const route = useRoute();
 const gameId = computed(() => route.params.id);
@@ -137,6 +138,7 @@ useHead(computed(() => {
 }));
 
 onMounted(() => {
+  warmupPing(); // юзер скоро может жать «В корзину» / «Купить»
   loadGame(gameId.value);
   window.addEventListener('scroll', onScroll, { passive: true });
 });
