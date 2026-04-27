@@ -252,31 +252,9 @@ body {
   color: var(--ember-deep);
 }
 
-/* ── Курсор "Orc fist" на светлой теме: заливка кулака тёмно-бронзовой
-     коже (иначе ash-bloodrock сливается с песком), коготь остаётся
-     смолянисто-чёрным ── */
-[data-theme="light"] .oc-hand {
-  /* Под полуденным солнцем кожа орка темнее — обугленная зелёно-бронзовая */
-  fill: #6b8e32;
-  stroke: #2a1a0e;
-}
-[data-theme="light"] .oc-highlight { stroke: var(--orc-emerald); opacity: 0.5; }
-[data-theme="light"] .oc-shadow    { stroke: #3a4a18; }
-[data-theme="light"] .oc-volume    { fill: #3a4a18; opacity: 0.5; }
-[data-theme="light"] .oc-tattoo    { stroke: #2a1a0e; }
-[data-theme="light"] .oc-wrap      { fill: #2a1a0e; stroke: var(--bronze); }
-[data-theme="light"] .oc-rivet     { fill: var(--brass); stroke: #2a1a0e; }
-
-[data-theme="light"] .orc-cursor.is-hover .oc-hand {
-  fill: #7fa63d;
-}
-[data-theme="light"] .orc-cursor.is-clicking .oc-hand {
-  fill: #4a6b2a;
-}
-[data-theme="light"] .oc-claw {
-  fill: #0d0a08;
-  stroke: #0d0a08;
-}
+/* Старый orc-cursor SVG-курсор удалён, тематических оверрайдов
+   больше не нужно. CursorTrail.vue использует CSS-переменные
+   --c-core/mid/edge per-theme прямо внутри своего scoped-стиля. */
 
 /* ── Admin header "Горн жив" бейдж — более тёплый фон ── */
 [data-theme="light"] .adm-badge {
@@ -620,28 +598,6 @@ body {
   opacity: 0.5;
 }
 
-/* Курсор "Orc hand" на legacy: магически окрашенная сине-зелёная кожа */
-[data-theme="legacy"] .oc-hand {
-  fill: #4a7395;
-  stroke: #050812;
-}
-[data-theme="legacy"] .oc-highlight { stroke: #7db3d4; opacity: 0.7; }
-[data-theme="legacy"] .oc-shadow    { stroke: #2c3a5c; }
-[data-theme="legacy"] .oc-volume    { fill: #2c3a5c; opacity: 0.6; }
-[data-theme="legacy"] .oc-tattoo    { stroke: var(--ember-spark); opacity: 0.65; }
-[data-theme="legacy"] .oc-wrap      { fill: #050812; stroke: var(--brass); }
-[data-theme="legacy"] .oc-rivet     { fill: var(--ember-spark); stroke: #050812; }
-[data-theme="legacy"] .oc-rivet-shine { fill: var(--ember-gold); }
-
-[data-theme="legacy"] .orc-cursor.is-hover .oc-hand {
-  fill: #7db3d4;
-  filter: drop-shadow(0 2px 4px rgba(94, 76, 200, 0.55))
-          drop-shadow(0 0 6px rgba(168, 154, 245, 0.4));
-}
-[data-theme="legacy"] .orc-cursor.is-clicking .oc-hand {
-  fill: var(--ember-flame);
-}
-[data-theme="legacy"] .oc-claw {
-  fill: #050812;
-  stroke: #050812;
-}
+/* Cursor-overrides для legacy-темы удалены вместе со старым orc-cursor.
+   CursorTrail.vue теперь theme-aware через CSS-переменные внутри
+   своего scoped-стиля (см. data-theme правила там). */

@@ -10,6 +10,7 @@ import { storeToRefs } from 'pinia';
 import api from './api/axios';
 import ParticlesBackground from './components/ParticlesBackground.vue';
 import SupportChat from './components/SupportChat.vue';
+import CursorTrail from './components/CursorTrail.vue';
 import { resolveMediaUrl } from './utils/media';
 import { useToast } from './composables/useToast';
 import hordeSigilUrl from './assets/horde-sigil.svg';
@@ -108,41 +109,11 @@ const goToGame = (id) => {
   router.push({ name: 'game', params: { id } });
 };
 
-// ── Custom cursor · "Orc fist" (минимальный: кулак + палец + коготь) ──
-const cursorRing = ref(null);
-const cursorHover = ref(false);
-const cursorClicking = ref(false);
+// Старый orc-cursor (SVG-курсор, заменявший нативный) удалён.
+// Теперь нативный курсор ОС остаётся, а поверх — CursorTrail (см. ниже).
+// Только определяем isTouch — чтобы не цеплять mouse-only логику на мобиле
+// (mobile-menu, hamburger и пр. — там нативный тач-курсор как есть).
 const isTouch = ref(false);
-let cursorRevealed = false;
-
-const moveCursor = (e) => {
-  if (!cursorRing.value) return;
-  cursorRing.value.style.transform = `translate(${e.clientX}px,${e.clientY}px)`;
-  if (!cursorRevealed) {
-    cursorRevealed = true;
-    document.documentElement.classList.add('cursor-ready');
-  }
-};
-
-const INTERACTIVE_SELECTOR =
-  'a, button, [role="button"], input:not([type="hidden"]), textarea, select, label[for], summary, [data-cursor-hover]';
-
-const updateCursorHover = (e) => {
-  const t = e.target;
-  if (!t || !(t instanceof Element)) return;
-  cursorHover.value = !!t.closest(INTERACTIVE_SELECTOR);
-};
-const onCursorDown = () => { cursorClicking.value = true; };
-const onCursorUp   = () => { cursorClicking.value = false; };
-const onCursorLeave = () => {
-  if (document.documentElement.classList.contains('cursor-ready')) {
-    document.documentElement.classList.remove('cursor-ready');
-  }
-};
-const onCursorEnter = () => {
-  if (cursorRevealed) document.documentElement.classList.add('cursor-ready');
-};
-
 
 const handleLogout = async () => {
   await authStore.logout();
@@ -160,23 +131,12 @@ onMounted(() => {
   isTouch.value = window.matchMedia('(pointer: coarse)').matches;
   if (isTouch.value) {
     document.documentElement.classList.add('touch-device');
-  } else {
-    window.addEventListener('mousemove', moveCursor, { passive: true });
-    document.addEventListener('mouseover', updateCursorHover, { passive: true });
-    window.addEventListener('mousedown', onCursorDown, { passive: true });
-    window.addEventListener('mouseup',   onCursorUp,   { passive: true });
-    document.addEventListener('mouseleave', onCursorLeave);
-    document.addEventListener('mouseenter', onCursorEnter);
   }
+  // Cursor-trail сам подключает свои листенеры через свой onMounted —
+  // здесь ничего не делаем, просто рендерим компонент в template.
 });
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll);
-  window.removeEventListener('mousemove', moveCursor);
-  document.removeEventListener('mouseover', updateCursorHover);
-  window.removeEventListener('mousedown', onCursorDown);
-  window.removeEventListener('mouseup', onCursorUp);
-  document.removeEventListener('mouseleave', onCursorLeave);
-  document.removeEventListener('mouseenter', onCursorEnter);
   clearTimeout(searchTimer);
 });
 </script>
@@ -184,81 +144,9 @@ onUnmounted(() => {
 <template>
   <div id="app-wrapper">
 
-    <!-- Custom cursor (desktop only) — орочья рука с указательным пальцем.
-         Зелёная кожа, тёмные когти, кованая повязка на запястье с заклёпкой.
-         Кончик когтя указательного пальца — точка клика (10.5, 0 в SVG-coords).
-         Teleport в <body>, чтобы курсор был сиблингом чатов/модалок
-         (которые тоже телепортируются), иначе backdrop-filter-модалки
-         создают свой stacking-context и курсор оказывается под ними. -->
-    <Teleport to="body">
-      <svg
-        v-if="!isTouch"
-        class="orc-cursor"
-        :class="{ 'is-hover': cursorHover, 'is-clicking': cursorClicking }"
-        ref="cursorRing"
-        viewBox="0 0 48 48"
-        width="44"
-        height="44"
-        overflow="visible"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <!-- Весь визуал курсора повёрнут на -25° вокруг кончика когтя (10.5, 0) —
-             рука держится «под боком» как в классических RTS-курсорах:
-             палец указывает влево-вверх, тело руки уходит вправо-вниз.
-             Точка клика (кончик когтя) остаётся в SVG-координате (10.5, 0). -->
-        <g transform="rotate(-25 10.5 0)">
-          <!-- Главный силуэт: палец + кулак с тремя костяшками + предплечье.
-               Идём по часовой от верха пальца. -->
-          <path
-            class="oc-hand"
-            d="M 8 4
-               L 13 4
-               L 13 13
-               L 17 13   L 17 11   L 20 11   L 20 13
-               L 22 13   L 22 10   L 25 10   L 25 13
-               L 28 13
-               L 28 42
-               L 4 42
-               L 4 13
-               L 8 13
-               Z"
-          />
-
-          <!-- Светлая полоска вдоль пальца — намёк на цилиндрическую форму -->
-          <line class="oc-highlight" x1="9.6" y1="5" x2="9.6" y2="12.5" />
-
-          <!-- Тёмные тени между костяшками (рисуют пальцы кулака) -->
-          <line class="oc-shadow" x1="17" y1="13" x2="17" y2="20" />
-          <line class="oc-shadow" x1="22" y1="13" x2="22" y2="20" />
-          <line class="oc-shadow" x1="13" y1="13" x2="13" y2="20" />
-
-          <!-- Тёмная тень снизу-справа кулака (объём) -->
-          <path class="oc-volume" d="M 24 14 L 28 14 L 28 30 L 26 30 Z" />
-
-          <!-- Кованая повязка на запястье -->
-          <path class="oc-wrap" d="M 3 30 L 29 30 L 29 38 L 3 38 Z" />
-
-          <!-- Декоративные стежки по краям повязки -->
-          <line class="oc-stitch" x1="3.5" y1="30.8" x2="28.5" y2="30.8" />
-          <line class="oc-stitch" x1="3.5" y1="37.2" x2="28.5" y2="37.2" />
-
-          <!-- Заклёпка по центру повязки -->
-          <circle class="oc-rivet" cx="16" cy="34" r="1.7" />
-          <circle class="oc-rivet-shine" cx="15.4" cy="33.4" r="0.5" />
-
-          <!-- Татуировка-шеврон на тыльной стороне ладони -->
-          <path class="oc-tattoo" d="M 9 17 L 13 21 L 17 17 M 11 17 L 13 19 L 15 17" />
-
-          <!-- Коготь указательного пальца (главный — кончик курсора) -->
-          <path class="oc-claw oc-claw--index" d="M 8 4 L 13 4 L 10.5 0 Z" />
-
-          <!-- Когти на видимых костяшках -->
-          <path class="oc-claw oc-claw--small" d="M 17 11 L 20 11 L 18.5 8 Z" />
-          <path class="oc-claw oc-claw--small" d="M 22 10 L 25 10 L 23.5 7 Z" />
-        </g>
-      </svg>
-    </Teleport>
+    <!-- Cursor trail — кованый шлейф искр за нативным курсором.
+         Сам компонент Teleport'ится в body и отключается на тач + reduced-motion. -->
+    <CursorTrail />
 
     <!-- Ambient particles (existing; will blend with new theme) -->
     <ParticlesBackground />
@@ -2051,160 +1939,9 @@ onUnmounted(() => {
 .dropdown-enter-from,
 .dropdown-leave-to { opacity: 0; transform: translateY(-8px); }
 
-/* ==========================================================
-   CURSOR · "Orc hand" — орочья рука с указательным пальцем.
-   Зелёная кожа, чёрные когти, кованая повязка с заклёпкой.
-   Минимум анимаций: hover = тёплое свечение, click = сжатие.
-   ========================================================== */
-.orc-cursor {
-  position: fixed;
-  top: 0; left: 0;
-  pointer-events: none;
-  z-index: var(--z-cursor);
-  will-change: transform;
-  opacity: 0;
-  overflow: visible;
-  /* Точка клика — кончик когтя указательного пальца (10.5, 0 в SVG).
-     SVG 48×48 → 44×44 на экране. Кончик когтя в display-координатах ~(9.6, 0).
-     Margin сдвигает SVG влево, чтобы кончик когтя совпал с курсором мыши. */
-  margin: 0 0 0 -10px;
-  transition: opacity 0.25s var(--ease-smoke);
-}
-html.cursor-ready .orc-cursor { opacity: 1; }
-
-/* ── Кожа (силуэт ладони и предплечья) — зелёный орк ── */
-.oc-hand {
-  fill: var(--orc-green);
-  stroke: var(--iron-void);
-  stroke-width: 1.4;
-  stroke-linejoin: miter;
-  stroke-linecap: square;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
-  transition: fill 0.18s var(--ease-smoke), transform 0.18s var(--ease-forge);
-  transform-box: view-box;
-  transform-origin: 10.5px 0;
-}
-
-/* ── Светлая полоска вдоль пальца — намёк на цилиндр ── */
-.oc-highlight {
-  stroke: var(--orc-emerald);
-  stroke-width: 1;
-  stroke-linecap: round;
-  opacity: 0.65;
-  pointer-events: none;
-}
-
-/* ── Тёмные тени между костяшками — намекают на пальцы кулака ── */
-.oc-shadow {
-  stroke: var(--orc-moss);
-  stroke-width: 0.9;
-  stroke-linecap: round;
-  opacity: 0.85;
-  pointer-events: none;
-}
-
-/* ── Боковая тень — объём кулака ── */
-.oc-volume {
-  fill: var(--orc-moss);
-  opacity: 0.55;
-  pointer-events: none;
-}
-
-/* ── Кованая повязка на запястье ── */
-.oc-wrap {
-  fill: var(--iron-void);
-  stroke: var(--bronze-dark);
-  stroke-width: 0.7;
-  pointer-events: none;
-}
-
-/* ── Декоративные стежки по краям повязки ── */
-.oc-stitch {
-  stroke: var(--bronze);
-  stroke-width: 0.4;
-  stroke-dasharray: 1 1;
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-/* ── Заклёпка ── */
-.oc-rivet {
-  fill: var(--brass);
-  stroke: var(--iron-void);
-  stroke-width: 0.5;
-  filter: drop-shadow(0 0 1px rgba(199, 154, 94, 0.6));
-  transition: fill 0.18s var(--ease-smoke), filter 0.18s var(--ease-smoke);
-  pointer-events: none;
-}
-.oc-rivet-shine {
-  fill: var(--ember-gold);
-  opacity: 0.9;
-  pointer-events: none;
-}
-
-/* ── Татуировка-шеврон на тыльной стороне ладони ── */
-.oc-tattoo {
-  fill: none;
-  stroke: var(--iron-void);
-  stroke-width: 0.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  opacity: 0.55;
-  transition: stroke 0.18s var(--ease-smoke), opacity 0.18s var(--ease-smoke);
-  pointer-events: none;
-}
-
-/* ── Когти (все три) — чёрные, острые ── */
-.oc-claw {
-  fill: var(--iron-void);
-  stroke: var(--iron-void);
-  stroke-width: 0.6;
-  stroke-linejoin: miter;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.7));
-  transition: fill 0.18s var(--ease-smoke), transform 0.18s var(--ease-forge);
-  transform-box: view-box;
-  transform-origin: 10.5px 0;
-}
-
-/* ── Hover на интерактивном: кожа подсвечивается тлеющим красно-оранжевым,
-       заклёпка вспыхивает, когти угольно-чернеют ── */
-.orc-cursor.is-hover .oc-hand {
-  fill: var(--orc-emerald);
-  filter: drop-shadow(0 2px 4px rgba(226, 67, 16, 0.45))
-          drop-shadow(0 0 6px rgba(255, 122, 43, 0.32));
-  transform: scale(1.06);
-}
-.orc-cursor.is-hover .oc-claw {
-  fill: #0d0a08;
-  transform: scale(1.06);
-}
-.orc-cursor.is-hover .oc-rivet {
-  fill: var(--ember-gold);
-  filter: drop-shadow(0 0 3px rgba(255, 201, 121, 0.85));
-}
-.orc-cursor.is-hover .oc-tattoo {
-  stroke: var(--ember-deep);
-  opacity: 0.85;
-}
-
-/* ── Click: рука сжимается — тише, темнее ── */
-.orc-cursor.is-clicking .oc-hand,
-.orc-cursor.is-clicking .oc-claw {
-  transform: scale(0.93);
-}
-.orc-cursor.is-clicking .oc-hand {
-  fill: var(--orc-moss);
-  filter: drop-shadow(0 1px 2px rgba(226, 67, 16, 0.5));
-}
-
-/* ── Reduce-motion: оставляем только смену цвета, никаких transform ── */
-@media (prefers-reduced-motion: reduce) {
-  .oc-hand, .oc-claw { transition: fill 0.18s var(--ease-smoke); }
-  .orc-cursor.is-hover .oc-hand,
-  .orc-cursor.is-hover .oc-claw,
-  .orc-cursor.is-clicking .oc-hand,
-  .orc-cursor.is-clicking .oc-claw { transform: none; }
-}
+/* CURSOR — старый orc-hand SVG-курсор удалён.
+   Теперь нативный курсор ОС остаётся видимым, поверх — CursorTrail.vue
+   (искры за курсором + бурст на клике, theme-aware). */
 
 /* ==========================================================
    RESPONSIVE — header / footer / global app shell
@@ -2415,6 +2152,6 @@ html.cursor-ready .orc-cursor { opacity: 1; }
   .toast-container { bottom: 14px; right: 8px; left: 8px; width: auto; max-width: none; }
 }
 
-/* Скрыть системный курсор */
-html:not(.touch-device) * { cursor: none !important; }
+/* Системный курсор больше не скрываем — он остаётся виден, а
+   CursorTrail.vue лишь добавляет искры/частицы поверх него. */
 </style>
