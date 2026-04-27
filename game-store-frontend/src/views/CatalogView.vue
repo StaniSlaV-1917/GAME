@@ -779,6 +779,9 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
   .sort-wrap { justify-content: flex-end; }
   .genre-chips { justify-content: center; }
   .catalog-hero { min-height: 36vh; padding: 70px 22px 60px; }
+  /* На мобиле sticky-фильтры съедают пол-экрана при прокрутке —
+     отключаем "прилипание", фильтры скроллятся вместе со страницей. */
+  .filters-bar-wrap { position: static; }
 }
 @media (max-width: 768px) {
   .games-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }

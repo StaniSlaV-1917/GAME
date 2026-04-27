@@ -2257,7 +2257,9 @@ html.cursor-ready .orc-cursor { opacity: 1; }
   .action-btn { width: 36px; height: 36px; }
   .theme-btn-labeled { width: 36px; padding: 0; gap: 0; }
   .theme-btn-labeled .nav-chevron { display: none; }
-  .search-wrap { flex: 1 1 0; }
+  /* На мобиле прячем поиск в шапке полностью — он наезжал на кнопки темы.
+     Использовать поиск с телефона можно через каталог (там фильтры). */
+  .search-wrap { display: none; }
 }
 
 @media (max-width: 640px) {

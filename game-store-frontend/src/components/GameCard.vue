@@ -697,26 +697,68 @@ const handleMouseLeave = () => {
   .card-info { padding: 14px 16px 13px; gap: 5px; }
   .card-title { font-size: 1rem; }
 }
+
+/* На мобиле каталог = 2 колонки grid (см. CatalogView), каждая карточка
+   ~180-200px шириной. Перестраиваем bottom-row в столбец (цена сверху,
+   кнопка во всю ширину снизу), чтобы не вылезало за край карточки. */
 @media (max-width: 540px) {
-  .card-img-wrap { height: 170px; }
-  .card-info { padding: 12px 14px 12px; }
-  .card-title { font-size: 0.96rem; }
-  .card-genre { font-size: 0.78rem; }
-  .price-val { font-size: 1.1rem; }
-  .buy-btn { padding: 8px 11px; font-size: 0.72rem; gap: 4px; }
-  .details-btn { width: 32px; height: 32px; }
-  .badge { font-size: 0.62rem; padding: 4px 8px; }
-  .platform-chip { font-size: 0.6rem; padding: 3px 7px; }
+  .card-img-wrap { height: 160px; }
+  .card-info { padding: 12px 12px 12px; gap: 4px; }
+  .card-title { font-size: 0.92rem; line-height: 1.2; }
+  .card-genre { font-size: 0.74rem; }
+  .card-divider { margin: 6px 0 4px; }
+
+  /* Bottom row → столбец */
+  .card-bottom {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding-top: 6px;
+  }
+  .price-block { align-items: center; line-height: 1; }
+  .price-val { font-size: 1.15rem; }
+  .price-unit { font-size: 0.82rem; }
+  .old-price { font-size: 0.7rem; }
+
+  .card-actions { gap: 6px; }
+  .buy-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 9px 12px;
+    font-size: 0.74rem;
+    gap: 4px;
+  }
+  /* Details-btn (i-кнопка) прячем — картинка карточки и заголовок и так
+     ведут на страницу игры, дополнительная кнопка избыточна. */
+  .details-btn { display: none; }
+
+  /* Badges и platform-chip компактнее */
+  .badge { font-size: 0.6rem; padding: 3px 7px; gap: 3px; }
+  .badge-icon { font-size: 0.68rem; }
+  .platform-chip { font-size: 0.58rem; padding: 3px 7px; }
+  .card-badges { left: 10px; top: 10px; gap: 5px; }
+
+  /* Rating — компактнее, звёзды меньше */
+  .stars-track { gap: 0; }
+  .star { font-size: 0.82rem; }
+  .rating-val { font-size: 0.74rem; }
 }
+
 @media (max-width: 380px) {
-  .card-img-wrap { height: 150px; }
-  /* Кнопки рядом не помещаются — складываем bottom-row в столбец */
-  .card-bottom { flex-direction: column; align-items: stretch; gap: 8px; }
-  .price-block { align-items: center; }
-  .card-actions { justify-content: center; }
-  .buy-btn { flex: 1; justify-content: center; }
+  /* Совсем узкие экраны — иконки в кнопках и rating опускаем */
+  .card-img-wrap { height: 140px; }
+  .card-info { padding: 10px 10px 10px; }
+  .buy-icon { display: none; }
+  .buy-btn { padding: 8px 10px; font-size: 0.7rem; }
+  .rivet { width: 7px; height: 7px; }
+  .rivet-tl, .rivet-tr { top: 5px; }
+  .rivet-bl, .rivet-br { bottom: 5px; }
+  .rivet-tl, .rivet-bl { left: 5px; }
+  .rivet-tr, .rivet-br { right: 5px; }
 }
-/* Touch-устройства: tilt-эффект убираем, чтобы избежать ломаных трансформов */
+
+/* Touch-устройства: tilt-эффект убираем, чтобы избежать ломаных трансформов.
+   Также делаем ext-link и details-btn кликабельными без hover. */
 @media (hover: none) {
   .game-card-inner { transform: none !important; }
   .game-card-inner:hover { filter: none; }
