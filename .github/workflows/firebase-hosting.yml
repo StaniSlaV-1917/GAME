@@ -23,6 +23,9 @@ jobs:
           echo "VITE_REVERB_HOST=game-l6voba.fly.dev" >> game-store-frontend/.env
           echo "VITE_REVERB_PORT=8443" >> game-store-frontend/.env
           echo "VITE_REVERB_SCHEME=https" >> game-store-frontend/.env
+          # Cloudflare Turnstile site key — публичный, в JS-бандле всё равно
+          # будет, поэтому хардкод. Secret хранится отдельно как Fly secret.
+          echo "VITE_TURNSTILE_SITE_KEY=0x4AAAAAADEdhIFixCoLydpV" >> game-store-frontend/.env
       - run: cd game-store-frontend && npm install && npm run build
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:

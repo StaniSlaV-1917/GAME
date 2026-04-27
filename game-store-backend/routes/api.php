@@ -26,11 +26,19 @@ use App\Http\Controllers\Admin\AdminModsController;
 
 // --- Аутентификация --- //
 Route::prefix('auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
+    // Эндпойнты, на которые могут DDoS'ить боты — защищены Turnstile.
+    // Цель: регистрация и отправка одноразовых кодов на почту (passwordless +
+    // forgot-password) — самые «ботоопасные» из-за email-spam-цены).
+    // /login (с паролем) пока без Turnstile — пароль и так гейт; добавим
+    // если увидим брутфорс.
+    Route::middleware('turnstile')->group(function () {
+        Route::post('/register', [AuthController::class, 'register']);
+        Route::post('/passwordless', [AuthController::class, 'sendLoginCode']);
+        Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetCode']);
+    });
+
     Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/passwordless', [AuthController::class, 'sendLoginCode']);
     Route::post('/passwordless/login', [AuthController::class, 'loginWithCode']);
-    Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetCode']);
     Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
     
     Route::middleware('auth:sanctum')->group(function () {

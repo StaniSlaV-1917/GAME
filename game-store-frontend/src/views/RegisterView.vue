@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import { useAuthStore } from '../stores/auth';
 import { useToast } from '../composables/useToast';
 import { warmupPing } from '../utils/warmup';
+import TurnstileWidget from '../components/TurnstileWidget.vue';
 
 // Будим Fly-машину перед регистрацией
 onMounted(() => warmupPing());
@@ -27,6 +28,14 @@ const isLoading = ref(false);
 const error = ref('');
 const wrapperEl = ref(null);
 
+// Cloudflare Turnstile — токен подтверждения "не бот"
+const turnstileToken = ref(null);
+const turnstileRef = ref(null);
+const onTurnstileVerified = (token) => { turnstileToken.value = token; };
+const onTurnstileExpired = () => { turnstileToken.value = null; };
+const onTurnstileError = () => { turnstileToken.value = null; };
+const canSubmit = computed(() => !!turnstileToken.value);
+
 const handleFocus = (v) => wrapperEl.value?.classList.toggle('is-focused', v);
 
 const submit = async () => {
@@ -38,15 +47,26 @@ const submit = async () => {
   if (form.value.password.length < 6) {
     error.value = 'Пароль должен быть не менее 6 символов'; return;
   }
+  if (!turnstileToken.value) {
+    error.value = 'Подтвердите что вы не бот.';
+    return;
+  }
 
   isLoading.value = true;
   try {
-    await authStore.register(form.value);
+    // Прикладываем Turnstile-токен к payload — бэк-middleware его проверяет.
+    await authStore.register({
+      ...form.value,
+      'cf-turnstile-response': turnstileToken.value,
+    });
     toast.success('Имя вписано в свиток. Добро пожаловать в ряды.');
     router.push({ name: 'profile' });
   } catch (e) {
     error.value = e.response?.data?.message || 'Произошла ошибка при регистрации.';
     toast.error(error.value);
+    // Сбрасываем Turnstile — токен одноразовый, после неудачи нужен новый
+    turnstileToken.value = null;
+    turnstileRef.value?.reset();
     console.error(e);
   } finally {
     isLoading.value = false;
@@ -149,7 +169,16 @@ const submit = async () => {
               @focus="handleFocus(true)" @blur="handleFocus(false)"
             />
           </div>
-          <button type="submit" class="forge-btn" :disabled="isLoading">
+          <!-- Cloudflare Turnstile — без видимого challenge'а в большинстве
+               случаев, просто появляется виджет с галочкой через ~1 сек -->
+          <TurnstileWidget
+            ref="turnstileRef"
+            @verified="onTurnstileVerified"
+            @expired="onTurnstileExpired"
+            @error="onTurnstileError"
+          />
+
+          <button type="submit" class="forge-btn" :disabled="isLoading || !canSubmit">
             <span v-if="isLoading" class="btn-spinner" aria-hidden="true"></span>
             <span class="forge-btn-label">{{ isLoading ? 'Куём…' : 'Вписать в свиток' }}</span>
           </button>

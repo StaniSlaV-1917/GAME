@@ -69,5 +69,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'admin'   => \App\Http\Middleware\AdminMiddleware::class,
         'manager' => \App\Http\Middleware\ManagerMiddleware::class,
+        // Cloudflare Turnstile — защита от ботов на регистрации, логине, etc.
+        'turnstile' => \App\Http\Middleware\VerifyTurnstile::class,
     ];
 }
