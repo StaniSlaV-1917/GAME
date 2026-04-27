@@ -36,10 +36,33 @@ return [
             'throw' => false,
         ],
 
-        'public' => [
+        // 'public' — disk для всех публично-доступных пользовательских файлов
+        // (картинки игр, аватарки, обложки постов, чат-вложения).
+        //
+        // Логика: если выставлен R2_KEY (прод-окружение Fly с настроенным
+        // Cloudflare R2) — disk автоматически становится R2 с префиксом
+        // 'storage/'. URL'ы Storage::url($path) будут возвращать
+        // R2_PUBLIC_URL + 'storage/' + $path, что совпадает с тем что
+        // ожидает фронт через resolveMediaUrl (старые пути в БД
+        // вида /storage/gallery/... продолжают работать).
+        //
+        // Локально (без R2_KEY) — обычный local-disk, как было.
+        'public' => env('R2_KEY') ? [
+            'driver'   => 's3',
+            'key'      => env('R2_KEY'),
+            'secret'   => env('R2_SECRET'),
+            'region'   => 'auto',
+            'bucket'   => env('R2_BUCKET'),
+            'endpoint' => env('R2_ENDPOINT'),
+            'url'      => env('R2_PUBLIC_URL') . '/storage',
+            'use_path_style_endpoint' => false,
+            'visibility' => 'public',
+            'throw'    => false,
+            'prefix'   => 'storage',           // все ключи в R2 будут с префиксом storage/
+        ] : [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
