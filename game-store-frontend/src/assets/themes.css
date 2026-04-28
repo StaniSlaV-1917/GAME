@@ -865,6 +865,131 @@ html[data-theme="legacy"] .hero-tower {
   color: #050208;
 }
 
+/* ════════════════════════════════════════════════════════════
+   VIDEO HERO READABILITY (Light theme override)
+   ----------------------------------------------------------
+   На страницах с видео-фоном (`.hero-section--video`,
+   `.catalog-hero--video`, `.news-hero--video`, `.ab-hero--video`,
+   `.profile-hero--video`) под текстом всегда тёмный radial-overlay.
+   Light тема инвертирует текст в тёмные тона (--text-bright =
+   #2a1a0e), и заголовки сливаются с оверлеем.
+
+   Принудительно возвращаем светлую палитру (как в Dark) — потому
+   что локальный контекст (дрожащее видео + тёмная вуаль) НЕ зависит
+   от глобальной темы. Это стандартная практика для кинематографичных
+   героев — текст всегда контрастный к фон-плёнке, не к теме.
+
+   Specificity html[data-theme=...] .container .target = (0,3,1)
+   хватает чтобы перекрыть scoped и обычные глобальные правила.
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── Заголовки (главные, насыщенный белый) ─── */
+html[data-theme="light"] .hero-section--video .hero-title,
+html[data-theme="light"] .hero-section--video .hero-title-line,
+html[data-theme="light"] .catalog-hero--video .hero-title,
+html[data-theme="light"] .catalog-hero--video .hero-title-line,
+html[data-theme="light"] .news-hero--video .hero-title,
+html[data-theme="light"] .ab-hero--video .ab-hero-title,
+html[data-theme="light"] .profile-hero--video .hero-name {
+  color: #fff6df;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    0 4px 14px rgba(0, 0, 0, 0.55);
+}
+
+/* ─── Подзаголовки и описания (приглушённый кремовый) ─── */
+html[data-theme="light"] .hero-section--video .hero-tagline,
+html[data-theme="light"] .hero-section--video .hero-subtitle,
+html[data-theme="light"] .catalog-hero--video .hero-sub,
+html[data-theme="light"] .news-hero--video .hero-sub,
+html[data-theme="light"] .ab-hero--video .ab-hero-sub,
+html[data-theme="light"] .profile-hero--video .hero-tagline,
+html[data-theme="light"] .profile-hero--video .hero-meta,
+html[data-theme="light"] .profile-hero--video .stat-label {
+  color: #d8c49a;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* ─── Tribal-eyebrow и spike — на видео должны быть бронзовыми ─── */
+html[data-theme="light"] .hero-section--video .tribal-eyebrow,
+html[data-theme="light"] .catalog-hero--video .tribal-eyebrow,
+html[data-theme="light"] .news-hero--video .tribal-eyebrow,
+html[data-theme="light"] .ab-hero--video .tribal-eyebrow,
+html[data-theme="light"] .profile-hero--video .tribal-eyebrow {
+  color: #c79a5e;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+html[data-theme="light"] .hero-section--video .eb-spike,
+html[data-theme="light"] .catalog-hero--video .eb-spike,
+html[data-theme="light"] .news-hero--video .eb-spike,
+html[data-theme="light"] .ab-hero--video .eb-spike,
+html[data-theme="light"] .profile-hero--video .eb-spike {
+  border-top-color: #c79a5e;
+  filter: drop-shadow(0 0 3px rgba(255, 122, 43, 0.5));
+}
+
+/* ─── Hero-badge на главной/каталоге — тёмное стекло вместо песочного ─── */
+html[data-theme="light"] .hero-section--video .hero-badge,
+html[data-theme="light"] .catalog-hero--video .hero-badge {
+  background: linear-gradient(180deg,
+    rgba(8, 6, 10, 0.55) 0%,
+    rgba(18, 16, 13, 0.45) 100%);
+  border-color: rgba(199, 154, 94, 0.35);
+  color: #c79a5e;
+  text-shadow: none;
+}
+
+/* ─── Поле поиска в каталог-герое — тёмное стекло ─── */
+html[data-theme="light"] .catalog-hero--video .hero-search {
+  background: linear-gradient(180deg,
+    rgba(8, 6, 10, 0.55) 0%,
+    rgba(18, 16, 13, 0.45) 100%);
+  border-color: rgba(199, 154, 94, 0.4);
+}
+html[data-theme="light"] .catalog-hero--video .srch-input {
+  background: transparent;
+  color: #fff6df;
+  border-color: transparent;
+}
+html[data-theme="light"] .catalog-hero--video .srch-input::placeholder {
+  color: rgba(216, 196, 154, 0.7);
+}
+html[data-theme="light"] .catalog-hero--video .srch-icon {
+  color: #c79a5e;
+}
+
+/* ─── Role-badge в профиле + статы — числа золотом ─── */
+html[data-theme="light"] .profile-hero--video .role-badge {
+  background: linear-gradient(180deg,
+    rgba(8, 6, 10, 0.55) 0%,
+    rgba(18, 16, 13, 0.45) 100%);
+  border-color: rgba(199, 154, 94, 0.4);
+  color: #c79a5e;
+  text-shadow: none;
+}
+html[data-theme="light"] .profile-hero--video .stat-num {
+  color: #ffc979;
+  text-shadow:
+    0 0 12px rgba(255, 122, 43, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.85);
+}
+
+/* ════════════════════════════════════════════════════════════
+   То же для LEGACY (на всякий — палитра уже светлая, но video
+   даёт яркие участки, можно потерять контраст). Используем магически-
+   ледяные оттенки для внешнего вида отличного от Dark.
+   ════════════════════════════════════════════════════════════ */
+html[data-theme="legacy"] .hero-section--video .hero-title,
+html[data-theme="legacy"] .hero-section--video .hero-title-line,
+html[data-theme="legacy"] .catalog-hero--video .hero-title,
+html[data-theme="legacy"] .news-hero--video .hero-title,
+html[data-theme="legacy"] .ab-hero--video .ab-hero-title,
+html[data-theme="legacy"] .profile-hero--video .hero-name {
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    0 4px 14px rgba(94, 76, 200, 0.4);
+}
+
 /* ── CursorTrail · per-theme particle palette ─────────── */
 [data-theme="light"] .ct-particle {
   --c-core: var(--ember-gold);
@@ -876,4 +1001,547 @@ html[data-theme="legacy"] .hero-tower {
   --c-core: var(--ember-gold);     /* #d4c8ff */
   --c-mid:  var(--ember-spark);    /* #a89af5 */
   --c-edge: var(--ember-flame);    /* #5e4cc8 */
+}
+
+/* ════════════════════════════════════════════════════════════
+   LIGHT THEME — большой проход контрастных фиксов (audit пользователя)
+   ----------------------------------------------------------
+   Аудит выявил ~10 зон где Light тема ломала читаемость:
+   1. Header (текст на тёмном glass) — text-bright в light = тёмный →
+      невидим на тёмном backdrop-blur. Принудительно cream.
+   2. Hero-stats на главной (.hstat-*) на видео — тоже dark text on dark.
+   3. Feature-card / step-card — в Light были светло-песочные. Делаем
+      существенно темнее (контрастнее) — чтоб блоки читались как
+      «карточки», не сливаясь с body.
+   4. Footer copy — был светлым → light on light. Темнее.
+   5. NewsArticle .back-link-btn — ember-spark светлый → невидим.
+   6. GameCard .price, .rating-val, .star — light on light fix.
+   7. About-page контактные ссылки + «Вписать имя» кнопка визуально.
+   8. Admin модальные окна — поля без видимых границ.
+   9. Cart .price, ⚡ badge — light on light.
+   10. Profile overview .stat-card цифры пастельные → в light dark-deep.
+   11. Profile settings input fields → видимые рамки, current email — fix.
+
+   Все правила используют html[data-theme="light"] чтобы перебить
+   scoped CSS (specificity 0,?,1).
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── 1. HEADER · логотип и текст всегда светлый (header bg тёмный glass) ─── */
+html[data-theme="light"] .main-header,
+html[data-theme="light"] .main-header * {
+  color-scheme: dark;
+}
+html[data-theme="light"] .logo-word-main {
+  color: #fff6df;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+html[data-theme="light"] .logo-word-sub {
+  color: #d4b56a;
+}
+html[data-theme="light"] .nav-link,
+html[data-theme="light"] .nav-link span {
+  color: #d8c49a;
+}
+html[data-theme="light"] .nav-link:hover,
+html[data-theme="light"] .nav-link.router-link-active,
+html[data-theme="light"] .nav-link.router-link-active span {
+  color: #ffd390;
+}
+html[data-theme="light"] .action-btn,
+html[data-theme="light"] .theme-btn-labeled,
+html[data-theme="light"] .mode-btn {
+  color: #d8c49a;
+  border-color: rgba(199, 154, 94, 0.35);
+}
+html[data-theme="light"] .action-btn:hover {
+  color: #ffd390;
+  border-color: rgba(255, 211, 144, 0.5);
+}
+html[data-theme="light"] .search-input,
+html[data-theme="light"] .search-input::placeholder {
+  color: #d8c49a;
+}
+html[data-theme="light"] .search-input::placeholder { opacity: 0.65; }
+
+/* ─── 2. HERO-STATS на главной (видео-герой) ─── */
+html[data-theme="light"] .hero-section--video .hstat-num,
+html[data-theme="light"] .hero-section--video .hstat-plus {
+  color: #ffd390;
+  text-shadow:
+    0 0 12px rgba(255, 122, 43, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.85);
+}
+html[data-theme="light"] .hero-section--video .hstat-label {
+  color: #d8c49a;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+html[data-theme="light"] .hero-section--video .hstat-sep span {
+  background: linear-gradient(180deg, transparent, rgba(199, 154, 94, 0.5), transparent);
+}
+
+/* ─── 3. FEATURE-CARD / STEP-CARD — тёмное вместо песочного ─── */
+html[data-theme="light"] .feature-card,
+html[data-theme="light"] .step-card {
+  background: linear-gradient(180deg, #2a1a0e 0%, #1a100c 100%);
+  border-color: var(--bronze-dark);
+  box-shadow:
+    inset 0 1px 0 rgba(199, 154, 94, 0.25),
+    0 6px 18px rgba(0, 0, 0, 0.35);
+  color: #f2e5c9;
+}
+html[data-theme="light"] .feature-card *,
+html[data-theme="light"] .step-card * {
+  color: inherit;
+}
+html[data-theme="light"] .feature-card h3,
+html[data-theme="light"] .feature-card .feature-title,
+html[data-theme="light"] .step-card h3,
+html[data-theme="light"] .step-card .step-title {
+  color: #fff6df;
+}
+html[data-theme="light"] .feature-card p,
+html[data-theme="light"] .feature-card .feature-text,
+html[data-theme="light"] .step-card p,
+html[data-theme="light"] .step-card .step-text {
+  color: #d8c49a;
+}
+html[data-theme="light"] .step-card .step-num {
+  color: #ffd390;
+  text-shadow: 0 0 10px rgba(255, 122, 43, 0.4);
+}
+html[data-theme="light"] .feature-card:hover,
+html[data-theme="light"] .step-card:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(199, 154, 94, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    0 0 22px rgba(239, 74, 24, 0.3);
+}
+
+/* ─── 4. FOOTER — текст копирайта читаемый ─── */
+html[data-theme="light"] .footer-copy,
+html[data-theme="light"] .footer-made,
+html[data-theme="light"] .footer-bottom,
+html[data-theme="light"] .footer-bottom * {
+  color: #d8c49a;
+}
+html[data-theme="light"] .main-footer {
+  color-scheme: dark;
+}
+html[data-theme="light"] .main-footer h4,
+html[data-theme="light"] .footer-col h4,
+html[data-theme="light"] .footer-title {
+  color: #fff6df;
+}
+html[data-theme="light"] .footer-link,
+html[data-theme="light"] .footer-col a {
+  color: #d8c49a;
+}
+html[data-theme="light"] .footer-link:hover,
+html[data-theme="light"] .footer-col a:hover {
+  color: #ffd390;
+}
+
+/* ─── 5. NewsArticle «Обратно к хроникам» ─── */
+html[data-theme="light"] .back-link-btn {
+  color: var(--ember-deep);
+}
+html[data-theme="light"] .back-link-btn:hover {
+  color: #ef4a18;
+}
+
+/* ─── 6. GameCard в каталоге ─── */
+html[data-theme="light"] .card-rating .star {
+  color: var(--iron-mid);
+}
+html[data-theme="light"] .card-rating .star.filled {
+  color: #ef4a18;
+  text-shadow: 0 0 4px rgba(239, 74, 24, 0.4);
+}
+html[data-theme="light"] .rating-val {
+  color: var(--ember-deep);
+}
+html[data-theme="light"] .price,
+html[data-theme="light"] .price-val,
+html[data-theme="light"] .price-unit {
+  color: var(--ember-deep);
+  text-shadow: 0 0 6px rgba(239, 74, 24, 0.2);
+}
+html[data-theme="light"] .old-price {
+  color: var(--text-smoke);
+}
+
+/* ─── 7. About-page контакты + кнопки CTA ─── */
+html[data-theme="light"] .contact-link,
+html[data-theme="light"] .contact-row a,
+html[data-theme="light"] .contact-list a,
+html[data-theme="light"] .ab-contact a {
+  color: var(--ember-deep);
+  text-decoration: underline;
+  text-decoration-color: rgba(239, 74, 24, 0.4);
+}
+html[data-theme="light"] .contact-link:hover,
+html[data-theme="light"] .contact-row a:hover,
+html[data-theme="light"] .contact-list a:hover,
+html[data-theme="light"] .ab-contact a:hover {
+  color: #ef4a18;
+}
+/* Любая кнопка «Вписать имя» / «Записаться» / submit-like */
+html[data-theme="light"] .cta-btn,
+html[data-theme="light"] .ab-cta-btn,
+html[data-theme="light"] .signup-btn,
+html[data-theme="light"] .write-btn,
+html[data-theme="light"] .btn-cta,
+html[data-theme="light"] .cta-block button,
+html[data-theme="light"] .cta-block .btn {
+  background: var(--grad-ember);
+  color: #fff6df !important;
+  border: 1px solid var(--ember-deep);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 201, 121, 0.3),
+    0 4px 14px rgba(239, 74, 24, 0.35);
+}
+
+/* ─── 8. Admin modals — видимые рамки полей ─── */
+html[data-theme="light"] .admin-modal,
+html[data-theme="light"] .modal-content {
+  background: linear-gradient(180deg, #e8d6b0 0%, #c9b27e 100%);
+  border-color: var(--bronze-dark);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 236, 200, 0.5),
+    0 24px 60px rgba(90, 61, 34, 0.55);
+  color: var(--text-bone);
+}
+html[data-theme="light"] .admin-modal input,
+html[data-theme="light"] .admin-modal textarea,
+html[data-theme="light"] .admin-modal select,
+html[data-theme="light"] .modal-content input,
+html[data-theme="light"] .modal-content textarea,
+html[data-theme="light"] .modal-content select,
+html[data-theme="light"] .form-row input,
+html[data-theme="light"] .form-row textarea,
+html[data-theme="light"] .form-row select {
+  background: linear-gradient(180deg, rgba(248, 232, 190, 0.85) 0%, rgba(216, 196, 154, 1) 100%);
+  border: 2px solid var(--bronze-dark);
+  color: var(--text-bone);
+}
+html[data-theme="light"] .admin-modal input:focus,
+html[data-theme="light"] .admin-modal textarea:focus,
+html[data-theme="light"] .modal-content input:focus,
+html[data-theme="light"] .modal-content textarea:focus {
+  border-color: var(--ember-flame);
+  box-shadow: 0 0 0 3px rgba(239, 74, 24, 0.25);
+}
+html[data-theme="light"] .admin-modal label,
+html[data-theme="light"] .modal-content label,
+html[data-theme="light"] .field-label,
+html[data-theme="light"] .form-label {
+  color: var(--text-bone);
+  font-weight: 600;
+}
+
+/* ─── 9. Cart — цена и ⚡ Мгновенно ─── */
+html[data-theme="light"] .cart-item .price,
+html[data-theme="light"] .cart-total,
+html[data-theme="light"] .cart-summary .total-amount,
+html[data-theme="light"] .summary-total {
+  color: var(--ember-deep);
+}
+html[data-theme="light"] .instant-badge,
+html[data-theme="light"] .badge-instant,
+html[data-theme="light"] .instant-delivery,
+html[data-theme="light"] [class*="instant"] {
+  background: linear-gradient(135deg, var(--ember-flame), var(--ember-blood));
+  color: #fff6df !important;
+  border: 1px solid var(--ember-deep);
+  text-shadow: 0 1px 2px rgba(90, 23, 16, 0.6);
+}
+
+/* ─── 10. Profile overview — stat-card числа на ярком огне ─── */
+html[data-theme="light"] .tab-panel .stat-card {
+  background: linear-gradient(180deg, #f0dfb5 0%, #d8c49a 100%);
+  border-color: var(--bronze-dark);
+}
+html[data-theme="light"] .tab-panel .stat-card .stat-num {
+  color: var(--ember-deep);
+  text-shadow: 0 0 10px rgba(239, 74, 24, 0.25);
+}
+html[data-theme="light"] .tab-panel .stat-card .stat-num.small {
+  color: var(--text-bone);
+}
+html[data-theme="light"] .tab-panel .stat-card .stat-label {
+  color: var(--text-parchment);
+  font-weight: 600;
+}
+html[data-theme="light"] .tab-panel .panel-header h2 {
+  color: var(--text-bone);
+}
+html[data-theme="light"] .tab-panel .panel-header p {
+  color: var(--text-parchment);
+}
+html[data-theme="light"] .recent-title,
+html[data-theme="light"] .panel-header h3 {
+  color: var(--text-bone);
+}
+html[data-theme="light"] .order-card {
+  background: linear-gradient(180deg, #f0dfb5 0%, #d8c49a 100%);
+  border-color: var(--bronze-dark);
+}
+html[data-theme="light"] .order-card .order-id {
+  color: var(--ember-deep);
+}
+html[data-theme="light"] .order-card .order-date,
+html[data-theme="light"] .order-card .game-chip {
+  color: var(--text-parchment);
+}
+html[data-theme="light"] .order-card .order-total {
+  color: var(--ember-deep);
+}
+html[data-theme="light"] .see-all-btn {
+  color: var(--ember-deep);
+  border-color: var(--bronze-dark);
+}
+html[data-theme="light"] .see-all-btn:hover {
+  color: #ef4a18;
+}
+
+/* ─── 11. Profile settings — поля и текущий email ─── */
+html[data-theme="light"] .settings-card {
+  background: linear-gradient(180deg, #f0dfb5 0%, #d8c49a 100%);
+  border-color: var(--bronze-dark);
+}
+html[data-theme="light"] .settings-card .settings-title,
+html[data-theme="light"] .settings-card h3,
+html[data-theme="light"] .settings-card .card-title {
+  color: var(--text-bone);
+}
+html[data-theme="light"] .settings-card .settings-desc,
+html[data-theme="light"] .settings-card .card-desc {
+  color: var(--text-parchment);
+}
+html[data-theme="light"] .settings-card input,
+html[data-theme="light"] .settings-card textarea {
+  background: linear-gradient(180deg, rgba(248, 232, 190, 0.85) 0%, rgba(216, 196, 154, 1) 100%);
+  border: 2px solid var(--bronze-dark);
+  color: var(--text-bone);
+}
+html[data-theme="light"] .settings-card input:focus,
+html[data-theme="light"] .settings-card textarea:focus {
+  border-color: var(--ember-flame);
+  box-shadow: 0 0 0 3px rgba(239, 74, 24, 0.25);
+}
+html[data-theme="light"] .settings-card label {
+  color: var(--text-bone);
+  font-weight: 600;
+}
+/* Голубой «текущий email» → выделить контрастно (не голубым) */
+html[data-theme="light"] .current-email,
+html[data-theme="light"] .email-current,
+html[data-theme="light"] .settings-card .email-link,
+html[data-theme="light"] .settings-card a[href^="mailto:"] {
+  color: var(--ember-deep);
+  font-weight: 700;
+  background: rgba(239, 74, 24, 0.08);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* ─── Прочие выявленные клиш — общая страховка для светлой темы ─── */
+html[data-theme="light"] .panel-header h2 {
+  color: var(--text-bone);
+}
+html[data-theme="light"] .panel-header p {
+  color: var(--text-parchment);
+}
+
+/* ════════════════════════════════════════════════════════════
+   ROUND 2 — повторный аудит пользователя
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── A. FOOTER в Light — делаем СУЩЕСТВЕННО темнее body ───
+   Раньше ash-obsidian → #e8d6b0 в light = песочный, светлый текст
+   на нём не виден. Делаем тёмный gradient независимо от темы. */
+html[data-theme="light"] .main-footer {
+  background:
+    linear-gradient(180deg, #2a1a14 0%, #1a100c 60%, #0e0a08 100%);
+  color: var(--text-ash);
+  color-scheme: dark;
+}
+html[data-theme="light"] .main-footer .footer-col-title,
+html[data-theme="light"] .main-footer h4 {
+  color: #fff6df;
+}
+/* Соцсети-иконки и контактные иконки */
+html[data-theme="light"] .main-footer .social-icon,
+html[data-theme="light"] .main-footer .footer-social a,
+html[data-theme="light"] .main-footer .ft-social a,
+html[data-theme="light"] .main-footer .platform-icon,
+html[data-theme="light"] .main-footer svg {
+  color: #d4b56a;
+  fill: currentColor;
+}
+html[data-theme="light"] .main-footer .social-icon:hover,
+html[data-theme="light"] .main-footer .footer-social a:hover {
+  color: #ffd390;
+}
+html[data-theme="light"] .main-footer .platform-name {
+  color: #d8c49a;
+}
+html[data-theme="light"] .main-footer .footer-link,
+html[data-theme="light"] .main-footer a {
+  color: #d8c49a;
+}
+html[data-theme="light"] .main-footer .footer-link:hover,
+html[data-theme="light"] .main-footer a:hover {
+  color: #ffd390;
+}
+
+/* ─── B. GamePage — цена и Похожие трофеи ─── */
+html[data-theme="light"] .cur-price,
+html[data-theme="light"] .cur-val {
+  color: var(--ember-deep);
+  text-shadow: 0 0 8px rgba(239, 74, 24, 0.25);
+}
+html[data-theme="light"] .cur-unit {
+  color: var(--bronze-dark);
+}
+html[data-theme="light"] .sim-card {
+  background: linear-gradient(180deg, #f0dfb5 0%, #d8c49a 100%);
+  border-color: var(--bronze-dark);
+}
+html[data-theme="light"] .sim-card .sim-title {
+  color: var(--text-bone);
+}
+html[data-theme="light"] .sim-card .sim-price {
+  color: var(--ember-deep);
+}
+html[data-theme="light"] .similar-section .sec-title,
+html[data-theme="light"] .similar-section h2,
+html[data-theme="light"] .sec-header h2,
+html[data-theme="light"] .sec-header .sec-title {
+  color: var(--text-bone);
+}
+html[data-theme="light"] .similar-section .sec-eyebrow,
+html[data-theme="light"] .sec-eyebrow {
+  color: var(--iron-void);
+}
+
+/* ─── C. About — email сотрудников ─── */
+html[data-theme="light"] .team-card .employee-mail,
+html[data-theme="light"] .team-card .employee-email,
+html[data-theme="light"] .team-card a[href^="mailto:"],
+html[data-theme="light"] .team-card .team-mail,
+html[data-theme="light"] .team-card .team-contact {
+  color: var(--ember-deep);
+  text-decoration: underline;
+  text-decoration-color: rgba(239, 74, 24, 0.4);
+  font-weight: 600;
+}
+html[data-theme="light"] .team-card .employee-mail:hover,
+html[data-theme="light"] .team-card a[href^="mailto:"]:hover {
+  color: #ef4a18;
+}
+
+/* ─── E. Profile hero — пропущенные классы (.hs-* ≠ .stat-*) ─── */
+html[data-theme="light"] .profile-hero--video .hero-email,
+html[data-theme="light"] .profile-hero--video .hero-since {
+  color: #d8c49a;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+html[data-theme="light"] .profile-hero--video .hs-num {
+  color: #ff8433;        /* более насыщенный ember-glow вместо бледного gold */
+  text-shadow:
+    0 0 14px rgba(255, 100, 30, 0.6),
+    0 2px 4px rgba(0, 0, 0, 0.85);
+}
+html[data-theme="light"] .profile-hero--video .hs-label {
+  color: #d8c49a;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+html[data-theme="light"] .profile-hero--video .hs-sep {
+  background: linear-gradient(180deg, transparent, rgba(199, 154, 94, 0.5), transparent);
+}
+
+/* То же для всех тем — hero-stats на видео должны быть ярче (универсально) */
+.profile-hero--video .hs-num {
+  /* Базовое дефолтное усиление glow — даже в Dark/Legacy */
+  text-shadow:
+    0 0 12px rgba(255, 100, 30, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ════════════════════════════════════════════════════════════
+   ROUND 3 — мелкие уточнения после повторного аудита
+   ════════════════════════════════════════════════════════════ */
+
+/* ─── Step cards «Путь воина» / Feature cards «Почему нас» —
+   в Light добавляем gap, иначе после смены bg на тёмный карточки
+   склеиваются (в Dark gap=0 был ОК т.к. между ними были тонкие
+   декоративные линии-разделители) ─── */
+html[data-theme="light"] .steps-grid {
+  gap: 16px;
+}
+html[data-theme="light"] .features-grid {
+  gap: 18px;
+}
+
+/* ─── Header в Light: иконки в action-btn (корзина) и theme-icon
+   (солнце/луна) теперь ТЁМНЫЕ — тк сами кнопки в Light имеют
+   песочный gradient (это уже в themes.css ранее), и светлый icon
+   на песочном теряется. Хедер у нас всегда tinted-glass dark, но
+   action-btn внутри отдельно стилизован под песок. ─── */
+html[data-theme="light"] .action-btn,
+html[data-theme="light"] .action-btn svg,
+html[data-theme="light"] .action-btn .cart-count {
+  color: var(--iron-void);
+}
+html[data-theme="light"] .action-btn:hover,
+html[data-theme="light"] .action-btn:hover svg {
+  color: var(--ember-deep);
+}
+html[data-theme="light"] .theme-btn-labeled .theme-icon {
+  color: var(--ember-deep);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+html[data-theme="light"] .theme-btn-labeled:hover .theme-icon {
+  color: #ef4a18;
+  filter: drop-shadow(0 0 6px rgba(239, 74, 24, 0.5));
+}
+
+/* ─── Search в шапке: placeholder и иконки видимыми ─── */
+html[data-theme="light"] .search-input {
+  color: var(--text-bone);
+}
+html[data-theme="light"] .search-input::placeholder {
+  color: var(--text-smoke);
+  opacity: 0.85;
+}
+html[data-theme="light"] .search-icon,
+html[data-theme="light"] .search-wrap svg {
+  color: var(--bronze-dark);
+}
+
+/* ─── Гарантированный gap между theme-wrap и search-wrap (бывало
+   склеивались на 125% зуме) ─── */
+.search-wrap + .theme-wrap,
+.theme-wrap {
+  margin-left: 8px;
+}
+@media (max-width: 1599px) {
+  .search-wrap { margin-right: 4px; }
+  .theme-wrap  { margin-left: 4px; }
+}
+
+/* ─── Карусель GameCarousel: цены в Light темнее ─── */
+html[data-theme="light"] .game-carousel .price,
+html[data-theme="light"] .game-carousel .price-val,
+html[data-theme="light"] .game-carousel .price-unit,
+html[data-theme="light"] .game-carousel .game-price,
+html[data-theme="light"] .game-carousel .card-price,
+html[data-theme="light"] .game-carousel-section .price,
+html[data-theme="light"] .game-carousel-section .price-val {
+  color: var(--ember-deep);
+  text-shadow: 0 0 4px rgba(239, 74, 24, 0.2);
+}
+html[data-theme="light"] .game-carousel .winner-price {
+  color: var(--ember-deep);
 }
