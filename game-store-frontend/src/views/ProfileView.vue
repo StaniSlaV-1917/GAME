@@ -257,7 +257,21 @@ onMounted(() => {
 
     <template v-else>
       <!-- ===== HERO BANNER ===== -->
-      <div class="profile-hero">
+      <div class="profile-hero profile-hero--video">
+        <!-- Видео-фон: крепость Орды с воинами — киношный профиль -->
+        <video
+          class="profile-video"
+          src="/hero/profile-bg.mp4"
+          poster="/hero/profile-bg-poster.jpg"
+          autoplay
+          loop
+          muted
+          playsinline
+          preload="auto"
+          aria-hidden="true"
+        ></video>
+        <div class="profile-video-overlay" aria-hidden="true"></div>
+
         <div class="hero-bg-blur b1"></div>
         <div class="hero-bg-blur b2"></div>
         <div class="hero-grid"></div>
@@ -787,6 +801,64 @@ onMounted(() => {
   border-bottom: 1px solid var(--iron-dark);
   padding: 64px 24px 56px;
   box-shadow: var(--inset-forge);
+  isolation: isolate;
+}
+
+/* ═══ Видео-режим ═══ */
+.profile-hero--video {
+  margin-top: -73px;
+  padding-top: 137px;  /* 64 + 73 */
+  background: transparent;  /* видео заменяет градиент */
+  min-height: clamp(320px, calc(42vw + 73px), 825px);
+}
+.profile-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 50%;
+  z-index: -3;
+  pointer-events: none;
+}
+.profile-video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    /* Центральная вуаль под аватаром+именем+статами */
+    radial-gradient(ellipse 65% 60% at 50% 55%,
+      rgba(8, 6, 10, 0.72) 0%,
+      rgba(8, 6, 10, 0.5) 40%,
+      rgba(8, 6, 10, 0.18) 75%,
+      transparent 100%),
+    /* Вертикальный затемняющий градиент */
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.65) 0%,
+      rgba(0, 0, 0, 0.4)  30%,
+      rgba(0, 0, 0, 0.35) 50%,
+      rgba(0, 0, 0, 0.6)  80%,
+      rgba(0, 0, 0, 0.85) 100%),
+    radial-gradient(ellipse 110% 100% at 50% 50%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.45) 100%);
+}
+.profile-hero--video .hero-bg-blur,
+.profile-hero--video .hero-grid {
+  display: none;
+}
+/* Усиленный text-shadow на профильных заголовках/именах/мета —
+   на ярком фоне крепости иначе сливается */
+.profile-hero--video .hero-name,
+.profile-hero--video .hero-meta,
+.profile-hero--video .role-badge,
+.profile-hero--video .tribal-eyebrow,
+.profile-hero--video .stat-num,
+.profile-hero--video .stat-label {
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    0 4px 12px rgba(0, 0, 0, 0.6);
 }
 
 .hero-bg-blur {

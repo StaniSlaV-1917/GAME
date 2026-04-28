@@ -85,7 +85,21 @@ onUnmounted(() => revealObs?.disconnect());
   <div class="about-root">
 
     <!-- ═══ HERO ═══ -->
-    <section class="ab-hero">
+    <section class="ab-hero ab-hero--video">
+      <!-- Видео-фон: степная саванна с башней — родные земли клана -->
+      <video
+        class="about-video"
+        src="/hero/about-bg.mp4"
+        poster="/hero/about-bg-poster.jpg"
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="auto"
+        aria-hidden="true"
+      ></video>
+      <div class="about-video-overlay" aria-hidden="true"></div>
+
       <div class="ab-hero-bg" aria-hidden="true">
         <div class="hero-ember hero-ember-1"></div>
         <div class="hero-ember hero-ember-2"></div>
@@ -296,8 +310,64 @@ onUnmounted(() => revealObs?.disconnect());
   overflow: hidden;
   padding: 96px 24px 84px;
   text-align: center;
+  isolation: isolate;
 }
 .ab-hero-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+
+/* ═══ Видео-режим ═══ */
+.ab-hero--video {
+  margin-top: -73px;
+  padding-top: 169px;  /* 96 + 73 — компенсация хедера */
+  min-height: clamp(320px, calc(42vw + 73px), 825px);
+}
+.about-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;  /* кадр прижат к верху — обрезается низ */
+  z-index: -3;
+  pointer-events: none;
+}
+.about-video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    /* Центральная радиальная «вуаль» — затемнение под текстом, чтобы
+       светлый заголовок «Магазин игр…» читался на ярком саванном фоне */
+    radial-gradient(ellipse 60% 55% at 50% 55%,
+      rgba(8, 6, 10, 0.7) 0%,
+      rgba(8, 6, 10, 0.5) 40%,
+      rgba(8, 6, 10, 0.15) 75%,
+      transparent 100%),
+    /* Вертикальный градиент: тёмный верх под хедер + тёмный низ для
+       плавного перехода в страницу */
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.65) 0%,
+      rgba(0, 0, 0, 0.35) 30%,
+      rgba(0, 0, 0, 0.3)  50%,
+      rgba(0, 0, 0, 0.55) 80%,
+      rgba(0, 0, 0, 0.85) 100%),
+    /* Виньетка по углам */
+    radial-gradient(ellipse 110% 100% at 50% 50%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.45) 100%);
+}
+.ab-hero--video .ab-hero-bg {
+  display: none;
+}
+/* Усиленный text-shadow для заголовков hero (светлый шрифт на ярком
+   фоне видео без shadow смотрится водянисто) */
+.ab-hero--video .ab-hero-title,
+.ab-hero--video .ab-hero-sub,
+.ab-hero--video .tribal-eyebrow {
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.85),
+    0 4px 12px rgba(0, 0, 0, 0.6);
+}
 .hero-ember {
   position: absolute;
   border-radius: 50%;

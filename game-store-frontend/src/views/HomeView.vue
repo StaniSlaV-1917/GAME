@@ -4,101 +4,43 @@
     <!-- ===================================================
          HERO · "Оплот воина"
     =================================================== -->
-    <section class="hero-section">
-      <!-- ═══ Слой 1 (дальше всего): угольное небо ═══ -->
-      <div class="hero-sky"></div>
+    <section class="hero-section hero-section--video">
+      <!-- ═══ ВИДЕО-ФОН ═══
+           1.85 МБ, 1920×1080, 2.8 сек loop. Заменяет CSS-слои
+           неба/гор/башен/лавы. Поверх — тёмный gradient-overlay
+           для читаемости текста и наши частицы для динамики. -->
+      <video
+        class="hero-video"
+        src="/hero/forge-bg.mp4"
+        poster="/hero/forge-bg-poster.jpg"
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="auto"
+        aria-hidden="true"
+      ></video>
 
-      <!-- Звёзды (только верхние 30% — не отвлекают от драмы внизу) -->
-      <div class="hero-stars" aria-hidden="true">
-        <span v-for="n in 9" :key="`star-${n}`" class="hero-star" :style="{ '--i': n }"></span>
-      </div>
+      <!-- Затемняющий оверлей — снизу темнее (текст читается) -->
+      <div class="hero-video-overlay" aria-hidden="true"></div>
 
-      <!-- ═══ Слой 2: атмосферная дымка/смог ═══ -->
-      <div class="hero-haze" aria-hidden="true">
-        <span class="haze-band haze-band--1"></span>
-        <span class="haze-band haze-band--2"></span>
-        <span class="haze-band haze-band--3"></span>
-      </div>
-
-      <!-- ═══ Слой 3: дальние горы (размытые, бледные) ═══ -->
-      <div class="hero-ridge hero-ridge--far" aria-hidden="true">
-        <svg viewBox="0 0 1600 220" preserveAspectRatio="none">
-          <path d="M0,220 L0,160 L70,135 L150,150 L230,120 L320,140 L420,105 L510,135 L610,115 L710,140 L810,110 L910,138 L1010,118 L1110,142 L1210,125 L1320,145 L1430,128 L1530,150 L1600,140 L1600,220 Z" fill="currentColor"/>
-        </svg>
-      </div>
-
-      <!-- ═══ Слой 4: ЛАВОВАЯ РЕКА на горизонте — главный glow ═══ -->
-      <div class="hero-lava-river" aria-hidden="true">
-        <span class="lava-core"></span>
-        <span class="lava-bloom"></span>
-        <span class="lava-flicker"></span>
-      </div>
-
-      <!-- ═══ Слой 5: средние горы (резче, темнее) ═══ -->
-      <div class="hero-ridge hero-ridge--mid" aria-hidden="true">
-        <svg viewBox="0 0 1600 240" preserveAspectRatio="none">
-          <path d="M0,240 L0,180 L60,120 L130,160 L200,90 L280,140 L360,75 L440,130 L520,85 L600,150 L680,100 L760,160 L840,95 L920,145 L1000,80 L1080,140 L1160,90 L1240,150 L1320,110 L1400,160 L1480,120 L1560,165 L1600,150 L1600,240 Z" fill="currentColor"/>
-        </svg>
-      </div>
-
-      <!-- Башни/леса по краям — силуэты с факелами -->
-      <div class="hero-tower hero-tower--left" aria-hidden="true">
-        <svg viewBox="0 0 120 200" preserveAspectRatio="xMinYMax meet">
-          <!-- Дощатые подмостки (горизонтальные планки) -->
-          <path d="M0,200 L0,150 L40,150 L40,140 L75,140 L75,150 L120,150 L120,170 L100,170 L100,200 Z" fill="currentColor"/>
-          <!-- Опорные столбы -->
-          <rect x="20" y="155" width="4" height="45" fill="currentColor"/>
-          <rect x="55" y="145" width="4" height="55" fill="currentColor"/>
-          <rect x="90" y="155" width="4" height="45" fill="currentColor"/>
-          <!-- Перила -->
-          <rect x="40" y="135" width="35" height="2" fill="currentColor"/>
-        </svg>
-        <span class="tower-torch tower-torch--top" style="--delay: 0s"></span>
-        <span class="tower-torch tower-torch--mid" style="--delay: 1.3s"></span>
-      </div>
-      <div class="hero-tower hero-tower--right" aria-hidden="true">
-        <svg viewBox="0 0 120 200" preserveAspectRatio="xMaxYMax meet">
-          <path d="M120,200 L120,150 L80,150 L80,140 L45,140 L45,150 L0,150 L0,170 L20,170 L20,200 Z" fill="currentColor"/>
-          <rect x="96" y="155" width="4" height="45" fill="currentColor"/>
-          <rect x="61" y="145" width="4" height="55" fill="currentColor"/>
-          <rect x="26" y="155" width="4" height="45" fill="currentColor"/>
-          <rect x="45" y="135" width="35" height="2" fill="currentColor"/>
-        </svg>
-        <span class="tower-torch tower-torch--top" style="--delay: 0.7s"></span>
-        <span class="tower-torch tower-torch--mid" style="--delay: 2.1s"></span>
-      </div>
-
-      <!-- Раскалённый горн (radial glow снизу — теперь ярче) -->
-      <div class="hero-forge-glow"></div>
-
-      <!-- ═══ Слой 6: ближние горы (самые острые, тёмные) ═══ -->
-      <div class="hero-ridge hero-ridge--near" aria-hidden="true">
-        <svg viewBox="0 0 1600 280" preserveAspectRatio="none">
-          <path d="M0,280 L0,220 L50,140 L120,200 L180,90 L260,180 L340,60 L420,170 L500,80 L580,200 L660,100 L740,210 L820,70 L900,180 L980,90 L1060,200 L1140,110 L1220,210 L1300,130 L1380,200 L1460,140 L1540,210 L1600,180 L1600,280 Z" fill="currentColor"/>
-        </svg>
-      </div>
-
-      <!-- Дальняя наковальня — теперь крупнее и с подсветкой сзади -->
+      <!-- Дальняя наковальня (можно убрать, но оставим subtle silhouette) -->
       <div class="hero-anvil" aria-hidden="true">
         <span class="anvil-backlight" aria-hidden="true"></span>
         <svg viewBox="0 0 120 60" preserveAspectRatio="xMidYMax meet" class="hero-anvil-svg">
           <path d="M 14 22 L 106 22 L 100 32 L 76 32 L 76 44 L 88 44 L 88 52 L 32 52 L 32 44 L 44 44 L 44 32 L 20 32 Z" fill="currentColor"/>
         </svg>
         <span class="anvil-strike-flash" aria-hidden="true"></span>
-        <!-- Брызги-искры от ковки (горизонтальные) — синхронно с ударом -->
         <span class="anvil-spark-burst anvil-spark-burst--l" aria-hidden="true"></span>
         <span class="anvil-spark-burst anvil-spark-burst--r" aria-hidden="true"></span>
       </div>
 
-      <!-- Тепловое марево над горизонтом -->
-      <div class="hero-shimmer" aria-hidden="true"></div>
-
-      <!-- Восходящие угли (вертикальные) -->
+      <!-- Восходящие угли — поверх видео, добавляют динамики -->
       <div class="hero-embers" aria-hidden="true">
         <span v-for="n in 28" :key="n" class="ember-particle" :style="{ '--i': n }"></span>
       </div>
 
-      <!-- Пылевые мотыли (медленно дрейфующие частицы пыли) -->
+      <!-- Пылевые мотыли -->
       <div class="hero-dust" aria-hidden="true">
         <span v-for="n in 12" :key="`dust-${n}`" class="dust-mote" :style="{ '--i': n }"></span>
       </div>
@@ -388,6 +330,72 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
   padding: 160px 24px 120px;
   overflow: hidden;
   isolation: isolate;
+}
+
+/* ═══ Видео-режим — hero заходит ПОД sticky-хедер ═══
+   Хедер уже полупрозрачный с backdrop-blur; затягивая hero
+   вверх под него, мы убираем чёрную полоску между ними и
+   получаем «киношный» эффект: видео плывёт под размытым
+   стеклянным хедером, без визуального стыка.
+
+   Высота секции — под формат видео 16:9 (с лёгким уменьшением
+   до 75% полного, как у news/catalog), плюс 73px на хедер.
+   На FullHD ~895px, на 1366px ~647px, кадр виден без обрезки. */
+.hero-section--video {
+  margin-top: -73px;     /* высота хедера (≈72.89px) */
+  padding-top: 233px;    /* 160 (исходный) + 73 (компенсация) */
+  min-height: clamp(420px, calc(42vw + 73px), 825px);
+}
+/* Баннер, как и текст, надо опустить на ту же высоту хедера —
+   иначе он уезжает за хедер и виден лишь нижний край ткани. */
+.hero-section--video .hero-banner-wrap {
+  top: 73px;
+}
+
+/* ═══ ВИДЕО-ФОН ═══
+   .hero-section--video — модификатор: видео заменяет CSS-слои.
+   Само <video> растягивается object-fit:cover на всю секцию,
+   z-index -3. Сверху hero-video-overlay затемняет, чтобы текст
+   читался. */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;  /* сместить чуть выше — небо в кадре */
+  z-index: -3;
+  pointer-events: none;
+}
+.hero-video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    /* верх: лёгкое затемнение, чтобы хедер читался */
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(0, 0, 0, 0.15) 25%,
+      rgba(0, 0, 0, 0.0)  45%,
+      rgba(0, 0, 0, 0.4)  75%,
+      rgba(0, 0, 0, 0.75) 100%),
+    /* виньетка по краям */
+    radial-gradient(ellipse 110% 100% at 50% 50%,
+      transparent 50%,
+      rgba(0, 0, 0, 0.4) 100%);
+}
+/* Когда у hero включён режим видео — прячем CSS-слои, которые
+   видео уже даёт (небо, горы, башни, лава, дымка, звёзды). */
+.hero-section--video .hero-sky,
+.hero-section--video .hero-stars,
+.hero-section--video .hero-haze,
+.hero-section--video .hero-ridge,
+.hero-section--video .hero-lava-river,
+.hero-section--video .hero-tower,
+.hero-section--video .hero-forge-glow,
+.hero-section--video .hero-shimmer {
+  display: none;
 }
 
 /* ──────────────────────────────────────────────────────────────

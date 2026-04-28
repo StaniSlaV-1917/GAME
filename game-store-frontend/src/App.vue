@@ -13,7 +13,7 @@ import SupportChat from './components/SupportChat.vue';
 import CursorTrail from './components/CursorTrail.vue';
 import { resolveMediaUrl } from './utils/media';
 import { useToast } from './composables/useToast';
-import hordeSigilUrl from './assets/horde-sigil.svg';
+import hordeSigilUrl from './assets/horde-sigil.png';
 
 const { toasts, remove: removeToast } = useToast();
 

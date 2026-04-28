@@ -11,6 +11,20 @@
         "source": "**",
         "destination": "/index.html"
       }
+    ],
+    "headers": [
+      {
+        "source": "/hero/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=2592000, immutable" }
+        ]
+      },
+      {
+        "source": "**/*.@(mp4|webm|jpg|jpeg|png|webp|gif|svg|ico|woff|woff2)",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=604800" }
+        ]
+      }
     ]
   },
   "firestore": {

@@ -122,12 +122,24 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
 <template>
   <div class="catalog-root">
     <!-- ═══ HERO · Оружейная ═══ -->
-    <section class="catalog-hero">
-      <!-- Небо горна -->
+    <section class="catalog-hero catalog-hero--video">
+      <!-- ═══ ВИДЕО-ФОН ═══ Ночная крепость, две луны, туманный лес -->
+      <video
+        class="catalog-video"
+        src="/hero/catalog-bg.mp4"
+        poster="/hero/catalog-bg-poster.jpg"
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="auto"
+        aria-hidden="true"
+      ></video>
+      <div class="catalog-video-overlay" aria-hidden="true"></div>
+
+      <!-- CSS-слои оставляем в DOM, но прячем через .catalog-hero--video -->
       <div class="hero-sky"></div>
-      <!-- Горящий горн снизу -->
       <div class="hero-forge-glow"></div>
-      <!-- Каменная "стена" снизу -->
       <div class="hero-stone-wall"></div>
 
       <div class="hero-inner">
@@ -280,6 +292,49 @@ onUnmounted(() => { revealObs?.disconnect(); sentinelObs?.disconnect(); });
   overflow: hidden;
   padding: 80px 24px 70px;
   isolation: isolate;
+}
+
+/* ═══ Видео-режим: hero подтягивается под sticky-хедер,
+   видео-фон заменяет CSS-слои неба/горна/стены ═══ */
+.catalog-hero--video {
+  margin-top: -73px;
+  padding-top: 153px;  /* 80 (исходный) + 73 — компенсация хедера */
+  /* Высота под формат видео — 75% от полного 16:9 (~42vw + 73px на хедер).
+     На FullHD получается ~895px, на 1366px — ~647px, без обрезки кадра. */
+  min-height: clamp(320px, calc(42vw + 73px), 825px);
+}
+.catalog-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 50%;
+  z-index: -3;
+  pointer-events: none;
+}
+.catalog-video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    /* верх: затемнение под хедер */
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.18) 25%,
+      rgba(0, 0, 0, 0.08) 50%,
+      rgba(0, 0, 0, 0.4) 80%,
+      rgba(0, 0, 0, 0.7) 100%),
+    /* виньетка */
+    radial-gradient(ellipse 110% 100% at 50% 50%,
+      transparent 55%,
+      rgba(0, 0, 0, 0.4) 100%);
+}
+.catalog-hero--video .hero-sky,
+.catalog-hero--video .hero-forge-glow,
+.catalog-hero--video .hero-stone-wall {
+  display: none;
 }
 
 /* Небо */

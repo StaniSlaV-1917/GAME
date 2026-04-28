@@ -1,17 +1,28 @@
 <template>
   <div class="news-root">
     <!-- ═══ HERO ═══ -->
-    <section class="news-hero">
-      <!-- Декоративный фон: дальняя наковальня с пульсирующим горном -->
+    <section class="news-hero news-hero--video">
+      <!-- ═══ ВИДЕО-ФОН ═══ Воин с факелом перед строем башен -->
+      <video
+        class="news-video"
+        src="/hero/news-bg.mp4"
+        poster="/hero/news-bg-poster.jpg"
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="auto"
+        aria-hidden="true"
+      ></video>
+      <div class="news-video-overlay" aria-hidden="true"></div>
+
+      <!-- CSS-фон оставляем в DOM, но прячем через --video модификатор -->
       <div class="hero-bg" aria-hidden="true">
-        <!-- Пульсирующее свечение горна за наковальней -->
         <div class="forge-glow"></div>
-        <!-- Силуэт наковальни вдалеке -->
         <svg class="anvil-silhouette" viewBox="0 0 120 80" preserveAspectRatio="xMidYMax meet">
           <path d="M 14 26 L 106 26 L 100 38 L 76 38 L 76 54 L 88 54 L 88 64 L 32 64 L 32 54 L 44 54 L 44 38 L 20 38 Z"
                 fill="currentColor" />
         </svg>
-        <!-- Восходящие искры от горна -->
         <span v-for="n in 6" :key="`hs-${n}`" class="hero-spark" :style="{ '--i': n }"></span>
       </div>
 
@@ -239,6 +250,51 @@ onUnmounted(() => revealObs?.disconnect());
   justify-content: center;
   overflow: hidden;
   padding: 80px 24px 64px;
+  isolation: isolate;
+}
+
+/* ═══ Видео-режим: hero подтягивается под sticky-хедер ═══
+   min-height = 56.25vw (16:9 от ширины экрана) + 73px на хедер,
+   чтобы видео отображалось В ПОЛНЫЙ РОСТ без cover-обрезки.
+   На мобиле (узкие экраны) минимум 360px, чтоб контент остался
+   читабельным. На сверхшироких — кэп 1100px, чтоб не было как
+   киноэкран на весь монитор. */
+.news-hero--video {
+  margin-top: -73px;
+  padding-top: 153px;
+  /* 75% от полного 16:9 (было 56.25vw → стало ~42vw) — компактнее,
+     но всё ещё достаточно высокий чтобы видеть всю сцену без обрезки
+     по верху/низу. Cap снизили с 1100 → 825. */
+  min-height: clamp(320px, calc(42vw + 73px), 825px);
+}
+.news-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  z-index: -3;
+  pointer-events: none;
+}
+.news-video-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.18) 25%,
+      rgba(0, 0, 0, 0.08) 50%,
+      rgba(0, 0, 0, 0.45) 80%,
+      rgba(0, 0, 0, 0.75) 100%),
+    radial-gradient(ellipse 110% 100% at 50% 50%,
+      transparent 55%,
+      rgba(0, 0, 0, 0.4) 100%);
+}
+.news-hero--video .hero-bg {
+  display: none;
 }
 .hero-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
 
