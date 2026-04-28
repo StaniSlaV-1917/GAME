@@ -5,6 +5,7 @@ import { useHead } from '@vueuse/head';
 import { useAuthStore } from '../stores/auth';
 import { useToast } from '../composables/useToast';
 import { warmupPing } from '../utils/warmup';
+import TurnstileWidget from '../components/TurnstileWidget.vue';
 
 // Будим Fly-машину перед auth-запросом
 onMounted(() => warmupPing());
@@ -34,6 +35,26 @@ const error     = ref('');
 const step      = ref('email');   // для беспарольного и forgot: 'email' | 'code'
 const wrapperEl = ref(null);
 
+// Cloudflare Turnstile — общий для всех форм. Токен одноразовый, сбрасываем
+// после каждого сабмита. Все 5 endpoints (login/passwordless/.../reset)
+// требуют его на бэке (Phase 1.5).
+const turnstileToken = ref(null);
+const turnstileRef   = ref(null);
+const onTurnstileVerified = (token) => { turnstileToken.value = token; };
+const onTurnstileExpired  = () => { turnstileToken.value = null; };
+const onTurnstileError    = () => { turnstileToken.value = null; };
+const resetTurnstile = () => {
+  turnstileToken.value = null;
+  turnstileRef.value?.reset();
+};
+const requireTurnstile = () => {
+  if (!turnstileToken.value) {
+    error.value = 'Подтвердите что вы не бот.';
+    return false;
+  }
+  return true;
+};
+
 // Куда перейти после входа (поддержка ?redirect=)
 function getRedirectTarget() {
   const q = route.query.redirect;
@@ -45,15 +66,20 @@ const loginWithPassword = async () => {
   error.value = '';
   if (!passwordForm.login.trim()) { error.value = 'Введите email или номер телефона.'; return; }
   if (!passwordForm.password)     { error.value = 'Введите пароль.'; return; }
+  if (!requireTurnstile()) return;
 
   isLoading.value = true;
   try {
-    await authStore.login(passwordForm);
+    await authStore.login({
+      ...passwordForm,
+      'cf-turnstile-response': turnstileToken.value,
+    });
     toast.success('Врата открыты. Добро пожаловать в оплот.');
     await router.push(getRedirectTarget());
   } catch (err) {
     error.value = err.message || 'Неверный логин или пароль.';
     toast.error(error.value);
+    resetTurnstile();
   } finally {
     isLoading.value = false;
   }
@@ -63,15 +89,18 @@ const sendCode = async () => {
   if (isLoading.value) return;
   error.value = '';
   if (!codeForm.email.trim()) { error.value = 'Введите email.'; return; }
+  if (!requireTurnstile()) return;
 
   isLoading.value = true;
   try {
-    await authStore.sendLoginCode(codeForm.email);
+    await authStore.sendLoginCode(codeForm.email, turnstileToken.value);
+    resetTurnstile();
     step.value = 'code';
     toast.info('Знак отправлен на ' + codeForm.email);
   } catch (err) {
     error.value = err.message || 'Не удалось отправить код. Проверьте email.';
     toast.error(error.value);
+    resetTurnstile();
   } finally {
     isLoading.value = false;
   }
@@ -81,15 +110,20 @@ const loginWithCode = async () => {
   if (isLoading.value) return;
   error.value = '';
   if (!codeForm.code.trim()) { error.value = 'Введите код из письма.'; return; }
+  if (!requireTurnstile()) return;
 
   isLoading.value = true;
   try {
-    await authStore.loginWithCode(codeForm);
+    await authStore.loginWithCode({
+      ...codeForm,
+      'cf-turnstile-response': turnstileToken.value,
+    });
     toast.success('Знак подтверждён. Врата открыты.');
     await router.push(getRedirectTarget());
   } catch (err) {
     error.value = err.message || 'Неверный код. Попробуйте снова.';
     toast.error(error.value);
+    resetTurnstile();
   } finally {
     isLoading.value = false;
   }
@@ -99,15 +133,18 @@ const sendResetCode = async () => {
   if (isLoading.value) return;
   error.value = '';
   if (!forgotForm.email.trim()) { error.value = 'Введите ваш email.'; return; }
+  if (!requireTurnstile()) return;
 
   isLoading.value = true;
   try {
-    await authStore.sendPasswordResetCode(forgotForm.email);
+    await authStore.sendPasswordResetCode(forgotForm.email, turnstileToken.value);
+    resetTurnstile();
     step.value = 'code';
     toast.info('Ключ сброса отправлен на ' + forgotForm.email);
   } catch (err) {
     error.value = err.message || 'Не удалось отправить код. Проверьте email.';
     toast.error(error.value);
+    resetTurnstile();
   } finally {
     isLoading.value = false;
   }
@@ -125,6 +162,7 @@ const confirmResetPassword = async () => {
   if (forgotForm.password !== forgotForm.password_confirmation) {
     error.value = 'Пароли не совпадают.'; return;
   }
+  if (!requireTurnstile()) return;
 
   isLoading.value = true;
   try {
@@ -133,6 +171,7 @@ const confirmResetPassword = async () => {
       code:                  forgotForm.code,
       password:              forgotForm.password,
       password_confirmation: forgotForm.password_confirmation,
+      'cf-turnstile-response': turnstileToken.value,
     });
     toast.success('Ключ перекован. Теперь вы можете войти.');
     authMode.value = 'password';
@@ -141,9 +180,11 @@ const confirmResetPassword = async () => {
     forgotForm.code = '';
     forgotForm.password = '';
     forgotForm.password_confirmation = '';
+    resetTurnstile();
   } catch (err) {
     error.value = err.message || 'Не удалось сбросить пароль. Попробуйте снова.';
     toast.error(error.value);
+    resetTurnstile();
   } finally {
     isLoading.value = false;
   }
@@ -395,6 +436,17 @@ const handleFocus = (v) => wrapperEl.value?.classList.toggle('is-focused', v);
               ← Поменять email
             </button>
           </form>
+        </div>
+
+        <!-- Cloudflare Turnstile — общий для всех auth-форм. Токен
+             одноразовый, сбрасываем после каждого сабмита через ref. -->
+        <div class="turnstile-wrap">
+          <TurnstileWidget
+            ref="turnstileRef"
+            @verified="onTurnstileVerified"
+            @expired="onTurnstileExpired"
+            @error="onTurnstileError"
+          />
         </div>
 
         <div class="slab-foot">

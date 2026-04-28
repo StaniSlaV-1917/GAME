@@ -3,6 +3,7 @@ import { ref, computed, nextTick, watch, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { storeToRefs } from 'pinia';
 import api from '../api/axios';
+import TurnstileWidget from './TurnstileWidget.vue';
 
 const authStore = useAuthStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
@@ -23,6 +24,13 @@ const formEmail = ref('');
 const formMessage = ref('');
 const formSending = ref(false);
 const formError = ref('');
+
+// Cloudflare Turnstile (Phase 1.5 — анти-спам support-формы)
+const turnstileToken = ref(null);
+const turnstileRef   = ref(null);
+const onTurnstileVerified = (token) => { turnstileToken.value = token; };
+const onTurnstileExpired  = () => { turnstileToken.value = null; };
+const onTurnstileError    = () => { turnstileToken.value = null; };
 
 let msgId = 0;
 const nextId = () => ++msgId;
@@ -209,6 +217,10 @@ const submitForm = async () => {
     formError.value = 'Опиши проблему подробнее (минимум 10 символов).';
     return;
   }
+  if (!turnstileToken.value) {
+    formError.value = 'Подтвердите что вы не бот.';
+    return;
+  }
 
   formSending.value = true;
   try {
@@ -217,12 +229,16 @@ const submitForm = async () => {
       problem_path: problemPath.value.join(' → ') || 'Другое',
       message:      formMessage.value.trim(),
       user_name:    isLoggedIn.value && user.value?.fullname ? user.value.fullname : null,
+      'cf-turnstile-response': turnstileToken.value,
     });
     stage.value = 'done';
     addBotMessage('Обращение отправлено. Мы получили ваше письмо и ответим в ближайшее время.');
   } catch (e) {
     const msg = e?.response?.data?.message || 'Не удалось отправить. Попробуй ещё раз.';
     formError.value = msg;
+    // Сбрасываем токен после неудачи — Cloudflare-токен одноразовый
+    turnstileToken.value = null;
+    turnstileRef.value?.reset();
   } finally {
     formSending.value = false;
   }
@@ -388,7 +404,16 @@ onUnmounted(() => {
                     <span class="cf-counter">{{ formMessage.length }}/3000</span>
                   </label>
                   <p v-if="formError" class="cf-error">{{ formError }}</p>
-                  <button class="cf-submit" :disabled="formSending" @click="submitForm">
+                  <!-- Cloudflare Turnstile · анти-спам support-формы -->
+                  <div class="cf-turnstile">
+                    <TurnstileWidget
+                      ref="turnstileRef"
+                      @verified="onTurnstileVerified"
+                      @expired="onTurnstileExpired"
+                      @error="onTurnstileError"
+                    />
+                  </div>
+                  <button class="cf-submit" :disabled="formSending || !turnstileToken" @click="submitForm">
                     <span v-if="!formSending">Отправить обращение</span>
                     <span v-else class="cf-spinner"></span>
                   </button>

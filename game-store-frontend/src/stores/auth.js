@@ -67,11 +67,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
   
-  async function sendLoginCode(email) {
+  async function sendLoginCode(email, turnstileToken = null) {
     try {
-        await api.post('/auth/passwordless', { email });
+        await api.post('/auth/passwordless', {
+          email,
+          'cf-turnstile-response': turnstileToken,
+        });
     } catch (error) {
-        throw error.response.data.message || 'Failed to send code';
+        throw error.response?.data?.message || 'Failed to send code';
     }
   }
 
@@ -141,9 +144,12 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('gameStoreCart');
   }
 
-  async function sendPasswordResetCode(email) {
+  async function sendPasswordResetCode(email, turnstileToken = null) {
     try {
-      await api.post('/auth/forgot-password', { email });
+      await api.post('/auth/forgot-password', {
+        email,
+        'cf-turnstile-response': turnstileToken,
+      });
     } catch (error) {
       throw new Error(extractErrorMessage(error, 'Не удалось отправить код. Проверьте email и попробуйте снова.'));
     }

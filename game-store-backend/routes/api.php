@@ -26,21 +26,30 @@ use App\Http\Controllers\Admin\AdminModsController;
 
 // --- Аутентификация --- //
 Route::prefix('auth')->group(function () {
-    // Эндпойнты, на которые могут DDoS'ить боты — защищены Turnstile.
-    // Цель: регистрация и отправка одноразовых кодов на почту (passwordless +
-    // forgot-password) — самые «ботоопасные» из-за email-spam-цены).
-    // /login (с паролем) пока без Turnstile — пароль и так гейт; добавим
-    // если увидим брутфорс.
-    Route::middleware('turnstile')->group(function () {
-        Route::post('/register', [AuthController::class, 'register']);
-        Route::post('/passwordless', [AuthController::class, 'sendLoginCode']);
-        Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetCode']);
+    // ── Phase 1.5 защита от ботов и brute-force ──
+    // Стратегия:
+    //   • Turnstile на ВСЕХ публичных auth-эндпоинтах (вариант A).
+    //   • Throttle 3/мин — на отправку email-кодов (предотвращает email-spam).
+    //   • Throttle 5/мин — на сабмит креденшелов (предотвращает brute-force).
+    // Throttle bind по умолчанию = IP. Этого достаточно: бот с IP-ротацией
+    // упрётся в Turnstile, бот без — в throttle. Для real-юзера лимит
+    // практически недостижим.
+
+    // Регистрация и логин-сабмиты (включая брутфорс пароля и кода)
+    Route::middleware(['turnstile', 'throttle:5,1'])->group(function () {
+        Route::post('/register',           [AuthController::class, 'register']);
+        Route::post('/login',              [AuthController::class, 'login']);
+        Route::post('/passwordless/login', [AuthController::class, 'loginWithCode']);
+        Route::post('/reset-password',     [AuthController::class, 'resetPassword']);
     });
 
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/passwordless/login', [AuthController::class, 'loginWithCode']);
-    Route::post('/reset-password',  [AuthController::class, 'resetPassword']);
-    
+    // Запрос отправки кода на email — мягче лимит, тк для отправки одного
+    // email достаточно одного запроса; цель — анти-email-spam.
+    Route::middleware(['turnstile', 'throttle:3,1'])->group(function () {
+        Route::post('/passwordless',     [AuthController::class, 'sendLoginCode']);
+        Route::post('/forgot-password',  [AuthController::class, 'sendPasswordResetCode']);
+    });
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
@@ -53,10 +62,15 @@ Route::prefix('auth')->group(function () {
 });
 
 // --- Поддержка --- //
-Route::post('/support/send', [SupportController::class, 'send']);
+// Публичный эндпоинт без auth — самая «ботоопасная» дыра. Turnstile
+// + throttle 3/мин по IP перекрывает спам-тикеты.
+Route::middleware(['turnstile', 'throttle:3,1'])
+    ->post('/support/send', [SupportController::class, 'send']);
 
 // --- Публичный маршрут для синхронизации корзины --- //
-Route::post('/cart/sync', [CartController::class, 'sync']);
+// Мягкий throttle 30/мин — синхронизация может вызываться при каждом
+// изменении корзины, реальный юзер 30 раз в минуту не достигнет.
+Route::middleware('throttle:30,1')->post('/cart/sync', [CartController::class, 'sync']);
 
 // --- Публичный маршрут для сотрудников (About page) --- //
 Route::get('/employees', [EmployeeController::class, 'index']);
@@ -136,7 +150,8 @@ Route::get('/news/{id}', [NewsController::class, 'show']);
 
 // Отзывы для игры
 Route::get('/games/{gameId}/reviews', [ReviewController::class, 'index']);
-Route::middleware('auth:sanctum')->post('/games/{gameId}/reviews', [ReviewController::class, 'store']);
+// throttle:3,5 — 3 отзыва за 5 минут с одного юзера. Анти-spam-отзывы.
+Route::middleware(['auth:sanctum', 'throttle:3,5'])->post('/games/{gameId}/reviews', [ReviewController::class, 'store']);
 
 // Оформление заказа
 Route::middleware('auth:sanctum')->post('/orders', [OrderController::class, 'store']);
