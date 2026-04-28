@@ -1,30 +1,32 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Заморозка снята</title>
-</head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <h1 style="color: #16a34a;">✓ Заморозка с вашего аккаунта снята</h1>
+@extends('emails.layout', ['title' => 'Заморозка снята'])
 
-    <p>Здравствуйте, {{ $userName }}!</p>
+@section('content')
+    <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:bold;color:#ffc979;letter-spacing:0.5px;">
+        🔥 Заморозка снята
+    </h1>
 
-    <p>
-        Администрация GameStore сняла заморозку с вашего аккаунта.
-        Теперь вы снова можете создавать посты, комментарии и ставить реакции.
+    <p style="margin:0 0 8px;font-size:15px;color:#d8c49a;">
+        Здравствуйте, <strong style="color:#fff6df;">{{ $userName }}</strong>!
     </p>
 
-    <p style="text-align: center; margin: 24px 0;">
-        <a href="https://game-45428688-fe94e.web.app/"
-           style="display: inline-block; background: #ef4a18; color: #fff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: bold;">
-            Перейти на сайт
-        </a>
+    <p style="margin:0 0 24px;font-size:15px;color:#d8c49a;">
+        Совет старейшин снял заморозку с вашего аккаунта. Теперь вы снова можете
+        создавать посты, комментарии и ставить реакции — все ограничения сняты.
     </p>
 
-    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+    <!-- CTA -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+        <tr>
+            <td align="center">
+                <a href="https://game-45428688-fe94e.web.app/"
+                   style="display:inline-block;padding:14px 36px;background-color:#ef4a18;color:#fff6df;font-family:Georgia,serif;font-size:14px;font-weight:bold;text-decoration:none;border-radius:6px;letter-spacing:1.5px;text-transform:uppercase;">
+                    Перейти на сайт →
+                </a>
+            </td>
+        </tr>
+    </table>
 
-    <p style="color: #666; font-size: 0.9em;">
-        Это автоматическое сообщение от GameStore.
+    <p style="margin:24px 0 0;font-size:13px;color:#9a8672;line-height:1.6;text-align:center;">
+        Просим помнить о правилах сообщества — повторные нарушения могут привести к более строгим мерам.
     </p>
-</body>
-</html>
+@endsection

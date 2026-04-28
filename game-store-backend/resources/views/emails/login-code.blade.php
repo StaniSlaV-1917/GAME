@@ -1,147 +1,33 @@
-<!DOCTYPE html>
-<html lang="ru" xmlns="http://www.w3.org/1999/xhtml">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Код входа — GameStore</title>
-  <style>
-    @media only screen and (max-width:600px){
-      .email-card{width:100%!important;border-radius:0!important;}
-      .email-body{padding:30px 20px!important;}
-      .code-digit{font-size:36px!important;letter-spacing:10px!important;}
-    }
-  </style>
-</head>
-<body style="margin:0;padding:0;background-color:#030712;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+@extends('emails.layout', ['title' => 'Код входа'])
 
-<table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color:#030712;min-height:100vh;">
-  <tr>
-    <td align="center" style="padding:40px 16px;">
+@section('content')
+    <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:bold;color:#fff6df;letter-spacing:0.5px;">
+        🔥 Знак для входа в оплот
+    </h1>
 
-      <!-- CARD -->
-      <table class="email-card" width="600" border="0" cellspacing="0" cellpadding="0" style="background-color:#0d1117;border-radius:20px;overflow:hidden;border:1px solid #1e2d40;">
+    <p style="margin:0 0 24px;font-size:15px;color:#d8c49a;">
+        Здравствуйте, воин! Кто-то запросил код для входа в ваш аккаунт. Если это были вы — введите код ниже на странице входа.
+    </p>
 
-        <!-- ═══ HEADER ═══ -->
+    <!-- Код в большой плашке -->
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
         <tr>
-          <td style="background:linear-gradient(135deg,#0f0c29 0%,#1a0e3d 30%,#0f2460 65%,#0a1628 100%);padding:0;">
-            <!-- Stars decoration row -->
-            <table width="100%" border="0" cellspacing="0" cellpadding="0">
-              <tr>
-                <td style="padding:8px 30px 0;font-size:11px;color:rgba(255,255,255,0.15);letter-spacing:8px;text-align:center;">
-                  ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦
-                </td>
-              </tr>
-              <tr>
-                <td align="center" style="padding:28px 30px 6px;">
-                  <!-- Logo badge -->
-                  <table border="0" cellspacing="0" cellpadding="0" align="center">
-                    <tr>
-                      <td style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:16px;padding:2px;">
-                        <table border="0" cellspacing="0" cellpadding="0">
-                          <tr>
-                            <td style="background:linear-gradient(135deg,#1e1b4b,#1e3a5f);border-radius:14px;padding:12px 28px;">
-                              <span style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:3px;text-transform:uppercase;">GAME<span style="color:#60a5fa;">STORE</span></span>
-                            </td>
-                          </tr>
-                        </table>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td align="center" style="padding:10px 30px 30px;">
-                  <span style="font-size:36px;">🔐</span><br>
-                  <span style="font-size:13px;color:#94a3b8;letter-spacing:4px;text-transform:uppercase;font-weight:600;">Вход в аккаунт</span>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:0 30px 8px;font-size:11px;color:rgba(255,255,255,0.15);letter-spacing:8px;text-align:center;">
-                  ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦ &nbsp; ✦
-                </td>
-              </tr>
-            </table>
-          </td>
+            <td align="center" bgcolor="#1a0e08" style="background-color:#1a0e08;padding:28px 24px;border:1px solid #c79a5e;border-radius:6px;">
+                <p style="margin:0 0 6px;font-size:11px;letter-spacing:3px;color:#c79a5e;text-transform:uppercase;">
+                    Код подтверждения
+                </p>
+                <p style="margin:0;font-family:'Courier New',Courier,monospace;font-size:38px;font-weight:bold;letter-spacing:10px;color:#ffc979;line-height:1.2;">
+                    {{ $code }}
+                </p>
+            </td>
         </tr>
+    </table>
 
-        <!-- ═══ DIVIDER LINE ═══ -->
-        <tr>
-          <td style="padding:0;line-height:3px;background:linear-gradient(90deg,transparent,#3b82f6,#8b5cf6,#3b82f6,transparent);">&nbsp;</td>
-        </tr>
+    <p style="margin:24px 0 0;font-size:13px;color:#9a8672;">
+        Код действителен <strong style="color:#c79a5e;">10 минут</strong>. Не сообщайте его никому — даже сотрудникам поддержки.
+    </p>
 
-        <!-- ═══ BODY ═══ -->
-        <tr>
-          <td class="email-body" style="padding:44px 40px;">
-
-            <p style="margin:0 0 8px;font-size:20px;font-weight:700;color:#e2e8f0;text-align:center;">
-              Привет, игрок! 👋
-            </p>
-            <p style="margin:0 0 36px;font-size:15px;line-height:1.7;color:#64748b;text-align:center;">
-              Кто-то запросил вход в аккаунт GameStore.<br>
-              Используй код ниже — он действует&nbsp;<strong style="color:#f59e0b;">10&nbsp;минут</strong>.
-            </p>
-
-            <!-- CODE BLOCK -->
-            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:36px;">
-              <tr>
-                <td style="background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:16px;padding:2px;">
-                  <table width="100%" border="0" cellspacing="0" cellpadding="0">
-                    <tr>
-                      <td style="background:linear-gradient(135deg,#0f172a,#1e1b4b);border-radius:14px;padding:32px 20px;text-align:center;">
-                        <p style="margin:0 0 10px;font-size:11px;font-weight:700;color:#475569;letter-spacing:5px;text-transform:uppercase;">
-                          Код подтверждения
-                        </p>
-                        <p class="code-digit" style="margin:0 0 10px;font-size:52px;font-weight:900;color:#ffffff;letter-spacing:16px;line-height:1;font-variant-numeric:tabular-nums;">
-                          {{ $code }}
-                        </p>
-                        <p style="margin:0;font-size:12px;color:#475569;">
-                          ⏱ &nbsp;Истекает через 10 минут
-                        </p>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-
-            <!-- INFO CARDS ROW -->
-            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:36px;">
-              <tr>
-                <td width="48%" style="background:#111827;border:1px solid #1e2d40;border-radius:12px;padding:16px;text-align:center;vertical-align:top;">
-                  <p style="margin:0 0 6px;font-size:22px;">🛡️</p>
-                  <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">Никогда не передавай<br>код посторонним</p>
-                </td>
-                <td width="4%">&nbsp;</td>
-                <td width="48%" style="background:#111827;border:1px solid #1e2d40;border-radius:12px;padding:16px;text-align:center;vertical-align:top;">
-                  <p style="margin:0 0 6px;font-size:22px;">🚫</p>
-                  <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">Не ты запросил код?<br>Просто игнорируй письмо</p>
-                </td>
-              </tr>
-            </table>
-
-            <p style="margin:0;font-size:13px;color:#334155;text-align:center;line-height:1.6;">
-              Это автоматическое письмо от GameStore.<br>Не отвечай на него.
-            </p>
-          </td>
-        </tr>
-
-        <!-- ═══ FOOTER ═══ -->
-        <tr>
-          <td style="padding:0;line-height:1px;background:linear-gradient(90deg,transparent,#1e2d40,transparent);">&nbsp;</td>
-        </tr>
-        <tr>
-          <td align="center" style="padding:24px 40px;background:#080d14;">
-            <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#1e40af;letter-spacing:2px;text-transform:uppercase;">GAMESTORE</p>
-            <p style="margin:0;font-size:12px;color:#1e2d40;">&copy; {{ date('Y') }} GameStore &nbsp;·&nbsp; Все права защищены</p>
-          </td>
-        </tr>
-
-      </table>
-      <!-- /CARD -->
-
-    </td>
-  </tr>
-</table>
-</body>
-</html>
+    <p style="margin:16px 0 0;font-size:13px;color:#9a8672;">
+        Если вы не запрашивали код — просто проигнорируйте это письмо.
+    </p>
+@endsection
