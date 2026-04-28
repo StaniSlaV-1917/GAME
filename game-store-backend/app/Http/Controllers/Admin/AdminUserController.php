@@ -3,10 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AccountDeletedMail;
+use App\Mail\UserBannedMail;
+use App\Mail\UserFrozenMail;
+use App\Mail\UserUnbannedMail;
+use App\Mail\UserUnfrozenMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Админ-контроллер для модерации пользователей.
@@ -239,18 +245,45 @@ class AdminUserController extends Controller
     }
 
     /**
-     * Хук для отправки email-уведомления юзеру при модерационном действии.
-     * Реализация подключится в Batch C (UserBannedMail / UserUnbannedMail
-     * / UserFrozenMail / UserUnfrozenMail / AccountDeletedMail).
-     *
-     * Сейчас — лог-стаб, чтобы видеть что вызов произошёл.
+     * Отправляет email-уведомление пользователю при модерационном действии.
+     * Sync-отправка (без очереди) — действия модерации редкие, fail-fast OK.
+     * При ошибке отправки логируем но не падаем (юзер всё равно забанен/etc).
      */
     private function notifyModerationAction(User $user, string $action, ?string $reason = null): void
     {
+        if (!$user->email) {
+            Log::warning("[ModNotify] {$action}: user_id={$user->id} нет email — пропускаем уведомление");
+            return;
+        }
+
         Log::info("[ModNotify] {$action} → {$user->email}", [
             'user_id' => $user->id,
             'reason'  => $reason,
         ]);
-        // TODO Batch C: Mail::to($user->email)->send(new UserXxxMail(...));
+
+        $userName = $user->fullname ?: $user->username ?: 'воин';
+        $now      = now()->format('d.m.Y H:i');
+
+        try {
+            $mail = match ($action) {
+                'banned'    => new UserBannedMail($userName, $reason ?? 'Причина не указана', $now),
+                'unbanned'  => new UserUnbannedMail($userName),
+                'frozen'    => new UserFrozenMail($userName, $reason ?? 'Причина не указана', $now),
+                'unfrozen'  => new UserUnfrozenMail($userName),
+                'deleted'   => new AccountDeletedMail($userName),
+                default     => null,
+            };
+
+            if ($mail) {
+                Mail::to($user->email)->send($mail);
+            }
+        } catch (\Throwable $e) {
+            // Падение SMTP не должно ломать админ-действие — модерация
+            // приоритетнее уведомления.
+            Log::error("[ModNotify] mail failed for {$user->email}: " . $e->getMessage(), [
+                'action'  => $action,
+                'user_id' => $user->id,
+            ]);
+        }
     }
 }
