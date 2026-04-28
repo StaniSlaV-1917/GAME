@@ -52,16 +52,9 @@
               </div>
             </td>
             <td>
-              <select
-                class="table-select"
-                v-model="user.role"
-                @change="changeRole(user)"
-                :disabled="user.banned_at !== null"
-              >
-                <option v-for="r in roles" :key="r" :value="r" :disabled="r === 'admin' && currentUserRole !== 'admin'">
-                  {{ r }}
-                </option>
-              </select>
+              <span class="role-badge" :class="`role-${user.role}`">
+                {{ roleLabels[user.role] || user.role }}
+              </span>
             </td>
             <td>
               <span v-if="user.banned_at" class="status-badge status-banned" :title="user.ban_reason">
@@ -74,6 +67,13 @@
             </td>
             <td class="reg-date-cell">{{ formatDate(user.reg_date) }}</td>
             <td class="action-buttons">
+              <button
+                class="admin-button admin-button-secondary"
+                :disabled="user.banned_at !== null"
+                :title="user.banned_at ? 'Сначала разбаньте' : 'Сменить роль'"
+                @click="openRoleModal(user)"
+              >Роль</button>
+
               <button
                 v-if="!user.banned_at"
                 class="admin-button admin-button-danger"
@@ -168,6 +168,65 @@
       </div>
     </div>
 
+    <!-- ═══ Модалка смены роли ═══ -->
+    <div v-if="roleModal.open" class="modal-overlay" @click.self="roleModal.open = false">
+      <div class="modal-content mod-action-modal">
+        <h2 class="modal-title">⚙ Сменить роль</h2>
+        <p class="modal-subtitle">
+          {{ roleModal.user?.fullname || roleModal.user?.email }} (#{{ roleModal.user?.id }})
+        </p>
+
+        <div class="role-current">
+          Текущая роль:
+          <span class="role-badge" :class="`role-${roleModal.user?.role}`">
+            {{ roleLabels[roleModal.user?.role] || roleModal.user?.role }}
+          </span>
+        </div>
+
+        <div class="field">
+          <label>Новая роль</label>
+          <div class="role-options">
+            <label
+              v-for="r in roles"
+              :key="r"
+              class="role-option"
+              :class="{ active: roleModal.newRole === r, disabled: r === 'admin' && currentUserRole !== 'admin' }"
+            >
+              <input
+                type="radio"
+                :value="r"
+                v-model="roleModal.newRole"
+                :disabled="r === 'admin' && currentUserRole !== 'admin'"
+              />
+              <span class="role-option-icon">{{ roleIcons[r] }}</span>
+              <span class="role-option-body">
+                <strong>{{ roleLabels[r] }}</strong>
+                <span class="role-option-desc">{{ roleDescriptions[r] }}</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <p v-if="roleModal.newRole === 'admin' && currentUserRole !== 'admin'" class="modal-warning">
+          Только админы могут назначать других админами.
+        </p>
+
+        <div v-if="roleModal.error" class="msg-banner error">✗ {{ roleModal.error }}</div>
+
+        <div class="modal-actions">
+          <button class="admin-button admin-button-secondary" @click="roleModal.open = false">Отмена</button>
+          <button
+            class="admin-button admin-button-primary"
+            :disabled="roleModal.sending || roleModal.newRole === roleModal.user?.role"
+            @click="submitRoleChange"
+          >
+            <span v-if="roleModal.sending">Меняю...</span>
+            <span v-else>Сменить</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div v-if="toastVisible" class="admin-toast">{{ toastText }}</div>
   </div>
 </template>
@@ -184,6 +243,23 @@ const users = ref([]);
 const loading = ref(false);
 const error = ref('');
 const roles = ['user', 'manager', 'admin'];
+
+// Локализация ролей в Ashenforge-стилистике
+const roleLabels = {
+  user:    'Воин',
+  manager: 'Кузнец',
+  admin:   'Старейшина',
+};
+const roleIcons = {
+  user:    '⚔',
+  manager: '🔨',
+  admin:   '👑',
+};
+const roleDescriptions = {
+  user:    'Обычный пользователь — покупки, отзывы, посты',
+  manager: 'Управление контентом — игры, новости, заказы',
+  admin:   'Полный доступ — модерация + админ-панель',
+};
 
 const toastText = ref('');
 const toastVisible = ref(false);
@@ -203,6 +279,15 @@ const deleteModal = reactive({
   open: false,
   user: null,
   sending: false,
+});
+
+// Модалка смены роли
+const roleModal = reactive({
+  open: false,
+  user: null,
+  newRole: 'user',
+  sending: false,
+  error: '',
 });
 
 const showToast = (text) => {
@@ -242,15 +327,41 @@ const exportUsersReport = async () => {
   }
 };
 
-const changeRole = async (user) => {
+// ═══ Смена роли ═══
+
+const openRoleModal = (user) => {
+  roleModal.open = true;
+  roleModal.user = user;
+  roleModal.newRole = user.role;
+  roleModal.error = '';
+  roleModal.sending = false;
+};
+
+const submitRoleChange = async () => {
+  if (roleModal.sending) return;
+  if (roleModal.newRole === roleModal.user.role) {
+    roleModal.error = 'Выбрана та же роль что текущая.';
+    return;
+  }
+  if (roleModal.newRole === 'admin' && currentUserRole.value !== 'admin') {
+    roleModal.error = 'Только админы могут назначать других админами.';
+    return;
+  }
+  roleModal.sending = true;
+  roleModal.error = '';
   try {
-    const { data } = await api.put(`/admin/users/${user.id}/role`, { role: user.role });
-    user.role = data.user.role;
-    showToast(`Роль для #${user.id} изменена на ${user.role}`);
+    const { data } = await api.put(`/admin/users/${roleModal.user.id}/role`, {
+      role: roleModal.newRole,
+    });
+    // Обновляем юзера в списке
+    const idx = users.value.findIndex(u => u.id === roleModal.user.id);
+    if (idx >= 0 && data.user) Object.assign(users.value[idx], data.user);
+    showToast(`Роль изменена на «${roleLabels[roleModal.newRole]}»`);
+    roleModal.open = false;
   } catch (e) {
-    console.error(e);
-    await loadUsers(); // revert на сервере
-    showToast('Ошибка смены роли');
+    roleModal.error = e.response?.data?.message || 'Ошибка смены роли.';
+  } finally {
+    roleModal.sending = false;
   }
 };
 
@@ -358,24 +469,6 @@ onMounted(loadUsers);
 @import '../assets/admin.css';
 
 /* ═══ Таблица ═══ */
-.table-select {
-  width: 100%;
-  padding: 9px 13px;
-  border: 1px solid var(--iron-mid);
-  background: linear-gradient(180deg, rgba(8, 6, 10, 0.7), rgba(18, 16, 13, 0.85));
-  color: var(--text-bone);
-  font-family: var(--font-body);
-  font-size: 0.92rem;
-  outline: none;
-  box-shadow: var(--inset-iron-top);
-  transition: border-color 0.2s var(--ease-smoke), box-shadow 0.2s var(--ease-smoke);
-}
-.table-select:focus {
-  border-color: var(--ember-flame);
-  box-shadow: var(--inset-iron-top), 0 0 0 3px rgba(226, 67, 16, 0.14);
-}
-.table-select:disabled { opacity: 0.5; cursor: not-allowed; }
-
 .user-name-cell {
   display: flex; flex-direction: column; gap: 2px;
   min-width: 140px;
@@ -531,5 +624,109 @@ onMounted(loadUsers);
   color: #ff8433;
   font-size: 0.88rem;
   margin: 0 0 16px;
+}
+
+/* ═══ Role badge (отображение роли в таблице) ═══ */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+}
+.role-badge.role-user {
+  background: rgba(199, 154, 94, 0.12);
+  color: var(--brass);
+  border: 1px solid rgba(199, 154, 94, 0.4);
+}
+.role-badge.role-manager {
+  background: rgba(122, 28, 20, 0.18);
+  color: #ff8433;
+  border: 1px solid rgba(226, 67, 16, 0.5);
+}
+.role-badge.role-admin {
+  background: linear-gradient(135deg, rgba(255, 132, 51, 0.2), rgba(255, 201, 121, 0.18));
+  color: var(--ember-gold);
+  border: 1px solid rgba(255, 167, 88, 0.6);
+  box-shadow: 0 0 8px rgba(255, 132, 51, 0.25);
+}
+
+/* ═══ Модалка смены роли ═══ */
+.role-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  background: rgba(8, 6, 10, 0.4);
+  border: 1px solid var(--iron-mid);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  color: var(--text-parchment);
+}
+.role-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(8, 6, 10, 0.5), rgba(18, 16, 13, 0.7));
+  border: 2px solid var(--iron-mid);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease-smoke);
+}
+.role-option:hover:not(.disabled) {
+  border-color: var(--bronze);
+  background: linear-gradient(180deg, rgba(122, 28, 20, 0.15), rgba(8, 6, 10, 0.6));
+}
+.role-option.active {
+  border-color: var(--ember-flame);
+  background: linear-gradient(180deg, rgba(226, 67, 16, 0.18), rgba(122, 28, 20, 0.12));
+  box-shadow: 0 0 0 3px rgba(226, 67, 16, 0.2);
+}
+.role-option.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.role-option input[type="radio"] {
+  /* Скрываем радио-инпут — кликабельность через label */
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.role-option-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  width: 36px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.role-option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.role-option-body strong {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--text-bright);
+  letter-spacing: 0.3px;
+}
+.role-option-desc {
+  font-size: 0.82rem;
+  color: var(--text-parchment);
 }
 </style>
