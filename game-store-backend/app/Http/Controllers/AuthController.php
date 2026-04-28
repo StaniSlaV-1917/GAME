@@ -26,6 +26,7 @@ class AuthController extends Controller
         return [
             'id'                   => $user->id,
             'fullname'             => $user->fullname,
+            'username'             => $user->username,
             'email'                => $user->email,
             'phone'                => $user->phone,
             'is_admin'             => $user->role === 'admin',
@@ -337,12 +338,49 @@ class AuthController extends Controller
 
         $data = $request->validate([
             'fullname'             => 'sometimes|required|string|max:255',
+            // Username — публичный, для роута /u/:username (Phase 2).
+            // 3-20 символов, lowercase a-z, 0-9, _, точка. Не начинается
+            // с цифры или точки. Не оканчивается точкой.
+            'username'             => [
+                'sometimes', 'nullable', 'string',
+                'min:3', 'max:20',
+                'regex:/^[a-z][a-z0-9_.]{1,18}[a-z0-9_]$/',
+            ],
             'phone'                => 'sometimes|nullable|regex:/^7[0-9]{10}$/',
             'avatar'               => 'sometimes|nullable|string|max:150',
             'notify_login'         => 'sometimes|boolean',
             'notify_order_created' => 'sometimes|boolean',
             'notify_order_status'  => 'sometimes|boolean',
+        ], [
+            'username.regex' => 'Username: 3-20 символов, латиница, цифры, _ и точка. Должен начинаться с буквы.',
         ]);
+
+        if (array_key_exists('username', $data)) {
+            $username = $data['username'] ? mb_strtolower(trim($data['username'])) : null;
+
+            // Зарезервированные слова — нельзя занимать
+            $reserved = [
+                'admin','root','support','system','api','help','about','login',
+                'register','logout','profile','settings','user','users','u',
+                'post','posts','feed','community','soviet','catalog','news',
+                'cart','order','orders','review','reviews','mod','mods',
+                'gamestore','staff','moderator','manager','official',
+            ];
+            if ($username && in_array($username, $reserved, true)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'username' => ['Этот username зарезервирован системой.'],
+                ]);
+            }
+
+            // Уникальность (case-insensitive — поскольку всегда lowercase)
+            if ($username && User::where('username', $username)->where('id', '!=', $user->id)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'username' => ['Этот username уже занят.'],
+                ]);
+            }
+
+            $user->username = $username;
+        }
 
         if (!empty($data['phone'])) {
             $phoneHash = hash('sha256', $data['phone']);

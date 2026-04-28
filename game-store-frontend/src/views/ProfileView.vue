@@ -22,7 +22,7 @@ useHead(computed(() => ({
 const orders      = ref([]);
 const userReviews = ref([]);
 
-const profileForm  = ref({ fullname: '', phone: '' });
+const profileForm  = ref({ fullname: '', username: '', phone: '' });
 const notifyForm   = ref({ notify_login: true, notify_order_created: true, notify_order_status: true });
 const savingNotify = ref(false);
 const passwordForm = ref({ current_password: '', new_password: '', new_password_confirmation: '' });
@@ -105,6 +105,7 @@ const totalSpent = computed(() =>
 const loadInitialData = async () => {
   if (!user.value) return;
   profileForm.value.fullname              = user.value.fullname || '';
+  profileForm.value.username              = user.value.username || '';
   profileForm.value.phone                 = user.value.phone    || '';
   notifyForm.value.notify_login           = user.value.notify_login           ?? true;
   notifyForm.value.notify_order_created   = user.value.notify_order_created   ?? true;
@@ -131,7 +132,12 @@ const loadUserReviews = async () => {
 const saveProfile = async () => {
   error.value.profile = ''; message.value.profile = '';
   try {
-    const { data } = await api.put('/auth/profile', profileForm.value);
+    // Очищаем пустые строки до null — бэк принимает только null
+    // или валидную строку (мин. длина 3 для username, regex для phone)
+    const payload = { ...profileForm.value };
+    if (!payload.username || !payload.username.trim()) payload.username = null;
+    if (!payload.phone || !payload.phone.trim()) payload.phone = null;
+    const { data } = await api.put('/auth/profile', payload);
     const msg = data.message || 'Профиль обновлён!';
     message.value.profile = msg;
     toast.success(msg);
@@ -503,6 +509,29 @@ onMounted(() => {
                   <div class="field">
                     <label>Полное имя</label>
                     <input type="text" v-model="profileForm.fullname" autocomplete="name" placeholder="Ваше имя" />
+                  </div>
+                  <div class="field">
+                    <label>
+                      Username
+                      <span class="field-hint">3-20 символов, латиница, цифры, _ и точка</span>
+                    </label>
+                    <div class="username-input-wrap">
+                      <span class="username-prefix">@</span>
+                      <input
+                        type="text"
+                        v-model="profileForm.username"
+                        autocomplete="username"
+                        placeholder="vash_username"
+                        maxlength="20"
+                        @input="profileForm.username = (profileForm.username || '').toLowerCase().replace(/[^a-z0-9_.]/g, '')"
+                      />
+                    </div>
+                    <small v-if="!user.username" class="field-info">
+                      Установите username, чтобы вас могли найти по адресу <code>/u/имя</code>
+                    </small>
+                    <small v-else class="field-info">
+                      Ваш профиль доступен по адресу <code>/u/{{ user.username }}</code>
+                    </small>
                   </div>
                   <div class="field">
                     <label>Телефон <span class="field-hint">7XXXXXXXXXX (11 цифр)</span></label>
@@ -1688,6 +1717,42 @@ onMounted(() => {
   text-transform: none;
   letter-spacing: 0;
   margin-left: 6px;
+}
+
+/* Username input — c @-префиксом */
+.username-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+.username-prefix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: 1rem;
+  color: var(--brass);
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  border: 1px solid var(--iron-mid);
+  border-right: none;
+  border-radius: 6px 0 0 6px;
+}
+.username-input-wrap input {
+  flex: 1;
+  border-radius: 0 6px 6px 0;
+}
+.field-info {
+  font-size: 0.78rem;
+  color: var(--text-parchment);
+  margin-top: 2px;
+}
+.field-info code {
+  font-family: var(--font-mono, ui-monospace, Consolas, monospace);
+  background: rgba(199, 154, 94, 0.12);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--ember-gold);
 }
 
 .msg-banner {
