@@ -871,4 +871,80 @@ onUnmounted(() => revealObs?.disconnect());
   .featured-content { padding: 18px; }
   .featured-title { font-size: 1.2rem; }
 }
+
+/* ──────────────────────────────────────────────────────────────
+   Theme harmony — пере-окраска ember-glow эффектов под тему
+   (Sub-B). Scoped CSS использует :global() для попадания в data-theme
+   на html. Оранжево-красные glow в Light становятся бронзовыми, в
+   Legacy — магически-фиолетовыми.
+   ────────────────────────────────────────────────────────────── */
+
+/* === Light: бронзовая тёплая палитра === */
+:global([data-theme="light"]) .featured-card:hover {
+  box-shadow: var(--inset-iron-top), var(--shadow-deep), 0 0 36px rgba(199, 154, 94, 0.45);
+}
+:global([data-theme="light"]) .news-card:hover {
+  box-shadow:
+    inset 0 0 0 1px var(--bronze-dark),
+    var(--inset-iron-top),
+    var(--shadow-cast),
+    0 0 28px rgba(199, 154, 94, 0.5);
+}
+:global([data-theme="light"]) .featured-banner {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 201, 121, 0.35),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.4),
+    0 0 14px rgba(199, 154, 94, 0.55);
+}
+:global([data-theme="light"]) .card-read-btn:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 201, 121, 0.4),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.45),
+    0 0 12px rgba(199, 154, 94, 0.55);
+}
+:global([data-theme="light"]) .forge-glow {
+  background: radial-gradient(ellipse 70% 90% at 50% 100%,
+    rgba(255, 132, 51, 0.5) 0%,
+    rgba(211, 42, 24, 0.32) 25%,
+    rgba(140, 80, 24, 0.18) 55%,
+    transparent 80%);
+}
+
+/* === Legacy: магическая сине-фиолетовая === */
+:global([data-theme="legacy"]) .featured-card:hover {
+  box-shadow: var(--inset-iron-top), var(--shadow-deep), 0 0 36px rgba(94, 76, 200, 0.45);
+}
+:global([data-theme="legacy"]) .news-card:hover {
+  box-shadow:
+    inset 0 0 0 1px var(--bronze-dark),
+    var(--inset-iron-top),
+    var(--shadow-cast),
+    0 0 28px rgba(94, 76, 200, 0.45);
+}
+:global([data-theme="legacy"]) .featured-banner {
+  background: linear-gradient(180deg,
+    var(--ember-blood) 0%,
+    var(--ember-deep) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(212, 200, 255, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.5),
+    0 0 14px rgba(94, 76, 200, 0.55);
+}
+:global([data-theme="legacy"]) .card-read-btn:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(212, 200, 255, 0.35),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.5),
+    0 0 12px rgba(94, 76, 200, 0.55);
+}
+:global([data-theme="legacy"]) .forge-glow {
+  background: radial-gradient(ellipse 70% 90% at 50% 100%,
+    rgba(168, 154, 245, 0.5) 0%,
+    rgba(94, 76, 200, 0.32) 25%,
+    rgba(64, 54, 160, 0.18) 55%,
+    transparent 80%);
+}
+:global([data-theme="legacy"]) .hero-spark {
+  background: var(--ember-gold);              /* в legacy палитре = #d4c8ff */
+  box-shadow: 0 0 6px var(--ember-flame);    /* в legacy = #5e4cc8 */
+}
 </style>

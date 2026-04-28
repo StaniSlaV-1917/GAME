@@ -759,4 +759,27 @@ onUnmounted(() => {
   .article-body { padding: 24px; font-size: 1rem; }
   .ab-rivet--bl, .ab-rivet--br { display: none; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Theme harmony — окрашивание ember-glow эффектов под тему
+   ───────────────────────────────────────────────────────────── */
+
+/* Light: glow в тёплой бронзе вместо красно-оранжевого */
+:global([data-theme="light"]) .read-progress {
+  box-shadow: 0 0 12px rgba(199, 154, 94, 0.7);
+}
+:global([data-theme="light"]) .atd-spike {
+  filter: drop-shadow(0 0 4px rgba(199, 154, 94, 0.55));
+}
+
+/* Legacy: glow в магическом пурпуре */
+:global([data-theme="legacy"]) .read-progress {
+  box-shadow: 0 0 12px rgba(94, 76, 200, 0.7);
+}
+:global([data-theme="legacy"]) .atd-spike {
+  filter: drop-shadow(0 0 4px rgba(94, 76, 200, 0.55));
+}
+:global([data-theme="legacy"]) .ab-spike {
+  filter: drop-shadow(0 0 4px rgba(94, 76, 200, 0.45));
+}
 </style>
