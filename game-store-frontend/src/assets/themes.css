@@ -708,3 +708,73 @@ html[data-theme="legacy"] .atd-spike,
 html[data-theme="legacy"] .ab-spike {
   filter: drop-shadow(0 0 4px rgba(94, 76, 200, 0.5));
 }
+
+/* ============================================================
+   HOTFIX — Theme overrides для HomeView (hero) и CursorTrail
+   ----------------------------------------------------------
+   КРИТИЧНОЕ замечание: эти правила раньше жили в scoped CSS у
+   HomeView.vue / CursorTrail.vue через `:global([data-theme=...]) .xxx`.
+   У Vue/Vite scoped-CSS компилятора (vite-plugin-vue 6.x) в этой
+   связке БАГ — `:global(SEL) DESCENDANT` минифицируется в одиночный
+   SEL без descendant'а. То есть продакшен получал
+   `[data-theme="light"] { display: none }` (без `.hero-stars`!),
+   что прятало <html> целиком → белый экран при выборе Light.
+
+   Здесь, в глобальном themes.css, никаких scoped-преобразований нет
+   и Vite парсер ничего не ломает.
+   ============================================================ */
+
+/* ── Light (День Осады) · hero ──────────────────────────── */
+[data-theme="light"] .hero-stars,
+[data-theme="light"] .anvil-strike-flash {
+  display: none;
+}
+[data-theme="light"] .hero-aurora {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 132, 51, 0.45) 35%,
+    rgba(255, 176, 96, 0.55) 50%,
+    rgba(255, 132, 51, 0.45) 65%,
+    transparent 100%);
+}
+[data-theme="light"] .hero-cloud {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(176, 154, 104, 0.22) 30%,
+    rgba(140, 110, 70, 0.28) 50%,
+    rgba(176, 154, 104, 0.22) 70%,
+    transparent 100%);
+  opacity: 0.5;
+}
+
+/* ── Legacy (Древний свод) · hero ───────────────────────── */
+[data-theme="legacy"] .hero-aurora {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(94, 76, 200, 0.55) 35%,
+    rgba(168, 154, 245, 0.7) 50%,
+    rgba(94, 76, 200, 0.55) 65%,
+    transparent 100%);
+}
+[data-theme="legacy"] .banner-sigil-glow {
+  background: radial-gradient(circle,
+    rgba(212, 200, 255, 0.65) 0%,
+    rgba(94, 76, 200, 0.4) 40%,
+    transparent 70%);
+}
+[data-theme="legacy"] .hero-anvil {
+  filter: drop-shadow(0 0 12px rgba(94, 76, 200, 0.5));
+}
+
+/* ── CursorTrail · per-theme particle palette ─────────── */
+[data-theme="light"] .ct-particle {
+  --c-core: var(--ember-gold);
+  --c-mid:  var(--ember-glow);
+  --c-edge: var(--bronze);
+}
+[data-theme="legacy"] .ct-particle {
+  /* В legacy палитре ember-* = магические пурпур+лазурь */
+  --c-core: var(--ember-gold);     /* #d4c8ff */
+  --c-mid:  var(--ember-spark);    /* #a89af5 */
+  --c-edge: var(--ember-flame);    /* #5e4cc8 */
+}

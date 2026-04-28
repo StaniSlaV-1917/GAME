@@ -1362,52 +1362,15 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
 }
 
 /* ──────────────────────────────────────────────────────────────
-   Тематические оверрайды для hero-фона
+   Тематические оверрайды для hero-фона переехали в themes.css.
+   Раньше тут стояли :global([data-theme="..."]) .xxx правила, но
+   у Vue/Vite scoped-CSS компилятора в этой комбинации БАГ:
+   `:global(SEL) DESCENDANT` минифицировался в одиночный SEL без
+   descendant'а, и в продакшен прилетало `[data-theme="light"]
+   { display: none }` — что прятало <html> целиком (белый экран при
+   переключении на Light). Глобальные оверрайды живут в themes.css,
+   где никаких scoped-преобразований нет.
    ────────────────────────────────────────────────────────────── */
-
-/* Light (День Осады): звёзды не видно днём, аврора пастельнее,
-   облака светлее. */
-:global([data-theme="light"]) .hero-stars,
-:global([data-theme="light"]) .anvil-strike-flash {
-  display: none;
-}
-:global([data-theme="light"]) .hero-aurora {
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(255, 132, 51, 0.45) 35%,
-    rgba(255, 176, 96, 0.55) 50%,
-    rgba(255, 132, 51, 0.45) 65%,
-    transparent 100%);
-}
-:global([data-theme="light"]) .hero-cloud {
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(176, 154, 104, 0.22) 30%,
-    rgba(140, 110, 70, 0.28) 50%,
-    rgba(176, 154, 104, 0.22) 70%,
-    transparent 100%);
-  opacity: 0.5;
-}
-
-/* Legacy (Древний свод): магически-сине-фиолетовая палитра.
-   Аврора и аура сигила в холодной гамме. */
-:global([data-theme="legacy"]) .hero-aurora {
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(94, 76, 200, 0.55) 35%,
-    rgba(168, 154, 245, 0.7) 50%,
-    rgba(94, 76, 200, 0.55) 65%,
-    transparent 100%);
-}
-:global([data-theme="legacy"]) .banner-sigil-glow {
-  background: radial-gradient(circle,
-    rgba(212, 200, 255, 0.65) 0%,
-    rgba(94, 76, 200, 0.4) 40%,
-    transparent 70%);
-}
-:global([data-theme="legacy"]) .hero-anvil {
-  filter: drop-shadow(0 0 12px rgba(94, 76, 200, 0.5));
-}
 
 /* Reduced-motion: глушим все долгие анимации фона, оставляем только
    мягкое статичное свечение для атмосферы */

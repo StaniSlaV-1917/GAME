@@ -198,18 +198,9 @@ onUnmounted(() => {
 }
 
 /* ── Theme adaptation ──
-   В scoped-стиле для перекрытия per-theme нужен :global() или работа через
-   data-theme на html. Делаем :global селекторы чтоб поймать атрибут на html. */
-:global([data-theme="light"]) .ct-particle {
-  --c-core: var(--ember-gold);
-  --c-mid:  var(--ember-glow);
-  --c-edge: var(--bronze);
-}
-
-:global([data-theme="legacy"]) .ct-particle {
-  /* В legacy палитре ember-* = магические пурпур+лазурь */
-  --c-core: var(--ember-gold);     /* #d4c8ff */
-  --c-mid:  var(--ember-spark);    /* #a89af5 */
-  --c-edge: var(--ember-flame);    /* #5e4cc8 */
-}
+   Тематические оверрайды для .ct-particle живут в themes.css.
+   Раньше тут были :global([data-theme="..."]) .ct-particle правила,
+   но Vue/Vite scoped-CSS компилятор в этой комбинации
+   неправильно режет селектор и descendant'ы выпадают. Поэтому
+   глобальные оверрайды теперь в src/assets/themes.css. */
 </style>
