@@ -39,7 +39,7 @@ primary_region = "ams"
   FILESYSTEM_DISK = "local"
   # Sanctum: список доменов, которые могут получать sanctum-cookie.
   # Фронт на Firebase Hosting — добавим его сюда.
-  SANCTUM_STATEFUL_DOMAINS = "game-45428688-fe94e.web.app,game-l6voba.fly.dev"
+  SANCTUM_STATEFUL_DOMAINS = "game-45428688-fe94e.web.app,game-45428688-fe94e.firebaseapp.com,game-l6voba.fly.dev"
   SESSION_DOMAIN = ".fly.dev"
   SESSION_SECURE_COOKIE = "true"
 

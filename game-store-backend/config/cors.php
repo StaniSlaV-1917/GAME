@@ -10,7 +10,8 @@ return [
     'allowed_origins' => [
         'http://games:5173',
         'http://localhost:5173',
-        'https://game-45428688-fe94e.web.app'
+        'https://game-45428688-fe94e.web.app',
+        'https://game-45428688-fe94e.firebaseapp.com',
     ],
 
 
