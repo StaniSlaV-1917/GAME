@@ -33,9 +33,11 @@ html {
    ломается, просто скролл остаётся (как раньше).
    ────────────────────────────────────────────────────────────── */
 html:has(.modal-overlay),
+html:has(.modal-backdrop),
 html:has(.ap-backdrop),
 html:has(.winner-spotlight),
 body:has(.modal-overlay),
+body:has(.modal-backdrop),
 body:has(.ap-backdrop),
 body:has(.winner-spotlight) {
   overflow: hidden;

@@ -284,10 +284,14 @@
   background: rgba(8, 6, 10, 0.82);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  /* flex-start + padding-top — модалка прижата под хедером (73px),
+     не уезжает за вьюпорт. Внутренний скролл .modal-content через
+     max-height. Body-scroll lock через :has() в base.css. */
   display: flex;
   justify-content: center;
-  align-items: center;
-  z-index: 1000;
+  align-items: flex-start;
+  padding: calc(73px + 16px) 20px 16px;
+  z-index: 9999;
   animation: adminModalFade 0.22s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -302,11 +306,11 @@
   padding: 2rem 2.25rem;
   border: 1px solid var(--bronze-dark);
   clip-path: var(--clip-forged-md);
-  width: calc(100% - 2.5rem);
+  width: 100%;
   max-width: 620px;
-  max-height: calc(100vh - 2.5rem);
-  margin: 1.25rem;
-  overflow: hidden;
+  /* Внутренний скролл — учитываем хедер 73px + паддинги оверлея 32px */
+  max-height: calc(100vh - 73px - 32px);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   box-shadow:

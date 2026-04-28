@@ -111,7 +111,7 @@
     </div>
 
     <!-- ═══ Модалка причины бана / заморозки ═══ -->
-    <div v-if="modActionModal.open" class="modal-overlay" @click.self="closeModActionModal">
+    <div v-if="modActionModal.open" class="modal-backdrop" @click.self="closeModActionModal">
       <div class="modal-content mod-action-modal">
         <h2 class="modal-title">
           {{ modActionModal.action === 'ban' ? '🚫 Забанить' : '❄ Заморозить' }} пользователя
@@ -144,7 +144,7 @@
     </div>
 
     <!-- ═══ Confirm-модалка удаления ═══ -->
-    <div v-if="deleteModal.open" class="modal-overlay" @click.self="deleteModal.open = false">
+    <div v-if="deleteModal.open" class="modal-backdrop" @click.self="deleteModal.open = false">
       <div class="modal-content mod-action-modal">
         <h2 class="modal-title">⚠ Удалить пользователя?</h2>
         <p class="modal-subtitle">
@@ -169,7 +169,7 @@
     </div>
 
     <!-- ═══ Модалка смены роли ═══ -->
-    <div v-if="roleModal.open" class="modal-overlay" @click.self="roleModal.open = false">
+    <div v-if="roleModal.open" class="modal-backdrop" @click.self="roleModal.open = false">
       <div class="modal-content mod-action-modal">
         <h2 class="modal-title">⚙ Сменить роль</h2>
         <p class="modal-subtitle">
