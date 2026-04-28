@@ -10,17 +10,25 @@ import { ref, computed } from 'vue';
 const VALID = ['dark', 'light', 'legacy'];
 
 export const useThemeStore = defineStore('theme', () => {
-  const stored = localStorage.getItem('gsTheme');
+  // localStorage может бросить (incognito с заблокированным storage,
+  // SecurityError в редких embedded-режимах). Не даём убить инициализацию.
+  let stored = null;
+  try { stored = localStorage.getItem('gsTheme'); } catch (_) { /* ignore */ }
   const current = ref(VALID.includes(stored) ? stored : 'dark');
 
   const apply = () => {
-    document.documentElement.setAttribute('data-theme', current.value);
+    try {
+      document.documentElement.setAttribute('data-theme', current.value);
+    } catch (e) {
+      // setAttribute практически не бросает, но пусть будет страховка
+      console.error('[theme.apply]', e);
+    }
   };
 
   const setTheme = (theme) => {
     if (!VALID.includes(theme)) return;
     current.value = theme;
-    localStorage.setItem('gsTheme', theme);
+    try { localStorage.setItem('gsTheme', theme); } catch (_) { /* ignore — incognito quota */ }
     apply();
   };
 
