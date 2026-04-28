@@ -1370,29 +1370,84 @@ html[data-theme="light"] .main-footer .footer-col-title,
 html[data-theme="light"] .main-footer h4 {
   color: #fff6df;
 }
-/* Соцсети-иконки и контактные иконки */
-html[data-theme="light"] .main-footer .social-icon,
-html[data-theme="light"] .main-footer .footer-social a,
-html[data-theme="light"] .main-footer .ft-social a,
-html[data-theme="light"] .main-footer .platform-icon,
-html[data-theme="light"] .main-footer svg {
+/* ──── ИСПРАВЛЕНИЕ: правильные классы footer'а ──── */
+/* Соцкнопки .social-btn (с FontAwesome <i class="fa-brands">) */
+html[data-theme="light"] .main-footer .social-btn,
+html[data-theme="light"] .main-footer .social-btn i,
+html[data-theme="light"] .main-footer .social-btn .fa-brands {
+  color: #ffd390;
+  background: linear-gradient(180deg,
+    rgba(199, 154, 94, 0.18) 0%,
+    rgba(138, 100, 50, 0.22) 100%);
+  border-color: rgba(212, 181, 106, 0.45);
+}
+html[data-theme="light"] .main-footer .social-btn:hover,
+html[data-theme="light"] .main-footer .social-btn:hover i {
+  color: #ff8433;
+  background: linear-gradient(180deg,
+    rgba(239, 74, 24, 0.25) 0%,
+    rgba(168, 35, 24, 0.3) 100%);
+  border-color: rgba(255, 132, 51, 0.7);
+}
+
+/* Значки платформ Steam/Epic/GOG/Battle.net/Ubisoft/EA — .fp-badge */
+html[data-theme="light"] .main-footer .fp-badge {
+  color: #fff6df;
+  background: linear-gradient(180deg,
+    rgba(199, 154, 94, 0.16) 0%,
+    rgba(138, 100, 50, 0.22) 100%);
+  border-color: rgba(212, 181, 106, 0.4);
+}
+html[data-theme="light"] .main-footer .fp-badge:hover {
+  color: #ffd390;
+  background: linear-gradient(180deg,
+    rgba(239, 74, 24, 0.22) 0%,
+    rgba(168, 35, 24, 0.3) 100%);
+  border-color: rgba(255, 132, 51, 0.7);
+}
+
+/* Логотип в футере */
+html[data-theme="light"] .main-footer .footer-logo-text,
+html[data-theme="light"] .main-footer .footer-logo-text span:first-child {
+  color: #fff6df;
+}
+html[data-theme="light"] .main-footer .footer-logo-accent {
+  background: var(--grad-ember-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Tagline (главный абзац под логотипом) */
+html[data-theme="light"] .main-footer .footer-tagline {
+  color: #c4ad7c;
+}
+
+/* Списки ссылок в колонках Магазин / Сообщество / Вестник */
+html[data-theme="light"] .main-footer .footer-links a,
+html[data-theme="light"] .main-footer .footer-links a:visited {
+  color: #d8c49a;
+}
+html[data-theme="light"] .main-footer .footer-links a:hover {
+  color: #ffd390;
+}
+
+/* Иконки контактов ✉ ☎ */
+html[data-theme="light"] .main-footer .link-icon {
   color: #d4b56a;
-  fill: currentColor;
 }
-html[data-theme="light"] .main-footer .social-icon:hover,
-html[data-theme="light"] .main-footer .footer-social a:hover {
-  color: #ffd390;
+
+/* Шипы-разделители у заголовков колонок */
+html[data-theme="light"] .main-footer .col-title-spike {
+  border-top-color: #d4b56a;
+  filter: drop-shadow(0 0 3px rgba(255, 132, 51, 0.4));
 }
-html[data-theme="light"] .main-footer .platform-name {
-  color: #d8c49a;
-}
-html[data-theme="light"] .main-footer .footer-link,
-html[data-theme="light"] .main-footer a {
-  color: #d8c49a;
-}
-html[data-theme="light"] .main-footer .footer-link:hover,
-html[data-theme="light"] .main-footer a:hover {
-  color: #ffd390;
+
+/* Bottom bar — копирайт + Lok-tar ogar */
+html[data-theme="light"] .main-footer .footer-copy,
+html[data-theme="light"] .main-footer .footer-made {
+  color: #a89678;
 }
 
 /* ─── B. GamePage — цена и Похожие трофеи ─── */
