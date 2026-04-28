@@ -116,8 +116,11 @@ const close = () => {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(8, 6, 10, 0.82);
   backdrop-filter: blur(6px);
-  display: flex; justify-content: center; align-items: center;
-  z-index: 1000;
+  /* flex-start + padding-top = модалка под хедером, внутренний скролл
+     сохранён в .modal-content через max-height + overflow-y. */
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: calc(73px + 16px) 20px 16px;
+  z-index: 9999;
   animation: anFade 0.22s var(--ease-smoke);
 }
 @keyframes anFade { from { opacity: 0; } to { opacity: 1; } }
@@ -131,7 +134,8 @@ const close = () => {
   border: 1px solid var(--bronze-dark);
   clip-path: var(--clip-forged-md);
   padding: 34px 36px;
-  width: 92%; max-width: 660px; max-height: 90vh;
+  width: 92%; max-width: 660px;
+  max-height: calc(100vh - 73px - 32px);
   overflow-y: auto;
   box-shadow:
     inset 0 0 0 1px var(--iron-mid),

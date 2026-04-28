@@ -875,13 +875,14 @@ onDeactivated(() => {
 /* ===== WINNER SPOTLIGHT — лучи горна вокруг картинки + плита ===== */
 .winner-spotlight {
   position: fixed;
-  inset: 0;                         /* во весь экран — клик мимо карточки = закрытие */
+  inset: 0;
   z-index: 110;
   display: flex;
-  align-items: center;
+  /* flex-start + padding-top — модалка прижата под хедером, не уезжает */
+  align-items: flex-start;
   justify-content: center;
-  pointer-events: auto;             /* клики ловим */
-  padding: 20px;
+  pointer-events: auto;
+  padding: calc(73px + 30px) 20px 30px;
 }
 
 /* Лучи теперь живут ВОКРУГ картинки в .winner-img-wrap (см. ниже),

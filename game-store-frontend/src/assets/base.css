@@ -21,6 +21,26 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* ──────────────────────────────────────────────────────────────
+   Body-scroll lock when модалка открыта.
+   `:has()` современный селектор (Chrome 105+, Safari 15.4+, FF 121+) —
+   когда в документе появляется любой `.modal-overlay`, `.ap-backdrop`
+   или `.winner-spotlight` фон-страница не скроллится. Это решает
+   проблему «футер налезает на модалку при прокрутке».
+
+   Без JS, без хуков жизненного цикла — просто реактивно реагирует
+   на DOM. Если браузер не поддерживает :has() — фолбек: ничего не
+   ломается, просто скролл остаётся (как раньше).
+   ────────────────────────────────────────────────────────────── */
+html:has(.modal-overlay),
+html:has(.ap-backdrop),
+html:has(.winner-spotlight),
+body:has(.modal-overlay),
+body:has(.ap-backdrop),
+body:has(.winner-spotlight) {
+  overflow: hidden;
+}
+
 body {
   min-height: 100vh;
   font-family: var(--font-body);

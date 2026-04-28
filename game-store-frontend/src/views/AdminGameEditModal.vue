@@ -443,8 +443,13 @@ const close = () => { emit('close'); };
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.75);
   backdrop-filter: blur(6px);
-  display: flex; justify-content: center; align-items: center;
-  z-index: 1000;
+  /* flex-start + padding-top = модалка под хедером (раньше align: center
+     уезжала вершиной за вьюпорт). Внутренний скролл .modal-content
+     сохранён через max-height + overflow-y, чтобы вкладки галерея/моды
+     и поля внутри прокручивались как раньше. */
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: calc(73px + 16px) 20px 16px;
+  z-index: 9999;     /* выше любого футера/секции на странице */
   animation: fadeIn 0.18s ease;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -454,12 +459,17 @@ const close = () => { emit('close'); };
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 20px;
   padding: 32px;
-  width: 90%; max-width: 780px; max-height: 90vh;
+  width: 90%; max-width: 780px;
+  /* max-height учитывает: 100vh − 73 хедер − 32px паддинги оверлея */
+  max-height: calc(100vh - 73px - 32px);
   overflow-y: auto;
   box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
   scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
   animation: slideUp 0.22s ease;
 }
+.modal-content::-webkit-scrollbar { width: 4px; }
+.modal-content::-webkit-scrollbar-track { background: transparent; }
+.modal-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
 .modal-content::-webkit-scrollbar { width: 4px; }
 .modal-content::-webkit-scrollbar-track { background: transparent; }
