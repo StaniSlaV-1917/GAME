@@ -30,11 +30,18 @@ class AuthController extends Controller
             'email'                => $user->email,
             'phone'                => $user->phone,
             'is_admin'             => $user->role === 'admin',
+            'role'                 => $user->role,
             'reg_date'             => $user->reg_date,
             'avatar'               => $user->avatar,
             'notify_login'         => (bool) $user->notify_login,
             'notify_order_created' => (bool) $user->notify_order_created,
             'notify_order_status'  => (bool) $user->notify_order_status,
+            // Модерационный статус — фронт может показать «вы заморожены»
+            // если бэк отдаст это (для забаненных юзер не получит токен).
+            'banned_at'            => $user->banned_at,
+            'ban_reason'           => $user->ban_reason,
+            'frozen_at'            => $user->frozen_at,
+            'freeze_reason'        => $user->freeze_reason,
         ];
     }
 
@@ -152,6 +159,18 @@ class AuthController extends Controller
             ]);
         }
 
+        // Бан-проверка после успешной верификации credentials. Возвращаем
+        // 403 с причиной — юзер должен понимать почему его не пускают.
+        // (Замороженных пускаем, у них блокируется только создание контента.)
+        if ($user->isBanned()) {
+            return response()->json([
+                'message'    => 'Аккаунт заблокирован администрацией.',
+                'reason'     => $user->ban_reason ?? 'Причина не указана.',
+                'banned_at'  => $user->banned_at?->toIso8601String(),
+                'error_code' => 'account_banned',
+            ], 403);
+        }
+
         // Создаем токен для входа
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -218,6 +237,16 @@ class AuthController extends Controller
                 'phone_hash' => hash('sha256', ' ') // Заглушка для хеша телефона
             ]
         );
+
+        // Бан-проверка для passwordless-входа (тот же гейт что и для пароля)
+        if ($user->isBanned()) {
+            return response()->json([
+                'message'    => 'Аккаунт заблокирован администрацией.',
+                'reason'     => $user->ban_reason ?? 'Причина не указана.',
+                'banned_at'  => $user->banned_at?->toIso8601String(),
+                'error_code' => 'account_banned',
+            ], 403);
+        }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

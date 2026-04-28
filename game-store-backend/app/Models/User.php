@@ -27,12 +27,18 @@ class User extends Authenticatable
         'notify_login',
         'notify_order_created',
         'notify_order_status',
+        'banned_at',
+        'ban_reason',
+        'frozen_at',
+        'freeze_reason',
     ];
 
     protected $casts = [
         'notify_login'         => 'boolean',
         'notify_order_created' => 'boolean',
         'notify_order_status'  => 'boolean',
+        'banned_at'            => 'datetime',
+        'frozen_at'            => 'datetime',
     ];
 
     protected $hidden = [
@@ -72,5 +78,31 @@ class User extends Authenticatable
     public function isManager(): bool
     {
         return $this->role === 'manager';
+    }
+
+    /**
+     * Юзер забанен — не может логиниться вообще.
+     * Возвращает причину в ответе при попытке /api/auth/login.
+     */
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
+    }
+
+    /**
+     * Юзер заморожен — может логиниться и читать, но не может
+     * создавать контент (посты/комменты/реакции).
+     */
+    public function isFrozen(): bool
+    {
+        return $this->frozen_at !== null;
+    }
+
+    /**
+     * Активный юзер: не забанен и не заморожен.
+     */
+    public function isActive(): bool
+    {
+        return !$this->isBanned() && !$this->isFrozen();
     }
 }

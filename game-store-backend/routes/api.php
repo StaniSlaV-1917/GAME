@@ -89,10 +89,17 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
         ]);
     });
 
-    Route::get('/users', [AdminUserController::class, 'index']);
-    Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
-    Route::put('/users/{id}', [AdminUserController::class, 'update']);          // обновить ФИО/email/телефон
-    Route::put('/users/{id}/role', [AdminUserController::class, 'updateRole']); // сменить роль
+    // Phase 1.6/B — админ только модерирует, личные данные не правит.
+    // Ранее был PUT /users/{id} для редактирования fullname/email/phone
+    // — удалён намеренно. Личные данные пользователь меняет сам через
+    // /api/auth/profile.
+    Route::get('/users',                        [AdminUserController::class, 'index']);
+    Route::put('/users/{id}/role',              [AdminUserController::class, 'updateRole']);
+    Route::post('/users/{id}/ban',              [AdminUserController::class, 'ban']);
+    Route::post('/users/{id}/unban',            [AdminUserController::class, 'unban']);
+    Route::post('/users/{id}/freeze',           [AdminUserController::class, 'freeze']);
+    Route::post('/users/{id}/unfreeze',         [AdminUserController::class, 'unfreeze']);
+    Route::delete('/users/{id}',                [AdminUserController::class, 'destroy']);
 
 
     Route::get('/games', [AdminGamesController::class, 'index']);
