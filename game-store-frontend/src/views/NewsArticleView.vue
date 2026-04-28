@@ -122,9 +122,18 @@ onUnmounted(() => {
             <span>Все хроники</span>
           </RouterLink>
           <div class="article-meta">
-            <span class="meta-date">{{ formatDate(article.published_at) }}</span>
+            <span class="meta-date">
+              <span class="date-icon" aria-hidden="true">📜</span>
+              {{ formatDate(article.published_at) }}
+            </span>
           </div>
           <h1 class="article-title">{{ article.title }}</h1>
+          <!-- Tribal-divider под заголовком — для единообразия с NewsView featured -->
+          <div class="article-title-divider" aria-hidden="true">
+            <span></span>
+            <span class="atd-spike"></span>
+            <span></span>
+          </div>
         </div>
       </header>
 
@@ -138,6 +147,8 @@ onUnmounted(() => {
             <span class="ab-rivet ab-rivet--tr" aria-hidden="true"></span>
             <span class="ab-rivet ab-rivet--bl" aria-hidden="true"></span>
             <span class="ab-rivet ab-rivet--br" aria-hidden="true"></span>
+            <!-- Шип-гвоздь сверху — будто свиток приколочен к стене -->
+            <span class="ab-spike" aria-hidden="true"></span>
             <div class="article-body" v-html="article.content"></div>
           </div>
 
@@ -147,7 +158,10 @@ onUnmounted(() => {
               <span class="fb-arrow">←</span>
               <span>Обратно к хроникам</span>
             </RouterLink>
-            <div class="footer-date">{{ formatDate(article.published_at) }}</div>
+            <div class="footer-date">
+              <span class="date-icon" aria-hidden="true">📜</span>
+              {{ formatDate(article.published_at) }}
+            </div>
           </div>
         </div>
 
@@ -181,7 +195,10 @@ onUnmounted(() => {
               <span class="wt-spike" aria-hidden="true"></span>
               Высечено
             </h3>
-            <p class="widget-date">{{ formatDate(article.published_at) }}</p>
+            <p class="widget-date">
+              <span class="date-icon" aria-hidden="true">📜</span>
+              {{ formatDate(article.published_at) }}
+            </p>
           </div>
 
           <!-- Переходы -->
@@ -426,6 +443,51 @@ onUnmounted(() => {
 .ab-rivet--tr { top: 16px; right: 16px; }
 .ab-rivet--bl { bottom: 16px; left: 16px; }
 .ab-rivet--br { bottom: 16px; right: 16px; }
+
+/* Шип-гвоздь сверху по центру article-body-wrap — для единообразия с
+   .card-spike в NewsView (свиток приколочен к стене железным шипом). */
+.ab-spike {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 14px solid var(--iron-warm);
+  filter: drop-shadow(0 1px 2px rgba(199, 154, 94, 0.4));
+  z-index: 3;
+}
+
+/* Tribal-divider после заголовка статьи — горизонтальная линия с шипом */
+.article-title-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  max-width: 320px;
+}
+.article-title-divider > span:first-child,
+.article-title-divider > span:last-child {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bronze), transparent);
+}
+.atd-spike {
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid var(--ember-deep);
+  filter: drop-shadow(0 0 4px rgba(194, 40, 26, 0.55));
+}
+
+/* Иконка свитка перед датой — единообразие с NewsView */
+.date-icon {
+  display: inline-flex;
+  margin-right: 4px;
+  font-size: 0.9em;
+  filter: drop-shadow(0 0 3px rgba(199, 154, 94, 0.4));
+}
 
 .article-body {
   font-family: var(--font-body);

@@ -2,15 +2,27 @@
   <div class="news-root">
     <!-- ═══ HERO ═══ -->
     <section class="news-hero">
+      <!-- Декоративный фон: дальняя наковальня с пульсирующим горном -->
       <div class="hero-bg" aria-hidden="true">
-        <div class="hero-ember hero-ember-1"></div>
-        <div class="hero-ember hero-ember-2"></div>
-        <div class="hero-grid"></div>
+        <!-- Пульсирующее свечение горна за наковальней -->
+        <div class="forge-glow"></div>
+        <!-- Силуэт наковальни вдалеке -->
+        <svg class="anvil-silhouette" viewBox="0 0 120 80" preserveAspectRatio="xMidYMax meet">
+          <path d="M 14 26 L 106 26 L 100 38 L 76 38 L 76 54 L 88 54 L 88 64 L 32 64 L 32 54 L 44 54 L 44 38 L 20 38 Z"
+                fill="currentColor" />
+        </svg>
+        <!-- Восходящие искры от горна -->
+        <span v-for="n in 6" :key="`hs-${n}`" class="hero-spark" :style="{ '--i': n }"></span>
       </div>
+
+      <!-- Гвозди по бокам шапки — будто "Хроники" приколочены к стене -->
+      <span class="hero-nail hero-nail--l" aria-hidden="true"></span>
+      <span class="hero-nail hero-nail--r" aria-hidden="true"></span>
+
       <div class="hero-inner">
         <span class="tribal-eyebrow reveal">
           <span class="eb-spike"></span>
-          Хроники
+          Глашатай кузницы
           <span class="eb-spike"></span>
         </span>
         <h1 class="hero-title reveal">Вести из <span class="grad-text">оружейной</span></h1>
@@ -54,12 +66,15 @@
       </div>
 
       <div v-else-if="newsItems.length">
-        <!-- Главная весть -->
+        <!-- Главная весть — оформлена как развёрнутый свиток-плакат -->
         <RouterLink :to="'/news/' + newsItems[0].id" class="featured-card reveal">
           <span class="feat-rivet feat-rivet--tl" aria-hidden="true"></span>
           <span class="feat-rivet feat-rivet--tr" aria-hidden="true"></span>
           <span class="feat-rivet feat-rivet--bl" aria-hidden="true"></span>
           <span class="feat-rivet feat-rivet--br" aria-hidden="true"></span>
+          <!-- Декоративные шипы по краям — будто прибито к стене -->
+          <span class="feat-spike feat-spike--top" aria-hidden="true"></span>
+          <span class="feat-spike feat-spike--bottom" aria-hidden="true"></span>
           <div class="featured-img-wrap">
             <img
               :src="resolveMediaUrl(newsItems[0].image)"
@@ -69,16 +84,29 @@
             <div class="featured-overlay"></div>
           </div>
           <div class="featured-content">
-            <span class="featured-badge">Главная весть</span>
+            <span class="featured-banner">
+              <span class="fb-spike fb-spike--l" aria-hidden="true"></span>
+              <span class="fb-text">⚒ Главная весть</span>
+              <span class="fb-spike fb-spike--r" aria-hidden="true"></span>
+            </span>
             <h2 class="featured-title">{{ newsItems[0].title }}</h2>
+            <!-- Tribal-divider под заголовком (как у game-card) -->
+            <div class="feat-divider" aria-hidden="true">
+              <span></span>
+              <span class="feat-divider-spike"></span>
+              <span></span>
+            </div>
             <div class="featured-meta">
-              <span class="news-date">{{ formatDate(newsItems[0].published_at) }}</span>
-              <span class="read-label">Читать хронику →</span>
+              <span class="news-date">
+                <span class="date-icon" aria-hidden="true">📜</span>
+                {{ formatDate(newsItems[0].published_at) }}
+              </span>
+              <span class="read-label">Читать хронику ⚔</span>
             </div>
           </div>
         </RouterLink>
 
-        <!-- Лента -->
+        <!-- Лента — каждая карточка как «прибитая к стене дощечка с вестью» -->
         <div v-if="newsItems.length > 1" class="news-grid">
           <article
             v-for="(item, i) in newsItems.slice(1)"
@@ -86,8 +114,14 @@
             class="news-card reveal"
             :style="{ '--i': i % 3 }"
           >
+            <!-- 4 заклёпки (вместо 2 — как кованая дощечка с гвоздями по углам) -->
             <span class="card-rivet card-rivet--tl" aria-hidden="true"></span>
             <span class="card-rivet card-rivet--tr" aria-hidden="true"></span>
+            <span class="card-rivet card-rivet--bl" aria-hidden="true"></span>
+            <span class="card-rivet card-rivet--br" aria-hidden="true"></span>
+            <!-- Шип сверху — будто весть прибита железным гвоздём -->
+            <span class="card-spike" aria-hidden="true"></span>
+
             <RouterLink :to="'/news/' + item.id" class="card-img-link">
               <img
                 :src="resolveMediaUrl(item.image)"
@@ -95,16 +129,26 @@
                 width="400" height="220"
               />
               <div class="card-img-overlay"></div>
-              <div class="card-img-hover">
-                <span>Читать</span>
-              </div>
             </RouterLink>
+
+            <!-- Кованая полоса-разделитель между картинкой и текстом -->
+            <div class="card-divider" aria-hidden="true">
+              <span class="cd-line"></span>
+              <span class="cd-spike"></span>
+              <span class="cd-line"></span>
+            </div>
 
             <div class="card-body">
               <RouterLink :to="'/news/' + item.id" class="card-title">{{ item.title }}</RouterLink>
               <div class="card-footer">
-                <span class="news-date">{{ formatDate(item.published_at) }}</span>
-                <RouterLink :to="'/news/' + item.id" class="card-read-btn">Подробнее →</RouterLink>
+                <span class="news-date">
+                  <span class="date-icon" aria-hidden="true">📜</span>
+                  {{ formatDate(item.published_at) }}
+                </span>
+                <RouterLink :to="'/news/' + item.id" class="card-read-btn">
+                  <span>Развернуть</span>
+                  <span class="crb-arrow" aria-hidden="true">→</span>
+                </RouterLink>
               </div>
             </div>
           </article>
@@ -196,39 +240,80 @@ onUnmounted(() => revealObs?.disconnect());
   overflow: hidden;
   padding: 80px 24px 64px;
 }
-.hero-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
-.hero-ember {
+.hero-bg { position: absolute; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+
+/* ── Дальняя наковальня в силуэте у нижнего края hero ── */
+.anvil-silhouette {
   position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(180px, 28vw, 320px);
+  color: var(--iron-void);
+  opacity: 0.7;
+  filter: drop-shadow(0 -2px 4px rgba(0, 0, 0, 0.5));
+}
+
+/* ── Пульсирующее свечение горна позади наковальни ── */
+.forge-glow {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(280px, 36vw, 480px);
+  height: clamp(160px, 22vw, 280px);
+  background: radial-gradient(ellipse 70% 90% at 50% 100%,
+    rgba(255, 122, 43, 0.55) 0%,
+    rgba(226, 67, 16, 0.35) 25%,
+    rgba(138, 31, 24, 0.18) 55%,
+    transparent 80%);
+  filter: blur(20px);
+  animation: forgeGlowPulse 4.5s ease-in-out infinite;
+}
+@keyframes forgeGlowPulse {
+  0%, 100% { opacity: 0.65; transform: translateX(-50%) scale(1); }
+  50%      { opacity: 1;    transform: translateX(-50%) scale(1.06); }
+}
+
+/* ── Восходящие искры от горна — летят вверх и тают ── */
+.hero-spark {
+  position: absolute;
+  bottom: 12%;
+  left: calc(35% + (var(--i) * 5%));
+  width: 3px; height: 3px;
   border-radius: 50%;
-  filter: blur(110px);
+  background: var(--ember-gold);
+  box-shadow: 0 0 6px var(--ember-flame);
+  opacity: 0;
+  animation: heroSparkRise 5s ease-out infinite;
+  animation-delay: calc(var(--i) * -0.7s);
 }
-.hero-ember-1 {
-  width: 560px; height: 560px;
-  background: radial-gradient(circle, var(--ember-glow) 0%, transparent 70%);
-  top: -120px; left: -80px;
-  opacity: 0.3;
-  animation: newsFloat 14s ease-in-out infinite;
+@keyframes heroSparkRise {
+  0%   { opacity: 0;    transform: translate(0, 0) scale(0.6); }
+  20%  { opacity: 0.95; }
+  100% { opacity: 0;
+         transform: translate(calc(var(--i) * 4px - 12px), -180px) scale(0.3); }
 }
-.hero-ember-2 {
-  width: 440px; height: 440px;
-  background: radial-gradient(circle, var(--ember-heart) 0%, transparent 70%);
-  bottom: -100px; right: -60px;
-  opacity: 0.25;
-  animation: newsFloat 18s ease-in-out infinite reverse;
+
+/* ── Гвозди по бокам шапки: будто "Хроники" приколочены к стене ── */
+.hero-nail {
+  position: absolute;
+  top: 40px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%,
+    var(--brass) 0%,
+    var(--bronze) 45%,
+    var(--iron-void) 100%);
+  box-shadow:
+    inset -2px -2px 3px rgba(0, 0, 0, 0.7),
+    inset 2px 2px 2px rgba(255, 201, 121, 0.4),
+    0 0 8px rgba(199, 154, 94, 0.5);
+  z-index: 2;
 }
-.hero-grid {
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(122, 93, 72, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(122, 93, 72, 0.07) 1px, transparent 1px);
-  background-size: 54px 54px;
-  mask-image: radial-gradient(ellipse at center, black 25%, transparent 80%);
-  -webkit-mask-image: radial-gradient(ellipse at center, black 25%, transparent 80%);
-}
-@keyframes newsFloat {
-  0%, 100% { transform: translate(0, 0); }
-  50%      { transform: translate(22px, -18px); }
-}
+.hero-nail--l { left: clamp(20px, 6vw, 80px); }
+.hero-nail--r { right: clamp(20px, 6vw, 80px); }
 
 .hero-inner {
   position: relative;
@@ -438,6 +523,28 @@ onUnmounted(() => revealObs?.disconnect());
 .feat-rivet--bl { bottom: 16px; left: 16px; }
 .feat-rivet--br { bottom: 16px; right: 16px; }
 
+/* Декоративные шипы по краям featured — вверху и внизу по центру —
+   будто "плакат-весть" прибит шипами к стене */
+.feat-spike {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  z-index: 3;
+}
+.feat-spike--top {
+  top: -2px;
+  border-top: 14px solid var(--iron-warm);
+  filter: drop-shadow(0 1px 2px rgba(199, 154, 94, 0.4));
+}
+.feat-spike--bottom {
+  bottom: -2px;
+  border-bottom: 14px solid var(--iron-warm);
+  filter: drop-shadow(0 -1px 2px rgba(199, 154, 94, 0.4));
+}
+
 .featured-img-wrap {
   width: 100%;
   height: clamp(280px, 42vw, 500px);
@@ -467,46 +574,94 @@ onUnmounted(() => revealObs?.disconnect());
   padding: 38px clamp(30px, 5vw, 56px);
   z-index: 1;
 }
-.featured-badge {
-  display: inline-block;
-  margin-bottom: 16px;
-  padding: 5px 16px;
-  background: linear-gradient(135deg,
-    rgba(226, 67, 16, 0.25),
-    rgba(194, 40, 26, 0.2));
+
+/* Banner-стиль badge "Главная весть" с шипами по бокам — вместо плоского rect */
+.featured-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 6px 16px;
+  background: linear-gradient(180deg,
+    var(--ember-blood) 0%,
+    var(--ember-deep) 100%);
   border: 1px solid var(--ember-heart);
   color: var(--ember-gold);
-  font-family: var(--font-ui);
-  font-size: 0.74rem;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 2.5px;
+  letter-spacing: 2px;
   text-transform: uppercase;
-  box-shadow: 0 0 12px rgba(226, 67, 16, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 201, 121, 0.25),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.5),
+    0 0 14px rgba(226, 67, 16, 0.4);
+  position: relative;
 }
+.fb-spike {
+  width: 0; height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+.fb-spike--l { border-right: 6px solid var(--ember-gold); }
+.fb-spike--r { border-left: 6px solid var(--ember-gold); }
+
 .featured-title {
   font-family: var(--font-display);
   font-weight: var(--fw-black, 900);
   font-size: clamp(1.5rem, 3vw, 2.3rem);
   color: var(--text-bright);
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   line-height: 1.25;
   letter-spacing: 0.3px;
-  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.8);
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.85);
 }
+
+/* Tribal-divider под заголовком — горизонтальная линия с шипом по центру */
+.feat-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  max-width: 280px;
+}
+.feat-divider > span:first-child,
+.feat-divider > span:last-child {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bronze), transparent);
+}
+.feat-divider-spike {
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 8px solid var(--ember-deep);
+  filter: drop-shadow(0 0 4px rgba(194, 40, 26, 0.6));
+}
+
 .featured-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .news-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-ui);
   font-size: 0.85rem;
   color: var(--text-parchment);
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
+}
+.date-icon {
+  font-size: 0.95rem;
+  filter: drop-shadow(0 0 4px rgba(199, 154, 94, 0.4));
 }
 .read-label {
   font-family: var(--font-display);
   font-size: 0.95rem;
   color: var(--ember-spark);
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 /* ══ News grid ══ */
@@ -530,23 +685,58 @@ onUnmounted(() => revealObs?.disconnect());
   transition: transform 0.3s var(--ease-forge), box-shadow 0.3s var(--ease-smoke);
 }
 .news-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--inset-iron-top), var(--shadow-cast), 0 0 22px rgba(226, 67, 16, 0.25);
+  transform: translateY(-4px);
+  border-color: var(--bronze-dark);
+  box-shadow:
+    inset 0 0 0 1px var(--bronze-dark),
+    var(--inset-iron-top),
+    var(--shadow-cast),
+    0 0 28px rgba(226, 67, 16, 0.32);
+}
+/* Заклёпки тоже подсвечиваются на hover */
+.news-card:hover .card-rivet {
+  box-shadow:
+    inset -1px -1px 2px rgba(0, 0, 0, 0.7),
+    inset 1px 1px 1px rgba(255, 201, 121, 0.5),
+    0 0 8px rgba(255, 122, 43, 0.55);
 }
 
+/* 4 заклёпки в углах карточки — кованая дощечка с гвоздями */
 .card-rivet {
   position: absolute;
-  width: 7px; height: 7px;
+  width: 8px; height: 8px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%,
     var(--brass) 0%,
-    var(--bronze) 50%,
+    var(--bronze) 45%,
     var(--iron-void) 100%);
   z-index: 3;
-  box-shadow: inset -1px -1px 1px rgba(0, 0, 0, 0.7);
+  box-shadow:
+    inset -1px -1px 2px rgba(0, 0, 0, 0.7),
+    inset 1px 1px 1px rgba(255, 201, 121, 0.35),
+    0 0 4px rgba(199, 154, 94, 0.5);
 }
-.card-rivet--tl { top: 10px; left: 10px; }
-.card-rivet--tr { top: 10px; right: 10px; }
+.card-rivet--tl { top: 10px;    left: 10px; }
+.card-rivet--tr { top: 10px;    right: 10px; }
+.card-rivet--bl { bottom: 10px; left: 10px; }
+.card-rivet--br { bottom: 10px; right: 10px; }
+
+/* Шип-гвоздь сверху по центру — будто весть пригвождена железным шипом */
+.card-spike {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 11px solid var(--iron-warm);
+  filter: drop-shadow(0 1px 2px rgba(199, 154, 94, 0.4));
+  z-index: 3;
+}
+.news-card:hover .card-spike {
+  filter: drop-shadow(0 0 4px rgba(255, 167, 88, 0.6));
+}
 
 .card-img-link { position: relative; display: block; overflow: hidden; }
 .card-img {
@@ -565,24 +755,35 @@ onUnmounted(() => revealObs?.disconnect());
     transparent 65%);
   pointer-events: none;
 }
-.card-img-hover {
-  position: absolute;
-  inset: 0;
+
+/* Kovani-divider между картинкой и текстом: тонкая бронзовая линия с шипом
+   по центру — заменяет «современный» hover-overlay с надписью «Читать» */
+.card-divider {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(226, 67, 16, 0.18);
-  color: var(--ember-gold);
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(255, 201, 121, 0.45);
-  opacity: 0;
-  transition: opacity 0.25s var(--ease-smoke);
+  gap: 8px;
+  padding: 0 16px;
+  margin-top: -2px;
+  position: relative;
+  z-index: 2;
 }
-.news-card:hover .card-img-hover { opacity: 1; }
+.cd-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--bronze), transparent);
+  opacity: 0.7;
+}
+.cd-spike {
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid var(--ember-deep);
+  filter: drop-shadow(0 0 3px rgba(194, 40, 26, 0.55));
+}
+
+/* hover-overlay со словом «Читать» убран — заменён ember-glow по контуру
+   через .news-card:hover box-shadow (см. выше). Текст «Развернуть» теперь
+   живёт только в footer-кнопке .card-read-btn — и так понятно куда клик. */
 
 .card-body {
   padding: 22px 22px 20px;
@@ -616,24 +817,44 @@ onUnmounted(() => revealObs?.disconnect());
   border-top: 1px dashed var(--iron-dark);
 }
 .card-read-btn {
-  background: rgba(8, 6, 10, 0.5);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(180deg,
+    rgba(28, 24, 22, 0.85) 0%,
+    rgba(18, 16, 13, 0.85) 100%);
   border: 1px solid var(--bronze-dark);
   color: var(--ember-spark);
-  padding: 6px 14px;
-  font-family: var(--font-ui);
+  padding: 7px 14px;
+  font-family: var(--font-display);
   font-size: 0.76rem;
   font-weight: 700;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.4px;
   text-transform: uppercase;
   text-decoration: none;
-  transition: all 0.2s var(--ease-smoke);
-  box-shadow: var(--inset-iron-top);
+  transition: all 0.22s var(--ease-smoke);
+  box-shadow:
+    inset 0 1px 0 rgba(199, 154, 94, 0.18),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.55);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 .card-read-btn:hover {
-  background: rgba(226, 67, 16, 0.18);
-  border-color: var(--ember-flame);
+  background: linear-gradient(180deg,
+    var(--ember-blood) 0%,
+    var(--ember-deep) 100%);
+  border-color: var(--ember-heart);
   color: var(--ember-gold);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 201, 121, 0.3),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.55),
+    0 0 12px rgba(226, 67, 16, 0.45);
 }
+.crb-arrow {
+  display: inline-block;
+  font-size: 0.92rem;
+  transition: transform 0.22s var(--ease-forge);
+}
+.card-read-btn:hover .crb-arrow { transform: translateX(3px); }
 
 /* ══ Responsive ══ */
 @media (max-width: 1024px) {
