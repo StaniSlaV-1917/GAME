@@ -724,37 +724,97 @@ html[data-theme="legacy"] .ab-spike {
    и Vite парсер ничего не ломает.
    ============================================================ */
 
-/* ── Light (День Осады) · hero ──────────────────────────── */
+/* ── Light (День Осады) · hero v2 ────────────────────────
+   Hero v2 = «адская кузница». В Light палитре сюжет тот же
+   (горн, лава, кузница), но днём — лава ярче и теплее, дымка
+   светлее. Звёзды не нужны (день). */
 [data-theme="light"] .hero-stars,
 [data-theme="light"] .anvil-strike-flash {
   display: none;
 }
-[data-theme="light"] .hero-aurora {
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(255, 132, 51, 0.45) 35%,
-    rgba(255, 176, 96, 0.55) 50%,
-    rgba(255, 132, 51, 0.45) 65%,
-    transparent 100%);
+[data-theme="light"] .hero-sky {
+  background:
+    radial-gradient(ellipse 130% 70% at 50% 100%, rgba(255, 130, 40, 0.35) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at 50% 15%, rgba(180, 90, 50, 0.25) 0%, transparent 55%),
+    linear-gradient(180deg,
+      #d8c8a8 0%,
+      #c4ad7c 25%,
+      #b08a5a 50%,
+      #a06038 70%,
+      #8a3a20 88%,
+      #6a2010 100%);
 }
-[data-theme="light"] .hero-cloud {
+[data-theme="light"] .haze-band--1 {
+  background: linear-gradient(90deg, transparent 0%, rgba(180, 130, 80, 0.4) 35%, rgba(220, 160, 100, 0.5) 50%, rgba(180, 130, 80, 0.4) 65%, transparent 100%);
+}
+[data-theme="light"] .lava-core {
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(176, 154, 104, 0.22) 30%,
-    rgba(140, 110, 70, 0.28) 50%,
-    rgba(176, 154, 104, 0.22) 70%,
+    rgba(255, 200, 100, 0.5) 12%,
+    rgba(255, 150, 50, 0.9) 30%,
+    rgba(255, 240, 150, 1) 50%,
+    rgba(255, 150, 50, 0.9) 70%,
+    rgba(255, 200, 100, 0.5) 88%,
     transparent 100%);
-  opacity: 0.5;
 }
 
-/* ── Legacy (Древний свод) · hero ───────────────────────── */
-[data-theme="legacy"] .hero-aurora {
+/* ── Legacy (Древний свод) · hero v2 ──────────────────────
+   В Legacy огонь = магическая аура. Лава заменяется
+   фиолетово-голубым свечением, факелы — синие. */
+[data-theme="legacy"] .hero-sky {
+  background:
+    radial-gradient(ellipse 130% 70% at 50% 100%, rgba(94, 76, 200, 0.4) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at 50% 15%, rgba(40, 30, 80, 0.4) 0%, transparent 55%),
+    linear-gradient(180deg,
+      #050812 0%,
+      #0a1024 25%,
+      #15203c 55%,
+      #2c2670 80%,
+      #4036a0 100%);
+}
+[data-theme="legacy"] .lava-core {
   background: linear-gradient(90deg,
     transparent 0%,
-    rgba(94, 76, 200, 0.55) 35%,
-    rgba(168, 154, 245, 0.7) 50%,
-    rgba(94, 76, 200, 0.55) 65%,
+    rgba(168, 154, 245, 0.5) 12%,
+    rgba(94, 76, 200, 0.9) 30%,
+    rgba(212, 200, 255, 1) 50%,
+    rgba(94, 76, 200, 0.9) 70%,
+    rgba(168, 154, 245, 0.5) 88%,
     transparent 100%);
+}
+[data-theme="legacy"] .lava-bloom {
+  background: radial-gradient(ellipse 80% 100% at 50% 50%,
+    rgba(94, 76, 200, 0.55) 0%,
+    rgba(64, 54, 160, 0.3) 35%,
+    rgba(26, 26, 77, 0.12) 65%,
+    transparent 85%);
+}
+[data-theme="legacy"] .anvil-backlight {
+  background: radial-gradient(ellipse 50% 60% at 50% 80%,
+    rgba(212, 200, 255, 0.65) 0%,
+    rgba(168, 154, 245, 0.4) 25%,
+    rgba(94, 76, 200, 0.2) 50%,
+    transparent 75%);
+}
+[data-theme="legacy"] .tower-torch {
+  background: radial-gradient(circle, rgba(212, 200, 255, 1) 0%, rgba(94, 76, 200, 0.8) 50%, transparent 80%);
+  box-shadow:
+    0 0 12px rgba(94, 76, 200, 0.9),
+    0 0 24px rgba(64, 54, 160, 0.5);
+}
+[data-theme="legacy"] .anvil-strike-flash {
+  background: radial-gradient(ellipse at center bottom,
+    rgba(212, 200, 255, 0.95) 0%,
+    rgba(168, 154, 245, 0.6) 22%,
+    rgba(94, 76, 200, 0.35) 45%,
+    transparent 70%);
+}
+[data-theme="legacy"] .anvil-spark-burst {
+  filter: blur(0.5px) drop-shadow(0 0 4px rgba(94, 76, 200, 0.7));
+}
+[data-theme="legacy"] .ember-particle {
+  background: radial-gradient(circle, rgba(212, 200, 255, 1) 0%, rgba(168, 154, 245, 1) 50%, rgba(94, 76, 200, 1) 100%);
+  box-shadow: 0 0 6px rgba(168, 154, 245, 0.95), 0 0 12px rgba(94, 76, 200, 0.5);
 }
 [data-theme="legacy"] .banner-sigil-glow {
   background: radial-gradient(circle,
@@ -763,7 +823,15 @@ html[data-theme="legacy"] .ab-spike {
     transparent 70%);
 }
 [data-theme="legacy"] .hero-anvil {
-  filter: drop-shadow(0 0 12px rgba(94, 76, 200, 0.5));
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.7));
+}
+[data-theme="legacy"] .hero-forge-glow {
+  background: radial-gradient(ellipse 55% 85% at 50% 100%,
+    rgba(168, 154, 245, 0.55) 0%,
+    rgba(94, 76, 200, 0.45) 18%,
+    rgba(64, 54, 160, 0.3) 38%,
+    rgba(26, 26, 77, 0.15) 58%,
+    transparent 80%);
 }
 
 /* ── CursorTrail · per-theme particle palette ─────────── */

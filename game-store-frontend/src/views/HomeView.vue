@@ -5,50 +5,102 @@
          HERO · "Оплот воина"
     =================================================== -->
     <section class="hero-section">
-      <!-- Фон: закатное небо Оргриммара -->
+      <!-- ═══ Слой 1 (дальше всего): угольное небо ═══ -->
       <div class="hero-sky"></div>
 
-      <!-- Мерцающие звёзды в верхней части неба -->
+      <!-- Звёзды (только верхние 30% — не отвлекают от драмы внизу) -->
       <div class="hero-stars" aria-hidden="true">
-        <span v-for="n in 14" :key="`star-${n}`" class="hero-star" :style="{ '--i': n }"></span>
+        <span v-for="n in 9" :key="`star-${n}`" class="hero-star" :style="{ '--i': n }"></span>
       </div>
 
-      <!-- Дрейфующие облака-дымка через небо -->
-      <div class="hero-clouds" aria-hidden="true">
-        <span class="hero-cloud hero-cloud--1"></span>
-        <span class="hero-cloud hero-cloud--2"></span>
-        <span class="hero-cloud hero-cloud--3"></span>
+      <!-- ═══ Слой 2: атмосферная дымка/смог ═══ -->
+      <div class="hero-haze" aria-hidden="true">
+        <span class="haze-band haze-band--1"></span>
+        <span class="haze-band haze-band--2"></span>
+        <span class="haze-band haze-band--3"></span>
       </div>
 
-      <!-- Аврора/полоса свечения на горизонте — пульсирующая -->
-      <div class="hero-aurora" aria-hidden="true"></div>
-
-      <!-- Горы-силуэты вдалеке -->
-      <div class="hero-mountains">
-        <svg viewBox="0 0 1600 200" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0,200 L0,130 L80,80 L160,110 L240,60 L340,95 L430,40 L520,85 L620,50 L720,100 L820,45 L920,90 L1020,55 L1130,95 L1230,60 L1340,100 L1440,70 L1530,105 L1600,85 L1600,200 Z" fill="currentColor"/>
+      <!-- ═══ Слой 3: дальние горы (размытые, бледные) ═══ -->
+      <div class="hero-ridge hero-ridge--far" aria-hidden="true">
+        <svg viewBox="0 0 1600 220" preserveAspectRatio="none">
+          <path d="M0,220 L0,160 L70,135 L150,150 L230,120 L320,140 L420,105 L510,135 L610,115 L710,140 L810,110 L910,138 L1010,118 L1110,142 L1210,125 L1320,145 L1430,128 L1530,150 L1600,140 L1600,220 Z" fill="currentColor"/>
         </svg>
       </div>
 
-      <!-- Дальняя наковальня с ритмичным «ударом молота» каждые ~7 сек.
-           На каждом ударе — короткая ember-вспышка позади + лёгкий
-           горизонтальный shake фоновых слоёв (через CSS-anim синхронизированы). -->
+      <!-- ═══ Слой 4: ЛАВОВАЯ РЕКА на горизонте — главный glow ═══ -->
+      <div class="hero-lava-river" aria-hidden="true">
+        <span class="lava-core"></span>
+        <span class="lava-bloom"></span>
+        <span class="lava-flicker"></span>
+      </div>
+
+      <!-- ═══ Слой 5: средние горы (резче, темнее) ═══ -->
+      <div class="hero-ridge hero-ridge--mid" aria-hidden="true">
+        <svg viewBox="0 0 1600 240" preserveAspectRatio="none">
+          <path d="M0,240 L0,180 L60,120 L130,160 L200,90 L280,140 L360,75 L440,130 L520,85 L600,150 L680,100 L760,160 L840,95 L920,145 L1000,80 L1080,140 L1160,90 L1240,150 L1320,110 L1400,160 L1480,120 L1560,165 L1600,150 L1600,240 Z" fill="currentColor"/>
+        </svg>
+      </div>
+
+      <!-- Башни/леса по краям — силуэты с факелами -->
+      <div class="hero-tower hero-tower--left" aria-hidden="true">
+        <svg viewBox="0 0 120 200" preserveAspectRatio="xMinYMax meet">
+          <!-- Дощатые подмостки (горизонтальные планки) -->
+          <path d="M0,200 L0,150 L40,150 L40,140 L75,140 L75,150 L120,150 L120,170 L100,170 L100,200 Z" fill="currentColor"/>
+          <!-- Опорные столбы -->
+          <rect x="20" y="155" width="4" height="45" fill="currentColor"/>
+          <rect x="55" y="145" width="4" height="55" fill="currentColor"/>
+          <rect x="90" y="155" width="4" height="45" fill="currentColor"/>
+          <!-- Перила -->
+          <rect x="40" y="135" width="35" height="2" fill="currentColor"/>
+        </svg>
+        <span class="tower-torch tower-torch--top" style="--delay: 0s"></span>
+        <span class="tower-torch tower-torch--mid" style="--delay: 1.3s"></span>
+      </div>
+      <div class="hero-tower hero-tower--right" aria-hidden="true">
+        <svg viewBox="0 0 120 200" preserveAspectRatio="xMaxYMax meet">
+          <path d="M120,200 L120,150 L80,150 L80,140 L45,140 L45,150 L0,150 L0,170 L20,170 L20,200 Z" fill="currentColor"/>
+          <rect x="96" y="155" width="4" height="45" fill="currentColor"/>
+          <rect x="61" y="145" width="4" height="55" fill="currentColor"/>
+          <rect x="26" y="155" width="4" height="45" fill="currentColor"/>
+          <rect x="45" y="135" width="35" height="2" fill="currentColor"/>
+        </svg>
+        <span class="tower-torch tower-torch--top" style="--delay: 0.7s"></span>
+        <span class="tower-torch tower-torch--mid" style="--delay: 2.1s"></span>
+      </div>
+
+      <!-- Раскалённый горн (radial glow снизу — теперь ярче) -->
+      <div class="hero-forge-glow"></div>
+
+      <!-- ═══ Слой 6: ближние горы (самые острые, тёмные) ═══ -->
+      <div class="hero-ridge hero-ridge--near" aria-hidden="true">
+        <svg viewBox="0 0 1600 280" preserveAspectRatio="none">
+          <path d="M0,280 L0,220 L50,140 L120,200 L180,90 L260,180 L340,60 L420,170 L500,80 L580,200 L660,100 L740,210 L820,70 L900,180 L980,90 L1060,200 L1140,110 L1220,210 L1300,130 L1380,200 L1460,140 L1540,210 L1600,180 L1600,280 Z" fill="currentColor"/>
+        </svg>
+      </div>
+
+      <!-- Дальняя наковальня — теперь крупнее и с подсветкой сзади -->
       <div class="hero-anvil" aria-hidden="true">
+        <span class="anvil-backlight" aria-hidden="true"></span>
         <svg viewBox="0 0 120 60" preserveAspectRatio="xMidYMax meet" class="hero-anvil-svg">
           <path d="M 14 22 L 106 22 L 100 32 L 76 32 L 76 44 L 88 44 L 88 52 L 32 52 L 32 44 L 44 44 L 44 32 L 20 32 Z" fill="currentColor"/>
         </svg>
         <span class="anvil-strike-flash" aria-hidden="true"></span>
+        <!-- Брызги-искры от ковки (горизонтальные) — синхронно с ударом -->
+        <span class="anvil-spark-burst anvil-spark-burst--l" aria-hidden="true"></span>
+        <span class="anvil-spark-burst anvil-spark-burst--r" aria-hidden="true"></span>
       </div>
 
-      <!-- Раскалённый горн снизу -->
-      <div class="hero-forge-glow"></div>
-
-      <!-- Тепловое марево над горизонтом — едва заметная дрожь -->
+      <!-- Тепловое марево над горизонтом -->
       <div class="hero-shimmer" aria-hidden="true"></div>
 
-      <!-- Летящие угли — увеличены с 12 до 24, разные размеры/скорости -->
+      <!-- Восходящие угли (вертикальные) -->
       <div class="hero-embers" aria-hidden="true">
-        <span v-for="n in 24" :key="n" class="ember-particle" :style="{ '--i': n }"></span>
+        <span v-for="n in 28" :key="n" class="ember-particle" :style="{ '--i': n }"></span>
+      </div>
+
+      <!-- Пылевые мотыли (медленно дрейфующие частицы пыли) -->
+      <div class="hero-dust" aria-hidden="true">
+        <span v-for="n in 12" :key="`dust-${n}`" class="dust-mote" :style="{ '--i': n }"></span>
       </div>
 
       <!-- Свисающий баннер Орды -->
@@ -338,166 +390,310 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
   isolation: isolate;
 }
 
-/* Небо заката */
+/* ──────────────────────────────────────────────────────────────
+   HERO BACKGROUND v2 — «Адская кузница»
+   ----------------------------------------------------------
+   Вдохновение: WoW cinematic (Maldraxxus / Orgrimmar forge).
+   Кинематографический стек слоёв (back→front):
+     -3  hero-sky          угольное небо
+     -2  hero-stars        слабые звёзды (только верх)
+     -2  hero-haze         атмосферная дымка
+     -2  hero-ridge--far   дальние горы (размытые)
+     -1  hero-lava-river   ЛАВОВАЯ река (главный glow)
+     -1  hero-ridge--mid   средние горы
+     -1  hero-tower--*     башни/леса с факелами по краям
+     -1  hero-forge-glow   нижнее свечение горна
+      0  hero-ridge--near  ближние острые горы
+      0  hero-anvil        силуэт наковальни (с подсветкой)
+      0  hero-embers       восходящие угли
+      0  hero-dust         медленные пылинки
+      1  hero-banner-wrap  баннер
+      3  hero-content      текст и кнопки
+   ────────────────────────────────────────────────────────────── */
+
+/* ═══ Небо ═══ */
 .hero-sky {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 120% 80% at 50% 100%, rgba(226, 67, 16, 0.25) 0%, transparent 55%),
-    radial-gradient(ellipse 90% 55% at 50% 20%, rgba(138, 31, 24, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse 130% 70% at 50% 100%, rgba(255, 80, 0, 0.32) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 50% at 50% 15%, rgba(58, 18, 14, 0.35) 0%, transparent 55%),
     linear-gradient(180deg,
-      #0a0806 0%,
-      #14100c 25%,
-      #2a1612 55%,
-      #5a1412 80%,
-      #8a1f18 100%);
-  z-index: -2;
-}
-.hero-sky::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(2px 2px at 20% 30%, rgba(255, 201, 121, 0.55), transparent),
-    radial-gradient(1.5px 1.5px at 70% 15%, rgba(255, 201, 121, 0.5), transparent),
-    radial-gradient(1px 1px at 45% 25%, rgba(199, 154, 94, 0.6), transparent),
-    radial-gradient(1px 1px at 85% 35%, rgba(199, 154, 94, 0.5), transparent),
-    radial-gradient(1.5px 1.5px at 15% 20%, rgba(212, 181, 106, 0.6), transparent),
-    radial-gradient(1px 1px at 90% 10%, rgba(199, 154, 94, 0.55), transparent);
-  background-size: 100% 100%;
-  opacity: 0.7;
+      #050203 0%,
+      #0a0606 18%,
+      #1a0a08 38%,
+      #3a0e0a 65%,
+      #6a1a14 88%,
+      #8a2818 100%);
+  z-index: -3;
 }
 
-/* Silhouette гор */
-.hero-mountains {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 28vh;
-  min-height: 220px;
-  color: #0a0704;
-  z-index: -1;
-  filter: drop-shadow(0 -4px 8px rgba(138, 31, 24, 0.3));
-}
-.hero-mountains svg { display: block; width: 100%; height: 100%; }
-
-/* Раскалённый горн снизу */
-.hero-forge-glow {
-  position: absolute;
-  bottom: -80px; left: 50%;
-  transform: translateX(-50%);
-  width: 120%; height: 340px;
-  background: radial-gradient(ellipse 50% 80% at 50% 100%,
-    rgba(255, 122, 43, 0.55) 0%,
-    rgba(226, 67, 16, 0.35) 25%,
-    rgba(138, 31, 24, 0.18) 50%,
-    transparent 75%);
-  filter: blur(16px);
-  z-index: -1;
-  animation: emberPulse 4s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* ── Мерцающие звёзды в верхней части неба ── */
+/* ═══ Звёзды (приглушённые) ═══ */
 .hero-stars {
   position: absolute;
-  inset: 0 0 50% 0;       /* только верхняя половина */
+  inset: 0 0 70% 0;       /* только верхние 30% */
   pointer-events: none;
   z-index: -2;
   overflow: hidden;
 }
 .hero-star {
   position: absolute;
-  /* Распределение по экрану: x = (i * 7%) mod 100, y по высоте — pseudo-random */
-  left: calc((var(--i) * 7.3%) - (var(--i) * 100% * 0));
-  top: calc((var(--i) * 6.7%) + 4%);
-  width: 2px;
-  height: 2px;
+  left: calc((var(--i) * 11%) - 5%);
+  top: calc((var(--i) * 4.7%) + 6%);
+  width: 1.5px;
+  height: 1.5px;
   border-radius: 50%;
-  background: var(--text-bone);
-  box-shadow: 0 0 4px rgba(248, 232, 200, 0.85);
-  opacity: 0;
-  animation: starTwinkle 4.5s ease-in-out infinite;
-  animation-delay: calc(var(--i) * -0.32s);
+  background: rgba(248, 232, 200, 0.7);
+  box-shadow: 0 0 3px rgba(248, 232, 200, 0.6);
+  animation: starTwinkle 5s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.4s);
+  opacity: 0.4;
 }
-@keyframes starTwinkle {
-  0%, 100% { opacity: 0.2; transform: scale(0.7); }
-  50%      { opacity: 0.95; transform: scale(1.1); }
-}
-/* Каждая 5-я звезда чуть ярче и крупнее — для разнообразия */
-.hero-star:nth-child(5n) {
-  width: 3px; height: 3px;
-  box-shadow: 0 0 8px rgba(255, 201, 121, 0.7);
+.hero-star:nth-child(3n) {
+  width: 2px; height: 2px;
+  box-shadow: 0 0 5px rgba(255, 201, 121, 0.55);
   background: var(--ember-gold);
 }
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.15; transform: scale(0.7); }
+  50%      { opacity: 0.7;  transform: scale(1.05); }
+}
 
-/* ── Дрейфующие облака-дымка через небо ── */
-.hero-clouds {
+/* ═══ Атмосферная дымка ═══ */
+.hero-haze {
   position: absolute;
-  inset: 0 0 40% 0;       /* верхние 60% */
+  inset: 30% 0 30% 0;
   pointer-events: none;
   z-index: -2;
   overflow: hidden;
 }
-.hero-cloud {
+.haze-band {
   position: absolute;
-  width: clamp(280px, 40vw, 540px);
-  height: clamp(60px, 8vw, 100px);
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(122, 93, 72, 0.18) 30%,
-    rgba(58, 42, 34, 0.22) 50%,
-    rgba(122, 93, 72, 0.18) 70%,
-    transparent 100%);
-  filter: blur(28px);
-  border-radius: 50%;
-  opacity: 0.6;
-  animation: cloudDrift 65s linear infinite;
-}
-.hero-cloud--1 { top: 18%; animation-duration: 68s; animation-delay: 0s; }
-.hero-cloud--2 { top: 32%; animation-duration: 92s; animation-delay: -22s; opacity: 0.45; }
-.hero-cloud--3 { top: 8%;  animation-duration: 78s; animation-delay: -48s; opacity: 0.55; }
-@keyframes cloudDrift {
-  0%   { transform: translateX(-30vw); }
-  100% { transform: translateX(130vw); }
-}
-
-/* ── Аврора/полоса свечения на горизонте ── */
-.hero-aurora {
-  position: absolute;
-  bottom: 22%;
   left: -10%;
-  right: -10%;
-  height: 4px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    rgba(226, 67, 16, 0.55) 35%,
-    rgba(255, 122, 43, 0.7) 50%,
-    rgba(226, 67, 16, 0.55) 65%,
-    transparent 100%);
-  filter: blur(12px);
-  z-index: -1;
-  animation: auroraPulse 6s ease-in-out infinite;
+  width: 130%;
+  height: 60%;
+  filter: blur(40px);
+  opacity: 0.55;
+  border-radius: 50%;
+  animation: hazeDrift 75s linear infinite;
 }
-@keyframes auroraPulse {
-  0%, 100% { opacity: 0.55; transform: scaleY(1); }
-  50%      { opacity: 1;    transform: scaleY(1.4); }
+.haze-band--1 {
+  top: 5%;
+  background: linear-gradient(90deg, transparent 0%, rgba(140, 90, 60, 0.4) 35%, rgba(180, 110, 70, 0.5) 50%, rgba(140, 90, 60, 0.4) 65%, transparent 100%);
+  animation-duration: 80s;
+}
+.haze-band--2 {
+  top: 35%;
+  background: linear-gradient(90deg, transparent 0%, rgba(80, 30, 20, 0.45) 30%, rgba(120, 50, 30, 0.55) 50%, rgba(80, 30, 20, 0.45) 70%, transparent 100%);
+  animation-duration: 95s;
+  animation-delay: -25s;
+  opacity: 0.65;
+}
+.haze-band--3 {
+  top: 55%;
+  background: linear-gradient(90deg, transparent 0%, rgba(60, 20, 14, 0.5) 25%, rgba(100, 35, 22, 0.6) 50%, rgba(60, 20, 14, 0.5) 75%, transparent 100%);
+  animation-duration: 110s;
+  animation-delay: -55s;
+  opacity: 0.5;
+}
+@keyframes hazeDrift {
+  0%   { transform: translateX(-25%); }
+  100% { transform: translateX(25%); }
 }
 
-/* ── Дальняя наковальня с ритмичным "ударом" ── */
-.hero-anvil {
+/* ═══ Гряды гор (3 слоя для глубины) ═══ */
+.hero-ridge {
   position: absolute;
-  bottom: 18%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: clamp(80px, 12vw, 130px);
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+.hero-ridge svg { display: block; width: 100%; height: 100%; }
+
+.hero-ridge--far {
+  bottom: 28%;
+  height: 14vh;
+  min-height: 110px;
+  color: rgba(56, 26, 20, 0.85);
+  z-index: -2;
+  filter: blur(2.5px);
+  opacity: 0.85;
+}
+.hero-ridge--mid {
+  bottom: 14%;
+  height: 22vh;
+  min-height: 180px;
+  color: #1a0c08;
+  z-index: -1;
+  filter: drop-shadow(0 -3px 6px rgba(255, 80, 0, 0.35));
+}
+.hero-ridge--near {
+  bottom: 0;
+  height: 30vh;
+  min-height: 240px;
+  color: #050202;
+  z-index: 0;
+  filter: drop-shadow(0 -6px 14px rgba(255, 100, 30, 0.55));
+}
+
+/* ═══ ЛАВОВАЯ РЕКА — главный визуальный акцент ═══ */
+.hero-lava-river {
+  position: absolute;
+  bottom: 16%;
+  left: -5%;
+  right: -5%;
+  height: 90px;
+  pointer-events: none;
+  z-index: -1;
+}
+.lava-core {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(255, 180, 80, 0.45) 12%,
+    rgba(255, 130, 30, 0.85) 30%,
+    rgba(255, 230, 130, 0.95) 50%,
+    rgba(255, 130, 30, 0.85) 70%,
+    rgba(255, 180, 80, 0.45) 88%,
+    transparent 100%);
+  filter: blur(8px);
+  border-radius: 50%;
+  animation: lavaPulse 5s ease-in-out infinite;
+}
+.lava-bloom {
+  position: absolute;
+  inset: -30px 0;
+  background: radial-gradient(ellipse 80% 100% at 50% 50%,
+    rgba(255, 100, 20, 0.55) 0%,
+    rgba(226, 67, 16, 0.3) 35%,
+    rgba(138, 31, 24, 0.12) 65%,
+    transparent 85%);
+  filter: blur(20px);
+  animation: lavaBloomPulse 6.5s ease-in-out infinite;
+}
+.lava-flicker {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 20%,
+    rgba(255, 255, 200, 0.3) 45%,
+    rgba(255, 255, 200, 0.45) 50%,
+    rgba(255, 255, 200, 0.3) 55%,
+    transparent 80%);
+  filter: blur(4px);
+  mix-blend-mode: screen;
+  animation: lavaFlicker 2.3s ease-in-out infinite;
+}
+@keyframes lavaPulse {
+  0%, 100% { opacity: 0.85; transform: scaleY(1); }
+  50%      { opacity: 1;    transform: scaleY(1.15); }
+}
+@keyframes lavaBloomPulse {
+  0%, 100% { opacity: 0.7; transform: scaleX(1); }
+  50%      { opacity: 1;   transform: scaleX(1.06); }
+}
+@keyframes lavaFlicker {
+  0%, 100%   { opacity: 0.55; transform: translateX(-3%); }
+  25%        { opacity: 0.85; transform: translateX(2%); }
+  50%        { opacity: 0.4;  transform: translateX(-1%); }
+  75%        { opacity: 0.75; transform: translateX(3%); }
+}
+
+/* ═══ Башни/леса по краям с факелами ═══ */
+.hero-tower {
+  position: absolute;
+  bottom: 14%;
+  width: clamp(70px, 8vw, 120px);
+  height: clamp(120px, 14vh, 200px);
+  color: #050202;
   z-index: -1;
   pointer-events: none;
-  filter: drop-shadow(0 0 12px rgba(226, 67, 16, 0.4));
+  filter: drop-shadow(0 -2px 4px rgba(255, 100, 30, 0.4));
+}
+.hero-tower--left  { left: 0; }
+.hero-tower--right { right: 0; }
+.hero-tower svg    { display: block; width: 100%; height: 100%; }
+
+.tower-torch {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 230, 130, 1) 0%, rgba(255, 130, 30, 0.8) 50%, transparent 80%);
+  box-shadow:
+    0 0 12px rgba(255, 130, 30, 0.9),
+    0 0 24px rgba(255, 100, 30, 0.5);
+  animation: torchFlicker 0.6s ease-in-out infinite alternate;
+  animation-delay: var(--delay, 0s);
+}
+.hero-tower--left  .tower-torch--top { top: 28%; left: 30%; }
+.hero-tower--left  .tower-torch--mid { top: 60%; left: 70%; }
+.hero-tower--right .tower-torch--top { top: 28%; right: 30%; }
+.hero-tower--right .tower-torch--mid { top: 60%; right: 70%; }
+@keyframes torchFlicker {
+  0%   { opacity: 0.85; transform: scale(0.95); }
+  100% { opacity: 1;    transform: scale(1.1); }
+}
+
+/* ═══ Свечение горна (нижний radial) — теперь ярче ═══ */
+.hero-forge-glow {
+  position: absolute;
+  bottom: -100px; left: 50%;
+  transform: translateX(-50%);
+  width: 130%; height: 380px;
+  background: radial-gradient(ellipse 55% 85% at 50% 100%,
+    rgba(255, 180, 80, 0.55) 0%,
+    rgba(255, 100, 20, 0.45) 18%,
+    rgba(226, 67, 16, 0.3) 38%,
+    rgba(138, 31, 24, 0.15) 58%,
+    transparent 80%);
+  filter: blur(18px);
+  z-index: -1;
+  animation: forgePulse 4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes forgePulse {
+  0%, 100% { opacity: 0.85; transform: translateX(-50%) scaleY(1); }
+  50%      { opacity: 1;    transform: translateX(-50%) scaleY(1.06); }
+}
+
+/* ═══ Наковальня — крупнее и с подсветкой сзади ═══ */
+.hero-anvil {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(110px, 16vw, 180px);
+  z-index: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.65));
+}
+.anvil-backlight {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240%;
+  height: 180%;
+  background: radial-gradient(ellipse 50% 60% at 50% 80%,
+    rgba(255, 200, 100, 0.65) 0%,
+    rgba(255, 130, 40, 0.4) 25%,
+    rgba(226, 67, 16, 0.2) 50%,
+    transparent 75%);
+  filter: blur(14px);
+  z-index: -1;
+  animation: anvilBacklight 5s ease-in-out infinite;
+}
+@keyframes anvilBacklight {
+  0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(1); }
+  50%      { opacity: 1;   transform: translateX(-50%) scale(1.08); }
 }
 .hero-anvil-svg {
   width: 100%;
   display: block;
-  color: rgba(8, 6, 10, 0.92);
+  position: relative;
+  color: rgba(2, 1, 1, 0.96);
   animation: anvilStrike 7s ease-in-out infinite;
 }
 @keyframes anvilStrike {
@@ -513,21 +709,103 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 200%;
-  height: 80%;
+  width: 280%;
+  height: 110%;
   background: radial-gradient(ellipse at center bottom,
-    rgba(255, 201, 121, 0.7) 0%,
-    rgba(255, 122, 43, 0.45) 25%,
-    transparent 65%);
-  filter: blur(12px);
+    rgba(255, 240, 180, 0.95) 0%,
+    rgba(255, 160, 60, 0.6) 22%,
+    rgba(255, 100, 20, 0.35) 45%,
+    transparent 70%);
+  filter: blur(14px);
   opacity: 0;
   animation: anvilFlash 7s ease-in-out infinite;
 }
 @keyframes anvilFlash {
   0%, 70%, 100% { opacity: 0;    transform: translateX(-50%) scale(0.6); }
-  72%           { opacity: 0.85; transform: translateX(-50%) scale(1.2); }
-  78%           { opacity: 0.4;  transform: translateX(-50%) scale(1.5); }
-  85%           { opacity: 0;    transform: translateX(-50%) scale(1.7); }
+  72%           { opacity: 1;    transform: translateX(-50%) scale(1.3); }
+  78%           { opacity: 0.55; transform: translateX(-50%) scale(1.7); }
+  85%           { opacity: 0;    transform: translateX(-50%) scale(2.0); }
+}
+
+/* ═══ Брызги-искры от ковки ═══
+   Горизонтальные стрики искр в обе стороны, синхронно с ударом наковальни.
+   Похоже на frame fr00 из reference-видео: яркий пучок искр расходится
+   при контакте молота с заготовкой. */
+.anvil-spark-burst {
+  position: absolute;
+  bottom: 18%;
+  width: 200px;
+  height: 6px;
+  pointer-events: none;
+  background:
+    radial-gradient(2px 2px at 5%   50%, rgba(255, 240, 180, 1), transparent 60%),
+    radial-gradient(2px 1px at 12%  40%, rgba(255, 200, 100, 0.9), transparent 60%),
+    radial-gradient(1.5px 1px at 22% 60%, rgba(255, 180, 80, 0.85), transparent 60%),
+    radial-gradient(1.5px 1px at 35% 45%, rgba(255, 220, 130, 0.8), transparent 60%),
+    radial-gradient(2px 1px at 48% 55%, rgba(255, 160, 60, 0.75), transparent 60%),
+    radial-gradient(1px 1px at 62% 40%, rgba(255, 200, 100, 0.7), transparent 60%),
+    radial-gradient(1.5px 1px at 78% 50%, rgba(255, 180, 80, 0.65), transparent 60%),
+    radial-gradient(1px 1px at 92% 45%, rgba(255, 160, 60, 0.5), transparent 60%);
+  filter: blur(0.5px) drop-shadow(0 0 4px rgba(255, 130, 30, 0.7));
+  opacity: 0;
+}
+.anvil-spark-burst--l {
+  right: 50%;
+  margin-right: 30px;
+  transform-origin: right center;
+  animation: sparkBurstL 7s ease-out infinite;
+}
+.anvil-spark-burst--r {
+  left: 50%;
+  margin-left: 30px;
+  transform-origin: left center;
+  animation: sparkBurstR 7s ease-out infinite;
+}
+@keyframes sparkBurstL {
+  0%, 70%, 100% { opacity: 0; transform: scaleX(0.3) translateX(0); }
+  72%           { opacity: 1; transform: scaleX(1)   translateX(-10px); }
+  78%           { opacity: 0.6; transform: scaleX(1.3) translateX(-25px); }
+  84%           { opacity: 0; transform: scaleX(1.5) translateX(-40px); }
+}
+@keyframes sparkBurstR {
+  0%, 70%, 100% { opacity: 0; transform: scaleX(0.3) translateX(0); }
+  72%           { opacity: 1; transform: scaleX(1)   translateX(10px); }
+  78%           { opacity: 0.6; transform: scaleX(1.3) translateX(25px); }
+  84%           { opacity: 0; transform: scaleX(1.5) translateX(40px); }
+}
+
+/* ═══ Пылевые мотыли — медленно дрейфующие подсвеченные пылинки ═══ */
+.hero-dust {
+  position: absolute;
+  inset: 10% 0 30% 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.dust-mote {
+  position: absolute;
+  width: 1.5px;
+  height: 1.5px;
+  border-radius: 50%;
+  background: rgba(255, 200, 130, 0.8);
+  box-shadow: 0 0 4px rgba(255, 180, 100, 0.6);
+  left: calc((var(--i) * 8.3%) + 4%);
+  top: calc((var(--i) * 5.7%) + 8%);
+  opacity: 0;
+  animation: dustDrift 18s linear infinite;
+  animation-delay: calc(var(--i) * -1.4s);
+}
+.dust-mote:nth-child(3n) {
+  width: 2.5px; height: 2.5px;
+  background: rgba(255, 220, 150, 0.7);
+  box-shadow: 0 0 6px rgba(255, 180, 100, 0.5);
+  animation-duration: 25s;
+}
+@keyframes dustDrift {
+  0%   { opacity: 0; transform: translate(0, 0); }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.6; }
+  100% { opacity: 0; transform: translate(20px, -60px); }
 }
 
 /* ── Тепловое марево над горизонтом (едва заметное) ── */
@@ -564,22 +842,41 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
 }
 .ember-particle {
   position: absolute;
-  bottom: 10%;
-  /* Распределение: var(--i) от 1 до 24, x = i * 4% — равномерно по ширине */
-  left: calc((var(--i) * 4%) + 2%);
-  width: 4px; height: 4px;
+  bottom: 14%;
+  left: calc((var(--i) * 3.5%) + 1%);
+  width: 3px; height: 3px;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--ember-gold), var(--ember-flame));
-  box-shadow: 0 0 8px rgba(255, 122, 43, 0.8);
-  animation: emberRise 7s ease-out infinite;
-  animation-delay: calc(var(--i) * -0.3s);
-  --x: calc((var(--i) * 3px) - 36px);
+  background: radial-gradient(circle, rgba(255, 240, 180, 1) 0%, var(--ember-glow) 50%, var(--ember-flame) 100%);
+  box-shadow:
+    0 0 6px rgba(255, 180, 80, 0.95),
+    0 0 12px rgba(255, 100, 20, 0.5);
+  animation: emberRise 6s ease-out infinite;
+  animation-delay: calc(var(--i) * -0.28s);
+  --x: calc((var(--i) * 4px) - 56px);
   opacity: 0;
 }
-/* Разнообразие частиц: каждая 3-я мельче и быстрее, каждая 4-я крупнее */
-.ember-particle:nth-child(3n)   { width: 2px; height: 2px; animation-duration: 5s; }
-.ember-particle:nth-child(4n)   { width: 6px; height: 6px; box-shadow: 0 0 14px rgba(255, 167, 88, 0.9); }
-.ember-particle:nth-child(5n+1) { animation-duration: 9s; }   /* медленные плавающие */
+/* Разнообразие частиц */
+.ember-particle:nth-child(3n)   {
+  width: 2px; height: 2px;
+  animation-duration: 4.2s;
+  box-shadow: 0 0 4px rgba(255, 200, 100, 0.9);
+}
+.ember-particle:nth-child(4n)   {
+  width: 5px; height: 5px;
+  box-shadow:
+    0 0 10px rgba(255, 200, 110, 1),
+    0 0 18px rgba(255, 130, 40, 0.6);
+}
+.ember-particle:nth-child(5n+1) { animation-duration: 8s; }
+.ember-particle:nth-child(7n)   {
+  /* «крупные горящие» — медленнее, ярче, с длинным шлейфом */
+  width: 6px; height: 6px;
+  animation-duration: 9.5s;
+  box-shadow:
+    0 0 14px rgba(255, 220, 130, 1),
+    0 0 28px rgba(255, 140, 40, 0.7),
+    0 0 42px rgba(255, 80, 20, 0.4);
+}
 
 /* Свисающий баннер */
 .hero-banner-wrap {
@@ -1376,18 +1673,31 @@ const toggleFaq = (id) => { openFaqItem.value = openFaqItem.value === id ? null 
    мягкое статичное свечение для атмосферы */
 @media (prefers-reduced-motion: reduce) {
   .hero-star,
-  .hero-cloud,
-  .hero-aurora,
+  .haze-band,
+  .lava-core,
+  .lava-bloom,
+  .lava-flicker,
+  .tower-torch,
   .hero-anvil-svg,
   .anvil-strike-flash,
+  .anvil-spark-burst,
+  .anvil-backlight,
   .hero-shimmer,
   .ember-particle,
+  .dust-mote,
   .banner-sigil-glow,
   .hero-forge-glow {
     animation: none !important;
   }
-  .hero-star { opacity: 0.6; }
-  .ember-particle { opacity: 0; } /* убираем, чтоб не торчали статично */
-  .anvil-strike-flash { display: none; }
+  .hero-star { opacity: 0.5; }
+  .ember-particle { opacity: 0; }
+  .dust-mote { opacity: 0; }
+  .anvil-strike-flash, .anvil-spark-burst { display: none; }
+  /* Лавовая река остаётся видна, просто без пульсации */
+  .lava-core { opacity: 0.85; }
+  .lava-bloom { opacity: 0.7; }
+  .lava-flicker { opacity: 0; }
+  .tower-torch { opacity: 0.9; }
+  .anvil-backlight { opacity: 0.75; }
 }
 </style>
