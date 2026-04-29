@@ -91,6 +91,22 @@ const routes = [
     props: true
   },
 
+  // ── Phase 2 / Forum: публичный профиль /u/:username ──
+  {
+    path: '/u/:username',
+    name: 'user-profile',
+    component: () => import('../views/PublicProfileView.vue'),
+    props: true,
+  },
+  // ── Phase 2 / Forum: одиночный пост /post/:id (Batch D реализует view) ──
+  {
+    path: '/post/:id',
+    name: 'post',
+    component: ForumStubView,
+    meta: { stub: { title: 'Карточка поста', eyebrow: 'Phase 2 / Batch D', icon: '📜' } },
+    props: true,
+  },
+
   // --- Админ-панель ---
   {
     path: '/admin',

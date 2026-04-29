@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReviewController;
@@ -161,6 +162,12 @@ Route::get('/news/{id}', [NewsController::class, 'show']);
 // CRUD (POST/PUT/DELETE) добавим в Batch C с auth + throttle.
 Route::get('/posts',      [PostController::class, 'index']);
 Route::get('/posts/{id}', [PostController::class, 'show']);
+
+// ── Phase 2 / Forum: публичные профили ──
+// /u/:username — публичный URL, привязан к username (а не id).
+// Возвращает 404 если username не задан, не существует или забанен.
+Route::get('/users/{username}/profile', [UserProfileController::class, 'show']);
+Route::get('/users/{username}/posts',   [UserProfileController::class, 'posts']);
 
 // Отзывы для игры
 Route::get('/games/{gameId}/reviews', [ReviewController::class, 'index']);
