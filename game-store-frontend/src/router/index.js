@@ -121,6 +121,35 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
+  // ── Pay/A — крипто-платежи (USDT TRC-20) ──
+  {
+    path: '/payment/:id(\\d+)',
+    name: 'payment',
+    component: () => import('../views/PaymentView.vue'),
+    props: true,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/payment/:id(\\d+)/success',
+    name: 'payment-success',
+    component: () => import('../views/PaymentSuccessView.vue'),
+    props: true,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/payment/:id(\\d+)/expired',
+    name: 'payment-expired',
+    component: () => import('../views/PaymentExpiredView.vue'),
+    props: true,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/profile/payments',
+    name: 'my-payments',
+    component: () => import('../views/MyPaymentsView.vue'),
+    meta: { requiresAuth: true },
+  },
+
   // --- Админ-панель ---
   {
     path: '/admin',

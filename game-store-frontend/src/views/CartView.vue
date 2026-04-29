@@ -85,20 +85,26 @@ const removeItem = async (itemId) => {
   }
 };
 
+/**
+ * Оформление заказа = создание crypto-платежа и редирект на /payment/:id.
+ * Pay/A: товара пока нет, но реальный платёж идёт. После confirmed
+ * юзер попадает на success-stub. Корзину чистим только после успеха
+ * (на странице success), здесь оставляем — если оплата сорвётся, корзина
+ * не должна пропасть.
+ */
 const makeOrder = async () => {
   if (!authStore.isLoggedIn) { router.push('/login'); return; }
   if (!cartItems.value?.length) { globalError.value = 'Добыча пуста.'; return; }
   ordering.value = true;
   globalError.value = '';
   try {
-    const { data } = await api.post('/orders', {
-      items: cartItems.value.map(i => ({ game_id: i.id, quantity: i.quantity }))
+    const { data } = await api.post('/payments', {
+      items: cartItems.value.map(i => ({ game_id: i.id, quantity: i.quantity })),
     });
-    successMessage.value = data.message || 'Поход успешен! Ключи отправлены на почту.';
-    await cartStore.clearCart();
-    cart.value = null;
+    // Редирект на окно оплаты — там QR + countdown + polling статуса
+    router.push({ name: 'payment', params: { id: data.id } });
   } catch (e) {
-    globalError.value = e.response?.data?.message || 'Ошибка при оформлении заказа.';
+    globalError.value = e.response?.data?.message || 'Ошибка при создании платежа.';
   } finally { ordering.value = false; }
 };
 

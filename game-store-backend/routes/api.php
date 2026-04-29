@@ -14,6 +14,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\SupportController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -252,6 +253,18 @@ Route::middleware(['auth:sanctum', 'throttle:3,5'])->post('/games/{gameId}/revie
 // Оформление заказа
 Route::middleware('auth:sanctum')->post('/orders', [OrderController::class, 'store']);
 Route::middleware('auth:sanctum')->get('/orders', [OrderController::class, 'index']);
+
+// ── Pay/A — крипто-платежи (USDT TRC-20) ──
+// Создание throttle:5,1 — 5 платежей/мин на юзера (защита от заваливания
+// pending'ами одного юзера). Show/index — без жёстких лимитов
+// (фронт poll'ит show каждые 3 сек = 20 req/мин — норма).
+Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
+    Route::get('/',         [PaymentController::class, 'index']);
+    Route::post('/',        [PaymentController::class, 'store'])
+         ->middleware('throttle:5,1');
+    Route::get('/{id}',     [PaymentController::class, 'show'])
+         ->whereNumber('id');
+});
 
 
 // --- Корзина (требует авторизации и сессии) --- //

@@ -55,6 +55,19 @@ primary_region = "ams"
   # будут реальные ключи (endpoint содержит account_id который мы не
   # светим в публичном файле).
 
+  # ── Pay/A — крипто-платежи ────────────────────────────────────────────
+  # CRYPTO_TRON_RECIPIENT — публичный TRON-адрес кошелька-получателя.
+  # Будет светиться юзерам в QR-коде, не secret. Можно держать тут.
+  CRYPTO_TRON_RECIPIENT = "TTX8RunJGpdyYSSDR36vAVbbw56GcmEw3f"
+  # 1 confirmation ~3 сек — для платежей <$100 достаточно. Для крупных
+  # лучше 19+ (~1 мин). Меняется без передеплоя через `fly secrets set`.
+  CRYPTO_MIN_CONFIRMATIONS = "1"
+  # 15 мин — окно оплаты. После истечения pending → expired.
+  CRYPTO_PAYMENT_TTL_MINUTES = "15"
+  # TRONGRID_API_KEY — приватный, ставится через
+  #   flyctl secrets set TRONGRID_API_KEY=... -a game-l6voba
+  # без него worker работает на rate limit ~5 req/sec (приемлемо для нас).
+
 # ── Release command ──
 # Запускается ПОСЛЕ старта Postgres-сайдкара и до публикации новой версии.
 # Если миграции упадут — деплой откатится.
@@ -68,6 +81,12 @@ primary_region = "ams"
 [processes]
   app = "apache2-foreground"
   reverb = "php artisan reverb:start --host=0.0.0.0 --port=8081"
+  # Pay/A — scheduler-worker. Раз в 30 сек дёргает payments:check-pending
+  # (matchинг pending'ов с blockchain через TronGrid).
+  # schedule:work — long-running цикл, внутри Laravel сам триггерит
+  # запланированные команды по их cron-выражениям. Никаких системных
+  # cron'ов на хосте не нужно.
+  worker = "php artisan schedule:work --verbose"
 
 # ── HTTP-сервис (Apache + Laravel API) ──
 [http_service]

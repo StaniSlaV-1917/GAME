@@ -12,7 +12,14 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Pay/A — крипто-платежи. Раз в 30 сек скан blockchain, матч
+        // pending → confirmed. Задача без очереди (короткая, критичная,
+        // одна за раз). withoutOverlapping чтобы не гнать параллельно
+        // если предыдущий запуск ещё не завершился.
+        $schedule->command('payments:check-pending')
+                 ->everyThirtySeconds()
+                 ->withoutOverlapping(2)
+                 ->runInBackground();
     }
 
     /**
