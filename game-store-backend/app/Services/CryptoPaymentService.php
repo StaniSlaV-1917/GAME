@@ -11,21 +11,19 @@ use Illuminate\Support\Facades\Log;
 /**
  * Pay/A — высокоуровневый сервис создания и закрытия крипто-платежей.
  *
- * Создание (createPending):
- *   1. Берём цену в рублях
- *   2. Конвертируем в USDT по текущему курсу
- *   3. Добавляем уникальный дробный «хвост» (6 знаков после запятой)
- *      чтобы на кошельке отличить два одновременных платежа без memo:
- *      базовая сумма 12.50 → реальная сумма 12.473821
- *   4. Проверяем uniqueness против активных pending'ов
- *   5. Записываем pending_payment с TTL 15 минут
+ * Поддерживает 3 валюты:
+ *   • USDT_TRC20 — Tron, address начинается с T..., 6 decimals
+ *   • TRX        — Tron, тот же address что USDT_TRC20, 6 decimals
+ *   • USDT_BEP20 — BSC, отдельный 0x... address, 18 decimals (raw),
+ *                  но мы оперируем 6 знаками для unique-tail (как у других)
  *
- * Закрытие (markConfirmed):
- *   • вызывается из CheckPendingPayments command после матча в blockchain
- *   • атомарно через DB::transaction чтобы исключить double-confirm
+ * Уникальный дробный «хвост» одинаковый для всех валют (random
+ * 0.100000–0.999999), различается только base amount (в каждой валюте свой)
+ * и recipient address (Tron для TRC20/TRX, BSC для BEP20).
  *
- * Истечение (markExpiredStaleOnes):
- *   • переводит pending'и с expires_at в прошлом → status='expired'
+ * Список доступных валют формируется на основе configured адресов:
+ * если config('services.crypto.bsc_recipient_address') пустой — BEP20
+ * не доступен.
  */
 class CryptoPaymentService
 {
@@ -34,17 +32,55 @@ class CryptoPaymentService
     ) {}
 
     /**
-     * Создать новое окно оплаты в USDT TRC-20.
+     * Какие валюты сейчас включены (на основе настроенных адресов).
+     * Используется во фронте для генерации селектора.
      *
-     * @param  User    $user
-     * @param  float   $amountRub        сумма заказа в рублях
-     * @param  array   $metadata         что покупает (snapshot корзины)
-     * @param  ?int    $orderId          если уже создан Order
-     * @return Payment
+     * @return array<string,array{label:string,network:string,address:string,decimals:int}>
+     */
+    public function availableCurrencies(): array
+    {
+        $tron = (string) Config::get('services.crypto.tron_recipient_address');
+        $bsc  = (string) Config::get('services.crypto.bsc_recipient_address');
+
+        $list = [];
+        if ($tron !== '') {
+            $list['USDT_TRC20'] = [
+                'label'    => 'USDT (TRC-20)',
+                'network'  => 'Tron (TRC-20)',
+                'address'  => $tron,
+                'decimals' => 6,
+            ];
+            $list['TRX'] = [
+                'label'    => 'TRX',
+                'network'  => 'Tron',
+                'address'  => $tron,
+                'decimals' => 6,
+            ];
+        }
+        if ($bsc !== '') {
+            $list['USDT_BEP20'] = [
+                'label'    => 'USDT (BEP-20)',
+                'network'  => 'BSC (BEP-20)',
+                'address'  => $bsc,
+                'decimals' => 6,  // мы оперируем 6 знаками для уникальности,
+                                   // фактическое value на BSC хранится в 18, но
+                                   // юзеру показываем округление до 6 (для
+                                   // унификации UX)
+            ];
+        }
+
+        return $list;
+    }
+
+    /**
+     * Создать новое окно оплаты.
+     *
+     * @param  string  $currency  USDT_TRC20 | TRX | USDT_BEP20
      */
     public function createPending(
         User $user,
         float $amountRub,
+        string $currency = 'USDT_TRC20',
         array $metadata = [],
         ?int $orderId = null
     ): Payment {
@@ -52,26 +88,38 @@ class CryptoPaymentService
             throw new \InvalidArgumentException('Сумма должна быть > 0');
         }
 
-        $rate = $this->exchange->usdtToRub();
-        $baseAmount = round($amountRub / $rate, 2); // округляем до копеек USDT
-        $recipient = (string) Config::get('services.crypto.tron_recipient_address');
-        $ttlMin = (int) Config::get('services.crypto.payment_ttl_minutes', 15);
-
-        if (!$recipient) {
-            throw new \RuntimeException('Не настроен адрес TRON-кошелька получателя.');
+        $available = $this->availableCurrencies();
+        if (!isset($available[$currency])) {
+            throw new \InvalidArgumentException(
+                "Валюта {$currency} не поддерживается или адрес не настроен."
+            );
         }
 
-        // Генерируем уникальную дробную часть. Пробуем до 10 раз —
-        // конфликт практически невозможен (1M вариантов, активных
-        // payment'ов единицы), но защищаемся.
+        // Конвертация в нужную крипту по текущему курсу
+        [$rate, $baseAmount] = match ($currency) {
+            'USDT_TRC20', 'USDT_BEP20' => [
+                $this->exchange->usdtToRub(),
+                round($amountRub / $this->exchange->usdtToRub(), 2),
+            ],
+            'TRX' => [
+                $this->exchange->trxToRub(),
+                round($amountRub / $this->exchange->trxToRub(), 2),
+            ],
+            default => throw new \InvalidArgumentException("Unknown currency {$currency}"),
+        };
+
+        $recipient = $available[$currency]['address'];
+        $ttlMin = (int) Config::get('services.crypto.payment_ttl_minutes', 15);
+
+        // Генерируем уникальную дробную часть. Проверяем uniqueness против
+        // активных pending'ов в той же валюте на том же адресе.
         $amountCrypto = null;
         for ($attempt = 0; $attempt < 10; $attempt++) {
             $tail = random_int(100000, 999999) / 1000000; // 0.100000–0.999999
             $candidate = round($baseAmount + $tail, 6);
 
-            // Проверяем что нет активного pending с такой же суммой
-            // и тем же адресом (чтобы worker мог однозначно матчить).
-            $exists = Payment::where('recipient_address', $recipient)
+            $exists = Payment::where('crypto_currency', $currency)
+                ->where('recipient_address', $recipient)
                 ->where('amount_crypto', $candidate)
                 ->where('status', 'pending')
                 ->where('expires_at', '>', now())
@@ -84,13 +132,13 @@ class CryptoPaymentService
         }
 
         if ($amountCrypto === null) {
-            throw new \RuntimeException('Не удалось сгенерировать уникальную сумму платежа. Попробуйте ещё раз.');
+            throw new \RuntimeException('Не удалось сгенерировать уникальную сумму. Попробуйте ещё раз.');
         }
 
         $payment = Payment::create([
             'user_id'           => $user->id,
             'order_id'          => $orderId,
-            'crypto_currency'   => 'USDT_TRC20',
+            'crypto_currency'   => $currency,
             'amount_rub'        => $amountRub,
             'amount_crypto'     => $amountCrypto,
             'exchange_rate'     => $rate,
@@ -103,10 +151,10 @@ class CryptoPaymentService
         Log::info('[Payment] created', [
             'payment_id'    => $payment->id,
             'user_id'       => $user->id,
+            'currency'      => $currency,
             'amount_rub'    => $amountRub,
             'amount_crypto' => $amountCrypto,
             'rate'          => $rate,
-            'expires_at'    => $payment->expires_at->toIso8601String(),
         ]);
 
         return $payment;
@@ -114,19 +162,13 @@ class CryptoPaymentService
 
     /**
      * Атомарно отметить платёж как confirmed.
-     *
-     * @param  Payment  $payment
-     * @param  string   $txHash         hash матчнутой транзакции
-     * @param  int      $confirmations  кол-во confirmation'ов на момент матча
-     * @return bool                     true если состояние изменилось
      */
     public function markConfirmed(Payment $payment, string $txHash, int $confirmations = 1): bool
     {
         return DB::transaction(function () use ($payment, $txHash, $confirmations) {
-            // Перечитываем под locked (защита от race condition с другим worker'ом)
             $fresh = Payment::lockForUpdate()->find($payment->id);
             if (!$fresh || $fresh->status !== 'pending') {
-                return false; // уже confirmed/expired кем-то ещё
+                return false;
             }
 
             $fresh->update([
@@ -139,6 +181,7 @@ class CryptoPaymentService
             Log::warning('[Payment] CONFIRMED', [
                 'payment_id'    => $fresh->id,
                 'user_id'       => $fresh->user_id,
+                'currency'      => $fresh->crypto_currency,
                 'amount_crypto' => $fresh->amount_crypto,
                 'tx_hash'       => $txHash,
             ]);
@@ -149,7 +192,6 @@ class CryptoPaymentService
 
     /**
      * Перевести pending'ы с истёкшим TTL → status='expired'.
-     * Возвращает кол-во обновлённых записей.
      */
     public function markExpiredStaleOnes(): int
     {

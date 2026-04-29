@@ -83,14 +83,90 @@ class TronGridService
     }
 
     /**
-     * Преобразование raw-amount (с 6 десятичных знаков) → human-friendly USDT.
-     * TronGrid возвращает value как строку без точки: "12473821" = 12.473821 USDT.
+     * Получить последние native TRX-транзакции на адрес.
+     * Endpoint отличается от TRC-20: /v1/accounts/{addr}/transactions
+     * с фильтром only_to + only_confirmed. Возвращает все типы транзакций,
+     * нам нужны type='TransferContract'.
+     *
+     * @return array  массив TRX-transfer'ов с полями:
+     *   transaction_id, raw_data.contract[0].parameter.value.{amount,to_address}
+     */
+    public function getRecentIncomingTrx(
+        string $toAddress,
+        int $limit = 50,
+        ?int $minTimestampMs = null
+    ): array {
+        $params = [
+            'only_to'        => true,
+            'only_confirmed' => true,
+            'limit'          => min($limit, 200),
+            'order_by'       => 'block_timestamp,desc',
+        ];
+
+        if ($minTimestampMs !== null) {
+            $params['min_timestamp'] = $minTimestampMs;
+        }
+
+        try {
+            $response = $this->http()
+                ->get(self::BASE_URL . "/v1/accounts/{$toAddress}/transactions", $params);
+
+            if (!$response->successful()) {
+                Log::warning('[TronGrid TRX] non-200 response', [
+                    'status' => $response->status(),
+                ]);
+                return [];
+            }
+
+            $data = $response->json('data') ?? [];
+
+            // Фильтруем только TransferContract (нативные TRX-переводы)
+            return array_filter($data, function ($tx) {
+                $contract = $tx['raw_data']['contract'][0] ?? null;
+                return ($contract['type'] ?? null) === 'TransferContract';
+            });
+        } catch (\Throwable $e) {
+            Log::error('[TronGrid TRX] request failed', [
+                'address' => $toAddress,
+                'error'   => $e->getMessage(),
+            ]);
+            return [];
+        }
+    }
+
+    /**
+     * Извлечь raw amount + to_address из TRX-транзакции.
+     * @return array{value: string, to: string}|null
+     */
+    public static function extractTrxTransfer(array $tx): ?array
+    {
+        $contract = $tx['raw_data']['contract'][0] ?? null;
+        if (($contract['type'] ?? null) !== 'TransferContract') return null;
+        $params = $contract['parameter']['value'] ?? null;
+        if (!isset($params['amount'], $params['to_address'])) return null;
+
+        return [
+            'value' => (string) $params['amount'],
+            'to'    => (string) $params['to_address'],
+        ];
+    }
+
+    /**
+     * Преобразование raw-amount (с N десятичных знаков) → human-friendly.
+     * TronGrid возвращает value как строку без точки:
+     *   "12473821" → 12.473821 (USDT/TRX, decimals=6)
      */
     public static function rawToUsdt(string $rawValue, int $decimals = 6): float
     {
         $divisor = (float) (10 ** $decimals);
         return (float) bcdiv($rawValue, (string) (10 ** $decimals), $decimals)
             ?: ((float) $rawValue / $divisor);
+    }
+
+    /** Алиас для TRX (decimals=6). */
+    public static function rawToTrx(string $rawValue): float
+    {
+        return self::rawToUsdt($rawValue, 6);
     }
 
     /**

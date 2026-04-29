@@ -32,6 +32,18 @@ class PaymentController extends Controller
      * Создаёт pending_payment с уникальной USDT-суммой.
      * Возвращает payment с публичными полями для PaymentView.
      */
+    /**
+     * GET /api/payments/currencies
+     * Список валют доступных для оплаты (зависит от настроенных адресов).
+     * Используется фронтом для генерации селектора.
+     */
+    public function currencies()
+    {
+        return response()->json([
+            'data' => $this->payments->availableCurrencies(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         $user = $request->user();
@@ -40,6 +52,7 @@ class PaymentController extends Controller
             'items'             => 'required|array|min:1',
             'items.*.game_id'   => 'required|integer|exists:games,id',
             'items.*.quantity'  => 'required|integer|min:1|max:99',
+            'currency'          => 'sometimes|string|in:USDT_TRC20,TRX,USDT_BEP20',
         ], [
             'items.required' => 'Корзина не может быть пустой.',
         ]);
@@ -78,9 +91,12 @@ class PaymentController extends Controller
             $payment = $this->payments->createPending(
                 user: $user,
                 amountRub: $total,
+                currency: $data['currency'] ?? 'USDT_TRC20',
                 metadata: ['cart' => $snapshot],
                 orderId: null  // в MVP не привязываемся к Order — фейк-выдача
             );
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         } catch (\RuntimeException $e) {
             Log::error('[Payment] create failed', ['error' => $e->getMessage()]);
             return response()->json(['message' => $e->getMessage()], 500);

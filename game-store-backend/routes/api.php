@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminSupportController;
 use App\Http\Controllers\Admin\AdminModsController;
+use App\Http\Controllers\Admin\AdminPaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -148,6 +149,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/support',        [AdminSupportController::class, 'index']);
     Route::put('/support/{id}',   [AdminSupportController::class, 'update']);
     Route::delete('/support/{id}',[AdminSupportController::class, 'destroy']);
+
+    // ── Pay/A — админский просмотр всех крипто-платежей ──
+    Route::get('/payments',       [AdminPaymentController::class, 'index']);
+    Route::get('/payments/{id}',  [AdminPaymentController::class, 'show']);
 });
 
 // --- Основные публичные маршруты --- //
@@ -254,10 +259,12 @@ Route::middleware(['auth:sanctum', 'throttle:3,5'])->post('/games/{gameId}/revie
 Route::middleware('auth:sanctum')->post('/orders', [OrderController::class, 'store']);
 Route::middleware('auth:sanctum')->get('/orders', [OrderController::class, 'index']);
 
-// ── Pay/A — крипто-платежи (USDT TRC-20) ──
-// Создание throttle:5,1 — 5 платежей/мин на юзера (защита от заваливания
-// pending'ами одного юзера). Show/index — без жёстких лимитов
-// (фронт poll'ит show каждые 3 сек = 20 req/мин — норма).
+// ── Pay/A — крипто-платежи (USDT TRC-20 / TRX / USDT BEP-20) ──
+// /currencies — публичный endpoint, нужен фронту даже до логина для
+//   pre-render селектора. Auth не нужен.
+// /create throttle:5,1 — 5 платежей/мин на юзера.
+// Show/index — без жёстких лимитов (фронт poll'ит каждые 3 сек = 20/мин).
+Route::get('/payments/currencies', [PaymentController::class, 'currencies']);
 Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
     Route::get('/',         [PaymentController::class, 'index']);
     Route::post('/',        [PaymentController::class, 'store'])

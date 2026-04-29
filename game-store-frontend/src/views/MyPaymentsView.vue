@@ -40,7 +40,22 @@ const linkFor = (p) => {
   return { name: 'payment', params: { id: p.id } };
 };
 
-const tronscanUrl = (hash) => hash ? `https://tronscan.org/#/transaction/${hash}` : null;
+const explorerUrl = (p) => {
+  if (!p?.transaction_hash) return null;
+  return p.crypto_currency === 'USDT_BEP20'
+    ? `https://bscscan.com/tx/${p.transaction_hash}`
+    : `https://tronscan.org/#/transaction/${p.transaction_hash}`;
+};
+
+const currencyLabel = (code) => {
+  switch (code) {
+    case 'USDT_TRC20': return 'USDT TRC-20';
+    case 'TRX':        return 'TRX';
+    case 'USDT_BEP20': return 'USDT BEP-20';
+    default:           return code || '—';
+  }
+};
+const currencyUnit = (code) => code === 'TRX' ? 'TRX' : 'USDT';
 
 onMounted(async () => {
   try {
@@ -89,12 +104,12 @@ const hasItems = computed(() => payments.value.length > 0);
             </div>
             <div class="row-main">
               <div class="row-amount">
-                {{ Number(p.amount_crypto).toFixed(6) }} USDT
-                <span class="row-equiv">≈ {{ Number(p.amount_rub).toFixed(2) }} ₽</span>
+                {{ Number(p.amount_crypto).toFixed(6) }} {{ currencyUnit(p.crypto_currency) }}
+                <span class="row-equiv">≈ {{ Number(p.amount_rub).toFixed(2) }} ₽ · {{ currencyLabel(p.crypto_currency) }}</span>
               </div>
               <div v-if="p.transaction_hash" class="row-hash mono">
                 <a
-                  :href="tronscanUrl(p.transaction_hash)"
+                  :href="explorerUrl(p)"
                   target="_blank"
                   rel="noopener"
                   @click.stop

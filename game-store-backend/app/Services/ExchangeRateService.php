@@ -84,4 +84,57 @@ class ExchangeRateService
         }
         return round($rubAmount / $rate, 6);
     }
+
+    /**
+     * Курс TRX/RUB. Считается как (TRX/USDT) × (USDT/RUB).
+     * Binance отдаёт TRXUSDT — сколько USDT за 1 TRX (~0.10).
+     * Кэш 60 сек.
+     */
+    public function trxToRub(): float
+    {
+        return Cache::remember('exchange_rate.trx_rub', 60, function () {
+            try {
+                $response = Http::timeout(8)
+                    ->get('https://api.binance.com/api/v3/ticker/price', [
+                        'symbol' => 'TRXUSDT',
+                    ]);
+                if ($response->successful() && isset($response['price'])) {
+                    $trxUsdt = (float) $response['price'];
+                    if ($trxUsdt > 0) {
+                        return $trxUsdt * $this->usdtToRub();
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('[ExchangeRate] TRX/USDT failed', ['error' => $e->getMessage()]);
+            }
+
+            // Fallback: CoinGecko
+            try {
+                $response = Http::timeout(8)
+                    ->get('https://api.coingecko.com/api/v3/simple/price', [
+                        'ids'           => 'tron',
+                        'vs_currencies' => 'rub',
+                    ]);
+                if ($response->successful() && isset($response['tron']['rub'])) {
+                    return (float) $response['tron']['rub'];
+                }
+            } catch (\Throwable $e) {
+                Log::error('[ExchangeRate] CoinGecko TRX failed', ['error' => $e->getMessage()]);
+            }
+
+            // Last-resort: 10 ₽/TRX (примерно реальный курс)
+            Log::error('[ExchangeRate] TRX fallback to 10');
+            return 10.0;
+        });
+    }
+
+    /** Конвертация рублей в TRX. Decimal precision 6. */
+    public function rubToTrx(float $rubAmount): float
+    {
+        $rate = $this->trxToRub();
+        if ($rate <= 0) {
+            throw new \RuntimeException('Не удалось получить курс TRX/RUB');
+        }
+        return round($rubAmount / $rate, 6);
+    }
 }

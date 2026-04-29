@@ -66,8 +66,15 @@ return [
     |
     */
     'crypto' => [
+        // Tron — для USDT TRC-20 + native TRX (один адрес)
         'tron_recipient_address' => env('CRYPTO_TRON_RECIPIENT'),
         'trongrid_api_key'       => env('TRONGRID_API_KEY'),
+
+        // BSC — для USDT BEP-20 (опционально; если адрес пустой —
+        // BEP-20 не будет в селекторе валют у юзера)
+        'bsc_recipient_address'  => env('CRYPTO_BSC_RECIPIENT'),
+        'bscscan_api_key'        => env('BSCSCAN_API_KEY'),
+
         'min_confirmations'      => (int) env('CRYPTO_MIN_CONFIRMATIONS', 1),
         'payment_ttl_minutes'    => (int) env('CRYPTO_PAYMENT_TTL_MINUTES', 15),
     ],

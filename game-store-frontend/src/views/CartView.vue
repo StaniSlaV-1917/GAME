@@ -27,6 +27,32 @@ const successMessage = ref('');
 const cart = ref(null);
 const removingId = ref(null);
 
+// Pay/A — список доступных крипто-валют (фронт фетчит при mount)
+const currencies = ref([]);             // [{ code, label, network, decimals }]
+const selectedCurrency = ref('USDT_TRC20');
+
+const loadCurrencies = async () => {
+  try {
+    const { data } = await api.get('/payments/currencies');
+    // Backend возвращает объект { USDT_TRC20: {...}, ... } — превращаем в массив
+    currencies.value = Object.entries(data.data || {}).map(([code, info]) => ({
+      code, ...info,
+    }));
+    // Если default не в списке (например админ убрал TRC-20) — берём первый
+    if (!currencies.value.find(c => c.code === selectedCurrency.value)) {
+      selectedCurrency.value = currencies.value[0]?.code || 'USDT_TRC20';
+    }
+  } catch (e) {
+    console.warn('[Cart] currencies fetch failed', e);
+    // Дефолт TRC-20 — на случай если эндпоинт упал
+    currencies.value = [{
+      code: 'USDT_TRC20',
+      label: 'USDT (TRC-20)',
+      network: 'Tron',
+    }];
+  }
+};
+
 const loadCart = async () => {
   loading.value = true;
   globalError.value = '';
@@ -100,6 +126,7 @@ const makeOrder = async () => {
   try {
     const { data } = await api.post('/payments', {
       items: cartItems.value.map(i => ({ game_id: i.id, quantity: i.quantity })),
+      currency: selectedCurrency.value,
     });
     // Редирект на окно оплаты — там QR + countdown + polling статуса
     router.push({ name: 'payment', params: { id: data.id } });
@@ -150,6 +177,7 @@ watch(cartTotal, (val) => animateTotal(val), { immediate: true });
 onMounted(() => {
   warmupPing(); // будим Fly-машину: юзер скоро жмёт «Оформить»
   loadCart();
+  loadCurrencies();
 });
 onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 </script>
@@ -321,6 +349,26 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
               <span class="tp-val">{{ displayTotal }}</span>
               <span class="tp-unit">₽</span>
             </span>
+          </div>
+
+          <!-- Pay/A — селектор крипто-валюты для оплаты.
+               Список приходит с бэка /api/payments/currencies — зависит
+               от настроенных адресов (если BSC-адрес не задан, BEP-20
+               не будет в списке). -->
+          <div v-if="currencies.length > 1" class="currency-selector">
+            <div class="cs-label">Валюта оплаты</div>
+            <div class="cs-options">
+              <button
+                v-for="c in currencies" :key="c.code"
+                type="button"
+                class="cs-opt"
+                :class="{ active: selectedCurrency === c.code }"
+                @click="selectedCurrency = c.code"
+              >
+                <span class="cs-opt-label">{{ c.label }}</span>
+                <span class="cs-opt-network">{{ c.network }}</span>
+              </button>
+            </div>
           </div>
 
           <button
@@ -1046,6 +1094,59 @@ onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame); });
 }
 .tp-val { font-size: 2rem; letter-spacing: var(--ls-tight); }
 .tp-unit { font-size: 1.1rem; color: var(--brass); margin-left: 2px; }
+
+/* Pay/A — селектор крипто-валюты в чекауте */
+.currency-selector {
+  margin: 16px 0;
+}
+.cs-label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--iron-warm);
+  margin-bottom: 8px;
+}
+.cs-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cs-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px 14px;
+  border: 1px solid var(--iron-dark);
+  border-radius: var(--r-sm);
+  background: rgba(0,0,0,0.25);
+  color: var(--text-parchment);
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--dur-fast) var(--ease-smoke);
+  text-align: left;
+}
+.cs-opt:hover {
+  border-color: var(--iron-warm);
+  color: var(--text-bright);
+}
+.cs-opt.active {
+  border-color: var(--iron-warm);
+  background: linear-gradient(180deg, rgba(226, 67, 16, 0.18) 0%, rgba(0,0,0,0) 100%);
+  color: var(--text-bright);
+  box-shadow: 0 0 10px rgba(226, 67, 16, 0.35);
+}
+.cs-opt-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+.cs-opt-network {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.cs-opt.active .cs-opt-network { color: var(--iron-warm); }
 
 .checkout-btn {
   width: 100%;

@@ -46,6 +46,26 @@ let countdownTimer = null;
 // ── Computed ───────────────────────────────────────────
 const paymentId = computed(() => Number(route.params.id));
 
+/**
+ * Метаданные валюты — название/сеть/единица. Используем для UI.
+ */
+const currencyMeta = computed(() => {
+  const c = payment.value?.crypto_currency;
+  switch (c) {
+    case 'USDT_TRC20':
+      return { title: 'USDT (TRC-20)', unit: 'USDT', network: 'TRC-20 (Tron)',
+               wrongNetworks: 'Не отправляй USDT в сетях ERC-20 / BEP-20 — они не подтвердятся.' };
+    case 'TRX':
+      return { title: 'TRX', unit: 'TRX', network: 'Tron',
+               wrongNetworks: 'Это native TRX (не USDT). Отправляй именно TRX в сети Tron.' };
+    case 'USDT_BEP20':
+      return { title: 'USDT (BEP-20)', unit: 'USDT', network: 'BEP-20 (BNB Smart Chain)',
+               wrongNetworks: 'Не отправляй USDT в сетях TRC-20 / ERC-20 — они не подтвердятся.' };
+    default:
+      return { title: 'Крипто-платёж', unit: '', network: c || '', wrongNetworks: '' };
+  }
+});
+
 const minutesLabel = computed(() => {
   const s = Math.max(0, secondsLeft.value);
   const m = Math.floor(s / 60);
@@ -180,10 +200,10 @@ watch(paymentId, async (id) => {
       <template v-else-if="payment">
         <header class="payment-hero">
           <div class="payment-eyebrow">⚒ Оплата криптой</div>
-          <h1 class="payment-title">USDT TRC-20</h1>
+          <h1 class="payment-title">{{ currencyMeta.title }}</h1>
           <p class="payment-sub">
             Сумма к оплате: <strong>{{ payment.amount_rub.toFixed(2) }} ₽</strong>
-            (по курсу 1 USDT = {{ payment.exchange_rate.toFixed(2) }} ₽)
+            (по курсу 1 {{ currencyMeta.unit }} = {{ payment.exchange_rate.toFixed(2) }} ₽)
           </p>
         </header>
 
@@ -209,7 +229,7 @@ watch(paymentId, async (id) => {
           <div class="details-block">
             <!-- Address -->
             <div class="detail-field">
-              <label class="detail-label">TRON-адрес получателя</label>
+              <label class="detail-label">Адрес получателя</label>
               <div class="detail-row">
                 <code class="detail-value mono">{{ payment.recipient_address }}</code>
                 <button
@@ -223,7 +243,7 @@ watch(paymentId, async (id) => {
 
             <!-- Amount EXACT -->
             <div class="detail-field highlight">
-              <label class="detail-label">Точная сумма (USDT)</label>
+              <label class="detail-label">Точная сумма ({{ currencyMeta.unit }})</label>
               <div class="detail-row">
                 <code class="detail-value mono amount">{{ payment.amount_crypto.toFixed(6) }}</code>
                 <button
@@ -242,10 +262,8 @@ watch(paymentId, async (id) => {
             <!-- Network -->
             <div class="detail-field">
               <label class="detail-label">Сеть</label>
-              <div class="detail-value">TRC-20 (Tron)</div>
-              <p class="detail-warning subtle">
-                Не отправляй USDT в сетях ERC-20 / BEP-20 — они не подтвердятся.
-              </p>
+              <div class="detail-value">{{ currencyMeta.network }}</div>
+              <p class="detail-warning subtle">{{ currencyMeta.wrongNetworks }}</p>
             </div>
           </div>
         </div>

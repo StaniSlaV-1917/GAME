@@ -200,6 +200,12 @@ const routes = [
     meta: { requiresAuth: true, roles: ['manager', 'admin'] }
   },
   {
+    path: '/admin/payments',
+    name: 'AdminPayments',
+    component: () => import('../views/AdminPayments.vue'),
+    meta: { requiresAuth: true, roles: ['manager', 'admin'] }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: NotFoundView,

@@ -22,9 +22,25 @@ const payment = ref(null);
 const loading = ref(true);
 
 const tronscanUrl = computed(() => {
-  return payment.value?.transaction_hash
-    ? `https://tronscan.org/#/transaction/${payment.value.transaction_hash}`
-    : null;
+  if (!payment.value?.transaction_hash) return null;
+  // BEP-20 → BscScan, иначе → TronScan
+  if (payment.value.crypto_currency === 'USDT_BEP20') {
+    return `https://bscscan.com/tx/${payment.value.transaction_hash}`;
+  }
+  return `https://tronscan.org/#/transaction/${payment.value.transaction_hash}`;
+});
+
+const currencyUnit = computed(() => {
+  return payment.value?.crypto_currency === 'TRX' ? 'TRX' : 'USDT';
+});
+
+const currencyNetwork = computed(() => {
+  switch (payment.value?.crypto_currency) {
+    case 'USDT_TRC20': return 'TRC-20 (Tron)';
+    case 'TRX':        return 'Tron';
+    case 'USDT_BEP20': return 'BEP-20 (BNB Smart Chain)';
+    default:           return payment.value?.crypto_currency || '';
+  }
 });
 
 const formattedDate = computed(() => {
@@ -66,9 +82,14 @@ onMounted(async () => {
           <div class="receipt-row">
             <span class="receipt-label">Сумма</span>
             <span class="receipt-value">
-              {{ payment.amount_crypto.toFixed(6) }} USDT
+              {{ payment.amount_crypto.toFixed(6) }} {{ currencyUnit }}
               <span class="receipt-equiv">≈ {{ payment.amount_rub.toFixed(2) }} ₽</span>
             </span>
+          </div>
+
+          <div class="receipt-row">
+            <span class="receipt-label">Сеть</span>
+            <span class="receipt-value">{{ currencyNetwork }}</span>
           </div>
 
           <div v-if="payment.transaction_hash" class="receipt-row">
