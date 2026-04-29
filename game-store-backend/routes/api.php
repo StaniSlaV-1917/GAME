@@ -165,6 +165,10 @@ Route::get('/news/{id}', [NewsController::class, 'show']);
 Route::get('/posts',      [PostController::class, 'index']);
 Route::get('/posts/{id}', [PostController::class, 'show']);
 
+// ── Phase 3 / Forum: персонализированная лента ──
+// Auth optional: для гостей trending, для логинутых — followers feed.
+Route::get('/feed', [PostController::class, 'feed']);
+
 // CRUD — auth + throttle. Frozen-юзеры получают 403 (внутри контроллера).
 // throttle:5,1 — 5 действий/мин по user_id. Анти-spam постов.
 Route::middleware(['auth:sanctum', 'throttle:5,1'])->group(function () {

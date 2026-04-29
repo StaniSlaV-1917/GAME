@@ -83,6 +83,69 @@ class PostController extends Controller
     }
 
     /**
+     * GET /api/feed
+     * Phase 3 / Batch B — лента постов.
+     *
+     * • Логинутый пользователь: посты от тех на кого подписан, новые сверху.
+     *   Если ни на кого не подписан → fallback на trending + флаг is_empty=true
+     *   (фронт покажет CTA «Подпишитесь на воинов»).
+     * • Гость: trending (сортировка по reaction_count за неделю + новизне).
+     */
+    public function feed(Request $request)
+    {
+        $user = $request->user();
+        $perPage = min(50, max(1, (int) $request->input('per_page', 15)));
+
+        if ($user) {
+            // Followers feed: посты от тех на кого подписан
+            $followingIds = \DB::table('follows')
+                ->where('follower_id', $user->id)
+                ->pluck('following_id');
+
+            if ($followingIds->isNotEmpty()) {
+                $posts = Post::published()
+                    ->whereIn('author_id', $followingIds)
+                    ->with([
+                        'author:id,fullname,username,avatar,role',
+                        'game:id,title,image',
+                    ])
+                    ->orderByDesc('published_at')
+                    ->paginate($perPage);
+
+                return response()->json([
+                    'mode'         => 'following',
+                    'data'         => $posts->items(),
+                    'current_page' => $posts->currentPage(),
+                    'last_page'    => $posts->lastPage(),
+                    'total'        => $posts->total(),
+                    'is_empty'     => false,
+                ]);
+            }
+            // Fallback: гость-режим + сообщение
+        }
+
+        // Trending: топ за неделю по reaction_count, потом по новизне
+        $trending = Post::published()
+            ->where('published_at', '>=', now()->subDays(7))
+            ->with([
+                'author:id,fullname,username,avatar,role',
+                'game:id,title,image',
+            ])
+            ->orderByDesc('reaction_count')
+            ->orderByDesc('published_at')
+            ->paginate($perPage);
+
+        return response()->json([
+            'mode'         => 'trending',
+            'data'         => $trending->items(),
+            'current_page' => $trending->currentPage(),
+            'last_page'    => $trending->lastPage(),
+            'total'        => $trending->total(),
+            'is_empty'     => $user && $trending->isEmpty(),
+        ]);
+    }
+
+    /**
      * Один пост по ID. Инкрементирует view_count атомарно.
      * Eager-load автор + игра + reactions summary.
      */

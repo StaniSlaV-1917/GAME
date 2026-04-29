@@ -44,8 +44,7 @@ const routes = [
   {
     path: '/feed',
     name: 'feed',
-    component: ForumStubView,
-    meta: { stub: { title: 'Лента сообщества', eyebrow: 'Phase 2', icon: '📜' } },
+    component: () => import('../views/FeedView.vue'),
   },
   {
     path: '/posts',
