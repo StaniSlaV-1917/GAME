@@ -31,8 +31,22 @@ const loading = ref(false);
 const writingFor = ref(null);
 let refreshTimer = null;
 
-// Дублированный список для seamless loop
-const looped = computed(() => [...users.value, ...users.value]);
+// Дублированный список для seamless loop.
+// Если юзеров мало (например 2-3), inflate'им — повторяем их в массиве
+// пока не наберётся минимум 16 карточек на ОДНУ копию. Потом дублируем
+// весь набор ещё раз (для seamless animation -50% translateY).
+// Таким образом с 2 юзерами рендерится 32 карточки и поток выглядит плавно.
+const looped = computed(() => {
+  if (!users.value.length) return [];
+  const MIN_PER_COPY = 16;
+  const inflated = [];
+  let i = 0;
+  while (inflated.length < MIN_PER_COPY) {
+    inflated.push(users.value[i % users.value.length]);
+    i++;
+  }
+  return [...inflated, ...inflated];
+});
 
 const loadUsers = async () => {
   loading.value = true;
@@ -152,10 +166,12 @@ onUnmounted(() => {
   border-radius: var(--r-md);
   background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
   overflow: hidden;
-  /* Высота фиксированная — задаёт длину видимого окна marquee */
   display: flex;
   flex-direction: column;
-  height: 540px;
+  /* Виджет тянется на 100% высоты родителя (.feed-sidebar который sticky)
+     — фактически от хедера до низа viewport'а. Скролл анимация всё равно
+     внутри rm-viewport, бесконечная. */
+  height: 100%;
 }
 .rm-head {
   padding: 12px 14px;

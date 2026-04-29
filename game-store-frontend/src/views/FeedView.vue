@@ -206,14 +206,20 @@ onMounted(loadFeed);
 }
 .feed-sidebar {
   position: sticky;
-  top: 92px; /* высота header + небольшой отступ */
+  top: 73px;  /* высота шапки */
   align-self: start;
+  /* Высота во весь viewport под header → виджет visually идёт от шапки
+     до низа экрана. Когда юзер скроллит вниз — sticky держит его на
+     месте; когда контент заканчивается, sticky естественно отпускает. */
+  height: calc(100vh - 73px);
+  /* padding-bottom для зазора от низа viewport'а */
+  padding-bottom: 12px;
 }
 @media (max-width: 1023px) {
   .feed-layout {
     grid-template-columns: 1fr;
   }
-  .feed-sidebar { display: none; }  /* на мобиле прячем чтобы не дублировать главный feed */
+  .feed-sidebar { display: none; }  /* на мобиле прячем */
 }
 
 .feed-header {
