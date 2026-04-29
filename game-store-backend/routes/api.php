@@ -6,6 +6,7 @@ use App\Http\Controllers\GameController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ReactionController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\AuthController;
@@ -181,6 +182,15 @@ Route::middleware(['auth:sanctum', 'throttle:10,1'])->group(function () {
     Route::post('/posts/{postId}/comments', [CommentController::class, 'store']);
     Route::put('/comments/{id}',            [CommentController::class, 'update']);
     Route::delete('/comments/{id}',         [CommentController::class, 'destroy']);
+});
+
+// ── Phase 2 / Forum: реакции ──
+// Палитра доступна гостям (для рендера ленты).
+// Toggle — auth + throttle:30,1 (кликают часто, но всё равно лимит).
+Route::get('/reactions/palette', [ReactionController::class, 'palette']);
+Route::get('/reactions/summary', [ReactionController::class, 'summary']);
+Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
+    Route::post('/reactions/toggle', [ReactionController::class, 'toggle']);
 });
 
 // ── Phase 2 / Forum: публичные профили ──

@@ -84,9 +84,9 @@ class PostController extends Controller
 
     /**
      * Один пост по ID. Инкрементирует view_count атомарно.
-     * Eager-load автор + игра + первые 50 корневых комментариев.
+     * Eager-load автор + игра + reactions summary.
      */
-    public function show(int $id)
+    public function show(Request $request, int $id)
     {
         $post = Post::published()
             ->with([
@@ -99,6 +99,14 @@ class PostController extends Controller
         // Атомарный инкремент view_count (без race condition)
         Post::where('id', $id)->increment('view_count');
         $post->view_count++;
+
+        // Реакции — сводка с reacted_by_me флагом для текущего юзера
+        $userId = optional($request->user())->id;
+        $post->reactions_summary = ReactionController::batchSummary(
+            Post::class,
+            [$id],
+            $userId
+        )[$id] ?? [];
 
         return response()->json($post);
     }

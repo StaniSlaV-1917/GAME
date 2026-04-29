@@ -22,10 +22,10 @@ class CommentController extends Controller
 {
     /**
      * GET /api/posts/{postId}/comments
-     * Возвращает плоский список комментариев. Frontend строит дерево
-     * по parent_id.
+     * Возвращает плоский список комментариев + реакции. Frontend строит
+     * дерево по parent_id и рисует reaction-бар у каждого.
      */
-    public function index(int $postId)
+    public function index(Request $request, int $postId)
     {
         $post = Post::published()->findOrFail($postId);
 
@@ -38,6 +38,15 @@ class CommentController extends Controller
                 'body', 'depth', 'reaction_count',
                 'created_at', 'updated_at',
             ]);
+
+        // Батчевая загрузка реакций для всех комментов разом (N+1 защита)
+        $userId  = optional($request->user())->id;
+        $summary = \App\Http\Controllers\ReactionController::batchSummary(
+            Comment::class,
+            $comments->pluck('id')->all(),
+            $userId
+        );
+        $comments->each(fn ($c) => $c->reactions_summary = $summary[$c->id] ?? []);
 
         return response()->json([
             'data'  => $comments,

@@ -7,12 +7,14 @@ import { useToast } from '../composables/useToast';
 import api from '../api/axios';
 import { renderMarkdown } from '../utils/markdown';
 import { resolveMediaUrl } from '../utils/media';
+import ReactionBar from '../components/ReactionBar.vue';
 
 // ─── Inline-рекурсивный CommentItem ───
 // Определяется ВНУТРИ script setup, чтобы избежать дубликата импорта
 // renderMarkdown в двух блоках <script> (Vue SFC ругается).
 const CommentItem = defineComponent({
   name: 'CommentItem',
+  components: { ReactionBar },
   props: {
     comment: Object,
     childrenFn: Function,
@@ -23,11 +25,13 @@ const CommentItem = defineComponent({
     submitting: Boolean,
     currentUserId: [Number, String, null],
     isAdmin: Boolean,
+    palette: { type: Array, default: () => [] },  // эмодзи-палитра
   },
   emits: [
     'reply', 'reply-cancel', 'reply-submit', 'reply-input',
     'edit-start', 'edit-cancel', 'edit-save', 'edit-input',
     'delete', 'author-click',
+    'reactions-updated',
   ],
   setup(props, { emit }) {
     const c = props.comment;
@@ -104,6 +108,17 @@ const CommentItem = defineComponent({
             ])
           : h('div', { class: 'comment-body md-rendered', innerHTML: renderMarkdown(c.body) }),
 
+        // Reaction-bar для коммента
+        !isEditing.value
+          ? h(ReactionBar, {
+              'reactable-type': 'comment',
+              'reactable-id': c.id,
+              summary: c.reactions_summary || [],
+              palette: props.palette,
+              onUpdated: (newSummary, newTotal) => emit('reactions-updated', c.id, newSummary, newTotal),
+            })
+          : null,
+
         !isEditing.value
           ? h('div', { class: 'comment-actions' }, [
               h('button', { class: 'comment-action', onClick: () => emit('reply', c.id) }, '↪ Ответить'),
@@ -155,6 +170,7 @@ const CommentItem = defineComponent({
                 submitting: props.submitting,
                 currentUserId: props.currentUserId,
                 isAdmin: props.isAdmin,
+                palette: props.palette,
                 onReply: (id) => emit('reply', id),
                 'onReply-cancel': () => emit('reply-cancel'),
                 'onReply-submit': (id) => emit('reply-submit', id),
@@ -165,6 +181,7 @@ const CommentItem = defineComponent({
                 'onEdit-input': (v) => emit('edit-input', v),
                 onDelete: (cm) => emit('delete', cm),
                 'onAuthor-click': (un) => emit('author-click', un),
+                'onReactions-updated': (id, sum, total) => emit('reactions-updated', id, sum, total),
               })))
           : null,
       ]);
@@ -182,6 +199,7 @@ const comments = ref([]);
 const loadingPost = ref(true);
 const loadingComments = ref(true);
 const error = ref('');
+const palette = ref([]);  // активные эмодзи из /api/reactions/palette
 
 // Reply state
 const replyingTo = ref(null);   // id parent comment
@@ -262,6 +280,8 @@ const loadPost = async () => {
   try {
     const { data } = await api.get(`/posts/${postId.value}`);
     post.value = data;
+    // Гарантируем что reactions_summary это массив (бэк может отдать null)
+    if (!post.value.reactions_summary) post.value.reactions_summary = [];
   } catch (e) {
     if (e.response?.status === 404) {
       error.value = 'Хроника не найдена или удалена.';
@@ -271,6 +291,31 @@ const loadPost = async () => {
     post.value = null;
   } finally {
     loadingPost.value = false;
+  }
+};
+
+const loadPalette = async () => {
+  if (palette.value.length) return; // уже загрузили
+  try {
+    const { data } = await api.get('/reactions/palette');
+    palette.value = data;
+  } catch (_) {
+    palette.value = [];
+  }
+};
+
+// Обновление реакций после toggle — приходит из ReactionBar emit('updated')
+const onPostReactionsUpdated = (newSummary, newTotal) => {
+  if (!post.value) return;
+  post.value.reactions_summary = newSummary;
+  post.value.reaction_count = newTotal;
+};
+// Bubbled из вложенных CommentItem — приходит (commentId, summary, total)
+const onCommentReactionsBubbled = (commentId, newSummary, newTotal) => {
+  const idx = comments.value.findIndex(c => c.id === commentId);
+  if (idx >= 0) {
+    comments.value[idx].reactions_summary = newSummary;
+    comments.value[idx].reaction_count = newTotal;
   }
 };
 
@@ -385,7 +430,7 @@ watch(postId, async () => {
 });
 
 onMounted(async () => {
-  await loadPost();
+  await Promise.all([loadPost(), loadPalette()]);
   if (post.value) await loadComments();
 });
 
@@ -492,6 +537,17 @@ const startReply = (commentId) => {
       <div class="post-body-wrap">
         <div class="post-body md-rendered" v-html="renderedBody"></div>
 
+        <!-- Реакции -->
+        <div class="post-reactions">
+          <ReactionBar
+            reactable-type="post"
+            :reactable-id="post.id"
+            :summary="post.reactions_summary || []"
+            :palette="palette"
+            @updated="onPostReactionsUpdated"
+          />
+        </div>
+
         <!-- Stats + actions -->
         <div class="post-footer-bar">
           <div class="post-stats">
@@ -562,6 +618,7 @@ const startReply = (commentId) => {
             :submitting="submitting"
             :current-user-id="authStore.user?.id"
             :is-admin="canModerate"
+            :palette="palette"
             @reply="startReply"
             @reply-cancel="replyingTo = null"
             @reply-submit="(parentId) => submitComment(parentId)"
@@ -572,6 +629,7 @@ const startReply = (commentId) => {
             @edit-input="(v) => editingText = v"
             @delete="deleteComment"
             @author-click="(username) => router.push({ name: 'user-profile', params: { username } })"
+            @reactions-updated="onCommentReactionsBubbled"
           />
         </div>
       </section>
@@ -804,13 +862,19 @@ const startReply = (commentId) => {
   color: var(--text-bone);
 }
 
+.post-reactions {
+  margin-top: 32px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--iron-mid);
+}
+
 .post-footer-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 14px;
-  margin-top: 36px;
+  margin-top: 16px;
   padding: 16px 0;
   border-top: 1px solid var(--iron-mid);
   border-bottom: 1px solid var(--iron-mid);
