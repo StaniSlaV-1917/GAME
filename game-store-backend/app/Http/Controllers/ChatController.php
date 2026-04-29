@@ -33,6 +33,32 @@ class ChatController extends Controller
     ) {}
 
     /**
+     * GET /api/chats/_probe — диагностика для отладки sidebar empty.
+     * Без auth — чтобы можно было curl'нуть с токеном или без.
+     * Возвращает: существуют ли таблицы, сколько чатов у юзера, и т.п.
+     */
+    public function probe(Request $request)
+    {
+        $user = \Illuminate\Support\Facades\Auth::guard('sanctum')->user();
+        $info = [
+            'has_chat_rooms_table'       => \Schema::hasTable('chat_rooms'),
+            'has_messages_table'         => \Schema::hasTable('messages'),
+            'has_participants_table'     => \Schema::hasTable('chat_room_participants'),
+            'total_rooms'                => \Schema::hasTable('chat_rooms') ? \DB::table('chat_rooms')->count() : null,
+            'total_participants'         => \Schema::hasTable('chat_room_participants') ? \DB::table('chat_room_participants')->count() : null,
+            'authenticated'              => (bool) $user,
+            'auth_user_id'               => $user?->id,
+            'my_participations'          => $user
+                ? \DB::table('chat_room_participants')->where('user_id', $user->id)->whereNull('left_at')->count()
+                : null,
+            'my_room_ids'                => $user
+                ? \DB::table('chat_room_participants')->where('user_id', $user->id)->whereNull('left_at')->pluck('chat_room_id')->all()
+                : null,
+        ];
+        return response()->json($info);
+    }
+
+    /**
      * GET /api/chats — мои чаты (sidebar list).
      * Сортировка по last_message_at desc.
      */
@@ -40,19 +66,23 @@ class ChatController extends Controller
     {
         $user = $request->user();
 
+        // Phase 4/D.1 — упрощённый eager-load (без column subsets), чтобы
+        // избежать silent fails из-за отсутствующих pivot-keys в belongsToMany.
+        // Перформанс не страдает — это всего ~100 строк max.
         $rooms = ChatRoom::whereHas('participants', function ($q) use ($user) {
                 $q->where('user_id', $user->id)->whereNull('left_at');
             })
-            ->with([
-                'latestMessage:id,chat_room_id,sender_id,body,created_at',
-                // Для DM нужен «второй участник» как «контрагент» — грузим всех
-                // participants, фронт сам найдёт второго (для group/public потом).
-                'users:id,fullname,username,avatar,role',
-            ])
+            ->with(['latestMessage', 'users'])
             ->orderByDesc('last_message_at')
             ->orderByDesc('created_at')
             ->limit(100)
             ->get();
+
+        Log::info('[Chat] index', [
+            'user_id'    => $user->id,
+            'rooms_count'=> $rooms->count(),
+            'room_ids'   => $rooms->pluck('id')->all(),
+        ]);
 
         $unreadByChat = $this->chats->unreadByChat($user);
 

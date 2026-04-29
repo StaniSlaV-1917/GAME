@@ -385,15 +385,17 @@ watch(isLoggedIn, (logged) => {
           </button>
         </div>
 
-        <!-- Desktop nav — пункты зависят от текущего режима -->
+        <!-- Desktop nav — пункты зависят от текущего режима.
+             Items с requiresAuth скрываются для гостей. -->
         <nav class="main-nav" aria-label="Главное меню">
           <RouterLink
-            v-for="item in modeStore.navItems"
+            v-for="item in modeStore.navItems.filter(i => !i.requiresAuth || isLoggedIn)"
             :key="item.to"
             :to="item.to"
             class="nav-link"
           >
             <span>{{ item.label }}</span>
+            <span v-if="item.to === '/messages' && chatsUnread > 0" class="nav-badge">{{ chatsBadge }}</span>
           </RouterLink>
           <RouterLink v-if="user?.is_admin" to="/admin" class="nav-link admin-link"><span>Совет</span></RouterLink>
         </nav>
@@ -1110,6 +1112,23 @@ watch(isLoggedIn, (logged) => {
   transition: all var(--dur-fast) var(--ease-smoke);
 }
 .nav-link span { position: relative; z-index: 2; }
+.nav-link .nav-badge {
+  display: inline-block;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #b8341a 0%, #7a1f0c 100%);
+  color: #fff5d6;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  letter-spacing: 0.3px;
+  box-shadow: 0 0 8px rgba(226, 67, 16, 0.45);
+  vertical-align: middle;
+}
 
 /* Фоновое свечение при hover */
 .nav-link::before {

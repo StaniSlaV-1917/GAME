@@ -32,6 +32,7 @@ export const useModeStore = defineStore('mode', () => {
       return [
         { to: '/feed',      label: 'Лента' },
         { to: '/posts',     label: 'Посты' },
+        { to: '/messages',  label: 'Сообщения', requiresAuth: true },
         { to: '/mods',      label: 'Моды' },
         { to: '/community', label: 'Сообщество' },
       ];

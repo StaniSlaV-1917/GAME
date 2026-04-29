@@ -217,6 +217,10 @@ Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::delete('/users/{username}/follow', [FollowController::class, 'unfollow']);
 });
 
+// Public probe для отладки 4D — чаты пустой sidebar и т.п.
+// Возвращает has_table flags + кол-во participations юзера (если есть токен).
+Route::get('/chats/_probe', [ChatController::class, 'probe']);
+
 // ── Phase 4 / Batch D — DM (личные сообщения) ──
 // Throttle:
 //   send — 30/мин, защита от спама. Реал-юзер физически не наберёт больше.

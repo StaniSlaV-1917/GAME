@@ -36,12 +36,37 @@ class NewChatMessage implements ShouldBroadcast
 
     /**
      * На какой channel пушим.
+     *
+     * Phase 4/D.1 — добавлены user channels всех получателей чтобы
+     * header chat-badge обновлялся мгновенно (а не через 5-мин polling),
+     * даже когда юзер не в /messages странице.
      */
     public function broadcastOn(): array
     {
-        return [
+        $channels = [
             new PrivateChannel("chat-room.{$this->message->chat_room_id}"),
         ];
+
+        // Все active participants кроме отправителя — получают тот же event
+        // на свой App.Models.User.{id} канал. Для этого канала клиент
+        // (chats store) обновит unread count + sidebar preview.
+        try {
+            $room = $this->message->chatRoom;
+            if ($room) {
+                $recipientIds = $room->participants()
+                    ->whereNull('left_at')
+                    ->where('user_id', '!=', $this->message->sender_id)
+                    ->pluck('user_id');
+
+                foreach ($recipientIds as $userId) {
+                    $channels[] = new PrivateChannel("App.Models.User.{$userId}");
+                }
+            }
+        } catch (\Throwable $e) {
+            // Если что-то сломалось — chat-room channel всё равно работает
+        }
+
+        return $channels;
     }
 
     /**

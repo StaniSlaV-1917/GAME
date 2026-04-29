@@ -37,6 +37,10 @@ export const useChatsStore = defineStore('chats', {
     totalUnread: 0,         // для header badge
     sending: false,
     pollTimer: null,
+
+    // Phase 4/D.1 — global subscription на User channel для header badge
+    // обновлений когда юзер не в активном чате.
+    userChannelSub: null,
   }),
 
   getters: {
@@ -266,7 +270,8 @@ export const useChatsStore = defineStore('chats', {
       try {
         const { data } = await api.post('/chats/dm', { username });
         // Перезагрузим список чатов чтобы новый появился в sidebar
-        this.fetchAll();
+        // (await важно: иначе MessagesView откроется с пустым sidebar)
+        await this.fetchAll();
         return data; // { id, type }
       } catch (e) {
         console.warn('[chats] createDm failed', e);
@@ -274,10 +279,87 @@ export const useChatsStore = defineStore('chats', {
       }
     },
 
-    /** Запустить poll для общего unread count в header. */
+    /**
+     * Phase 4/D.1 — подписка на App.Models.User.{id} канал для chat-events
+     * (отдельно от subscribe-to-room, который только для активного чата).
+     *
+     * Когда любое из чатов юзера получает новое сообщение, бэк broadcast'ит
+     * на user channel тоже. Здесь мы ловим это и обновляем header badge +
+     * sidebar last_message preview даже если юзер на другой странице сайта.
+     */
+    subscribeUserChannel() {
+      const auth = useAuthStore();
+      if (!auth.isLoggedIn || !auth.user?.id) return;
+
+      const echo = getEcho();
+      if (!echo) return;
+      if (this.userChannelSub) return; // уже подписаны
+
+      try {
+        const channel = echo.private(`App.Models.User.${auth.user.id}`);
+        channel.listen('.NewChatMessage', (payload) => {
+          // Если этот message — для активного чата, его обработает
+          // chat-room subscription. Здесь только обновляем глобальный badge.
+          if (this.activeRoomId === payload.chat_room_id) return;
+
+          // Инкремент общего badge
+          this.totalUnread++;
+
+          // Обновляем sidebar item: last_message + перенос вверх + ++unread
+          const it = this.items.find((c) => c.id === payload.chat_room_id);
+          if (it) {
+            it.unread_count = (it.unread_count || 0) + 1;
+            it.last_message = {
+              id: payload.id,
+              sender_id: payload.sender_id,
+              body: (payload.body || '').slice(0, 80),
+              created_at: payload.created_at,
+            };
+            it.last_message_at = payload.created_at;
+            const idx = this.items.indexOf(it);
+            if (idx > 0) {
+              this.items.splice(idx, 1);
+              this.items.unshift(it);
+            }
+          } else {
+            // Чата нет в текущем списке (новый или ещё не загружен) —
+            // тихо перезагружаем sidebar
+            this.fetchAll();
+          }
+        });
+        this.userChannelSub = channel;
+      } catch (e) {
+        console.warn('[chats] user channel subscribe failed', e);
+      }
+    },
+
+    unsubscribeUserChannel() {
+      if (this.userChannelSub) {
+        try {
+          const echo = getEcho();
+          const auth = useAuthStore();
+          if (echo && auth.user?.id) {
+            // Не вызываем echo.leave() — этот канал также используется
+            // notifications-store. Просто снимаем НАШ listener.
+            this.userChannelSub.stopListening('.NewChatMessage');
+          }
+        } catch (e) {
+          console.warn('[chats] user channel unsub failed', e);
+        }
+        this.userChannelSub = null;
+      }
+    },
+
+    /** Запустить poll для общего unread count в header + Reverb push. */
     startPolling() {
       this.stopPolling();
       this.fetchUnreadCount();
+      // Сразу подгружаем sidebar в фоне чтобы header-badge на /messages мог сразу что-то показать
+      this.fetchAll();
+
+      // Phase 4/D.1 — глобальная подписка на user channel для всех chat-events
+      this.subscribeUserChannel();
+
       this.pollTimer = setInterval(() => {
         if (document.visibilityState !== 'visible') return;
         this.fetchUnreadCount();
@@ -289,6 +371,7 @@ export const useChatsStore = defineStore('chats', {
         clearInterval(this.pollTimer);
         this.pollTimer = null;
       }
+      this.unsubscribeUserChannel();
     },
 
     /** Сброс при logout. */
