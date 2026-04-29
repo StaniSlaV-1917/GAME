@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, defineComponent, h } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import { useAuthStore } from '../stores/auth';
@@ -7,6 +7,170 @@ import { useToast } from '../composables/useToast';
 import api from '../api/axios';
 import { renderMarkdown } from '../utils/markdown';
 import { resolveMediaUrl } from '../utils/media';
+
+// ─── Inline-рекурсивный CommentItem ───
+// Определяется ВНУТРИ script setup, чтобы избежать дубликата импорта
+// renderMarkdown в двух блоках <script> (Vue SFC ругается).
+const CommentItem = defineComponent({
+  name: 'CommentItem',
+  props: {
+    comment: Object,
+    childrenFn: Function,
+    replyingTo: [Number, String, null],
+    replyText: String,
+    editingId: [Number, String, null],
+    editingText: String,
+    submitting: Boolean,
+    currentUserId: [Number, String, null],
+    isAdmin: Boolean,
+  },
+  emits: [
+    'reply', 'reply-cancel', 'reply-submit', 'reply-input',
+    'edit-start', 'edit-cancel', 'edit-save', 'edit-input',
+    'delete', 'author-click',
+  ],
+  setup(props, { emit }) {
+    const c = props.comment;
+    const isOwn = computed(() => props.currentUserId && c.author_id === props.currentUserId);
+    const canDelete = computed(() => isOwn.value || props.isAdmin);
+    const isEditing = computed(() => props.editingId === c.id);
+    const isReplying = computed(() => props.replyingTo === c.id);
+
+    const formatRelativeDate = (s) => {
+      if (!s) return '';
+      const d = new Date(s);
+      const diff = (Date.now() - d.getTime()) / 1000;
+      if (diff < 60) return 'только что';
+      if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
+      if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
+      return d.toLocaleDateString('ru-RU');
+    };
+
+    const onAuthorClick = () => {
+      if (c.author?.username) emit('author-click', c.author.username);
+    };
+
+    const subtree = computed(() => props.childrenFn(c.id));
+
+    return () => {
+      const roleIcons = { user: '⚔', manager: '🔨', admin: '👑' };
+      const role = c.author?.role || 'user';
+      const depth = Math.min(c.depth || 0, 6);
+
+      return h('div', { class: ['comment', `depth-${depth}`] }, [
+        h('div', { class: 'comment-head' }, [
+          h('span', {
+            class: ['comment-avatar', { clickable: !!c.author?.username }],
+            onClick: onAuthorClick,
+          }, [
+            c.author?.avatar
+              ? h('img', { src: `/avatars/${encodeURIComponent(c.author.avatar)}`, alt: c.author.fullname || c.author.username })
+              : h('span', (c.author?.fullname || c.author?.username || '?')[0].toUpperCase()),
+          ]),
+          h('div', { class: 'comment-meta' }, [
+            h('div', { class: 'comment-author-line' }, [
+              h('strong', {
+                class: { clickable: !!c.author?.username },
+                onClick: onAuthorClick,
+              }, c.author?.fullname || ('@' + (c.author?.username || 'anon'))),
+              c.author?.username ? h('span', { class: 'comment-author-uname' }, '@' + c.author.username) : null,
+              h('span', { class: `role-pip role-${role}` }, roleIcons[role]),
+            ]),
+            h('span', { class: 'comment-date' }, formatRelativeDate(c.created_at)),
+          ]),
+        ]),
+
+        isEditing.value
+          ? h('div', { class: 'comment-edit' }, [
+              h('textarea', {
+                value: props.editingText,
+                rows: 3,
+                maxlength: 5000,
+                onInput: (e) => emit('edit-input', e.target.value),
+                class: 'comment-textarea',
+              }),
+              h('div', { class: 'comment-edit-actions' }, [
+                h('button', {
+                  class: 'btn-ghost small',
+                  onClick: () => emit('edit-cancel'),
+                  disabled: props.submitting,
+                }, 'Отмена'),
+                h('button', {
+                  class: 'btn-primary small',
+                  onClick: () => emit('edit-save', c),
+                  disabled: props.submitting || !props.editingText.trim(),
+                }, 'Сохранить'),
+              ]),
+            ])
+          : h('div', { class: 'comment-body md-rendered', innerHTML: renderMarkdown(c.body) }),
+
+        !isEditing.value
+          ? h('div', { class: 'comment-actions' }, [
+              h('button', { class: 'comment-action', onClick: () => emit('reply', c.id) }, '↪ Ответить'),
+              isOwn.value
+                ? h('button', { class: 'comment-action', onClick: () => emit('edit-start', c) }, '✎ Изменить')
+                : null,
+              canDelete.value
+                ? h('button', { class: 'comment-action danger', onClick: () => emit('delete', c) }, '🗑 Удалить')
+                : null,
+            ])
+          : null,
+
+        isReplying.value && !isEditing.value
+          ? h('div', { id: `reply-form-${c.id}`, class: 'reply-form' }, [
+              h('textarea', {
+                value: props.replyText,
+                rows: 2,
+                maxlength: 5000,
+                placeholder: 'Ваш ответ...',
+                onInput: (e) => emit('reply-input', e.target.value),
+                class: 'comment-textarea',
+                autofocus: true,
+              }),
+              h('div', { class: 'comment-edit-actions' }, [
+                h('button', {
+                  class: 'btn-ghost small',
+                  onClick: () => emit('reply-cancel'),
+                  disabled: props.submitting,
+                }, 'Отмена'),
+                h('button', {
+                  class: 'btn-primary small',
+                  onClick: () => emit('reply-submit', c.id),
+                  disabled: props.submitting || !props.replyText.trim(),
+                }, props.submitting ? 'Отправка…' : 'Ответить'),
+              ]),
+            ])
+          : null,
+
+        subtree.value.length
+          ? h('div', { class: 'comment-children' },
+              subtree.value.map((child) => h(CommentItem, {
+                key: child.id,
+                comment: child,
+                childrenFn: props.childrenFn,
+                replyingTo: props.replyingTo,
+                replyText: props.replyText,
+                editingId: props.editingId,
+                editingText: props.editingText,
+                submitting: props.submitting,
+                currentUserId: props.currentUserId,
+                isAdmin: props.isAdmin,
+                onReply: (id) => emit('reply', id),
+                'onReply-cancel': () => emit('reply-cancel'),
+                'onReply-submit': (id) => emit('reply-submit', id),
+                'onReply-input': (v) => emit('reply-input', v),
+                'onEdit-start': (cm) => emit('edit-start', cm),
+                'onEdit-cancel': () => emit('edit-cancel'),
+                'onEdit-save': (cm) => emit('edit-save', cm),
+                'onEdit-input': (v) => emit('edit-input', v),
+                onDelete: (cm) => emit('delete', cm),
+                'onAuthor-click': (un) => emit('author-click', un),
+              })))
+          : null,
+      ]);
+    };
+  },
+});
 
 const route = useRoute();
 const router = useRouter();
@@ -414,185 +578,6 @@ const startReply = (commentId) => {
     </article>
   </div>
 </template>
-
-<script>
-// ─── Inline-рекурсивный компонент CommentItem ───
-import { defineComponent, h, computed } from 'vue';
-import { renderMarkdown } from '../utils/markdown.js';
-
-const CommentItem = defineComponent({
-  name: 'CommentItem',
-  props: {
-    comment: Object,
-    childrenFn: Function,
-    replyingTo: [Number, String, null],
-    replyText: String,
-    editingId: [Number, String, null],
-    editingText: String,
-    submitting: Boolean,
-    currentUserId: [Number, String, null],
-    isAdmin: Boolean,
-  },
-  emits: [
-    'reply', 'reply-cancel', 'reply-submit', 'reply-input',
-    'edit-start', 'edit-cancel', 'edit-save', 'edit-input',
-    'delete', 'author-click',
-  ],
-  setup(props, { emit }) {
-    const c = props.comment;
-    const isOwn = computed(() => props.currentUserId && c.author_id === props.currentUserId);
-    const canDelete = computed(() => isOwn.value || props.isAdmin);
-    const isEditing = computed(() => props.editingId === c.id);
-    const isReplying = computed(() => props.replyingTo === c.id);
-
-    const formatDate = (s) => {
-      if (!s) return '';
-      const d = new Date(s);
-      const diff = (Date.now() - d.getTime()) / 1000;
-      if (diff < 60) return 'только что';
-      if (diff < 3600) return Math.floor(diff / 60) + ' мин назад';
-      if (diff < 86400) return Math.floor(diff / 3600) + ' ч назад';
-      return d.toLocaleDateString('ru-RU');
-    };
-
-    const onAuthorClick = () => {
-      if (c.author?.username) emit('author-click', c.author.username);
-    };
-
-    const renderBody = () => renderMarkdown(c.body);
-
-    const subtree = computed(() => props.childrenFn(c.id));
-
-    return () => {
-      const roleLabels = { user: 'Воин', manager: 'Кузнец', admin: 'Старейшина' };
-      const roleIcons  = { user: '⚔', manager: '🔨', admin: '👑' };
-      const role = c.author?.role || 'user';
-      const depth = Math.min(c.depth || 0, 6); // cap visual indent
-
-      return h('div', { class: ['comment', `depth-${depth}`] }, [
-        // Author + meta
-        h('div', { class: 'comment-head' }, [
-          h('span', {
-            class: ['comment-avatar', { clickable: !!c.author?.username }],
-            onClick: onAuthorClick,
-          }, [
-            c.author?.avatar
-              ? h('img', { src: `/avatars/${encodeURIComponent(c.author.avatar)}`, alt: c.author.fullname || c.author.username })
-              : h('span', (c.author?.fullname || c.author?.username || '?')[0].toUpperCase()),
-          ]),
-          h('div', { class: 'comment-meta' }, [
-            h('div', { class: 'comment-author-line' }, [
-              h('strong', {
-                class: { clickable: !!c.author?.username },
-                onClick: onAuthorClick,
-              }, c.author?.fullname || ('@' + (c.author?.username || 'anon'))),
-              c.author?.username ? h('span', { class: 'comment-author-uname' }, '@' + c.author.username) : null,
-              h('span', { class: `role-pip role-${role}` }, roleIcons[role]),
-            ]),
-            h('span', { class: 'comment-date' }, formatDate(c.created_at)),
-          ]),
-        ]),
-
-        // Body — edit form OR rendered
-        isEditing.value
-          ? h('div', { class: 'comment-edit' }, [
-              h('textarea', {
-                value: props.editingText,
-                rows: 3,
-                maxlength: 5000,
-                onInput: (e) => emit('edit-input', e.target.value),
-                class: 'comment-textarea',
-              }),
-              h('div', { class: 'comment-edit-actions' }, [
-                h('button', {
-                  class: 'btn-ghost small',
-                  onClick: () => emit('edit-cancel'),
-                  disabled: props.submitting,
-                }, 'Отмена'),
-                h('button', {
-                  class: 'btn-primary small',
-                  onClick: () => emit('edit-save', c),
-                  disabled: props.submitting || !props.editingText.trim(),
-                }, 'Сохранить'),
-              ]),
-            ])
-          : h('div', { class: 'comment-body md-rendered', innerHTML: renderBody() }),
-
-        // Actions row
-        !isEditing.value
-          ? h('div', { class: 'comment-actions' }, [
-              h('button', { class: 'comment-action', onClick: () => emit('reply', c.id) }, '↪ Ответить'),
-              isOwn.value
-                ? h('button', { class: 'comment-action', onClick: () => emit('edit-start', c) }, '✎ Изменить')
-                : null,
-              canDelete.value
-                ? h('button', { class: 'comment-action danger', onClick: () => emit('delete', c) }, '🗑 Удалить')
-                : null,
-            ])
-          : null,
-
-        // Reply form
-        isReplying.value && !isEditing.value
-          ? h('div', { id: `reply-form-${c.id}`, class: 'reply-form' }, [
-              h('textarea', {
-                value: props.replyText,
-                rows: 2,
-                maxlength: 5000,
-                placeholder: 'Ваш ответ...',
-                onInput: (e) => emit('reply-input', e.target.value),
-                class: 'comment-textarea',
-                autofocus: true,
-              }),
-              h('div', { class: 'comment-edit-actions' }, [
-                h('button', {
-                  class: 'btn-ghost small',
-                  onClick: () => emit('reply-cancel'),
-                  disabled: props.submitting,
-                }, 'Отмена'),
-                h('button', {
-                  class: 'btn-primary small',
-                  onClick: () => emit('reply-submit', c.id),
-                  disabled: props.submitting || !props.replyText.trim(),
-                }, props.submitting ? 'Отправка…' : 'Ответить'),
-              ]),
-            ])
-          : null,
-
-        // Children — recursive render
-        subtree.value.length
-          ? h('div', { class: 'comment-children' },
-              subtree.value.map((child) => h(CommentItem, {
-                key: child.id,
-                comment: child,
-                childrenFn: props.childrenFn,
-                replyingTo: props.replyingTo,
-                replyText: props.replyText,
-                editingId: props.editingId,
-                editingText: props.editingText,
-                submitting: props.submitting,
-                currentUserId: props.currentUserId,
-                isAdmin: props.isAdmin,
-                onReply: (id) => emit('reply', id),
-                'onReply-cancel': () => emit('reply-cancel'),
-                'onReply-submit': (id) => emit('reply-submit', id),
-                'onReply-input': (v) => emit('reply-input', v),
-                'onEdit-start': (cm) => emit('edit-start', cm),
-                'onEdit-cancel': () => emit('edit-cancel'),
-                'onEdit-save': (cm) => emit('edit-save', cm),
-                'onEdit-input': (v) => emit('edit-input', v),
-                onDelete: (cm) => emit('delete', cm),
-                'onAuthor-click': (un) => emit('author-click', un),
-              })))
-          : null,
-      ]);
-    };
-  },
-});
-
-export default {
-  components: { CommentItem },
-};
-</script>
 
 <style scoped>
 .post-page {
