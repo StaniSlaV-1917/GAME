@@ -249,15 +249,19 @@ class PostController extends Controller
         $ext  = $file->getClientOriginalExtension();
         $name = 'post-covers/' . $user->id . '/' . Str::uuid() . '.' . $ext;
 
-        // Используем 'public' disk явно (URL-доступный через storage:link).
-        // R2 включится в Phase 1.E когда переедем на него полностью.
+        // Используем 'public' disk явно (R2 в проде, local в деве).
         $path = Storage::disk('public')->putFileAs(
             dirname($name),
             $file,
             basename($name)
         );
 
-        $publicUrl = Storage::disk('public')->url($path);
+        // ВАЖНО: для R2-disk с PathPrefixedAdapter putFileAs возвращает
+        // путь УЖЕ С ПРЕФИКСОМ 'storage/'. И ->url() base тоже заканчивается
+        // на '/storage'. Без обрезки получим .../storage/storage/post-covers/...
+        // (двойной storage). Срезаем дубликат:
+        $cleanPath = preg_replace('#^storage/#', '', $path);
+        $publicUrl = Storage::disk('public')->url($cleanPath);
 
         return response()->json([
             'url'  => $publicUrl,

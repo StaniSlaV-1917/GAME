@@ -15,6 +15,12 @@ const MEDIA_BASE = (import.meta.env.VITE_MEDIA_BASE_URL || 'http://127.0.0.1:800
 
 export function resolveMediaUrl(path, fallback = '/img/noimage.svg') {
   if (!path) return fallback;
+  // Хотфикс для legacy-битых URL с двойным /storage/storage/ (баг в
+  // PostController::uploadCover до фикса 28d4577). Срезаем дублирующий
+  // префикс независимо от того, абсолютный URL или relative.
+  if (typeof path === 'string') {
+    path = path.replace('/storage/storage/', '/storage/');
+  }
   if (/^https?:\/\//i.test(path)) return path;              // already absolute (News model)
   if (path.startsWith('/')) return `${MEDIA_BASE}${path}`;  // /storage/... paths
   return `${MEDIA_BASE}/img/${path}`;                        // bare filename → backend/public/img/
