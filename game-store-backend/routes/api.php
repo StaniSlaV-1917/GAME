@@ -216,6 +216,18 @@ Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
 });
 
 // ── Phase 4 / Forum: in-app уведомления ──
+// Public probe для проверки что роуты Phase 4/A вообще загружены
+// (используется для отладки деплоя — если этот 404, значит api.php
+// до этой точки не дошёл).
+Route::get('/notifications/_probe', function () {
+    return response()->json([
+        'phase' => '4A',
+        'ok'    => true,
+        'time'  => now()->toIso8601String(),
+        'has_table' => \Illuminate\Support\Facades\Schema::hasTable('notifications'),
+    ]);
+});
+
 // Все эндпоинты под auth. unread-count — лёгкий poll-эндпоинт для bell-badge,
 // throttle:60,1 (раз в секунду — норма для polling).
 // Остальные — стандартный auth, без жёстких лимитов (юзер не может
