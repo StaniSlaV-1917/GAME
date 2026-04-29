@@ -24,6 +24,7 @@ const userReviews = ref([]);
 
 const profileForm  = ref({ fullname: '', username: '', phone: '' });
 const notifyForm   = ref({ notify_login: true, notify_order_created: true, notify_order_status: true });
+const privacyForm  = ref({ library_public: true });
 const savingNotify = ref(false);
 const passwordForm = ref({ current_password: '', new_password: '', new_password_confirmation: '' });
 const emailChangeForm = ref({ newEmail: '', code: '' });
@@ -110,6 +111,7 @@ const loadInitialData = async () => {
   notifyForm.value.notify_login           = user.value.notify_login           ?? true;
   notifyForm.value.notify_order_created   = user.value.notify_order_created   ?? true;
   notifyForm.value.notify_order_status    = user.value.notify_order_status    ?? true;
+  privacyForm.value.library_public        = user.value.library_public         ?? true;
   await Promise.all([loadOrders(), loadUserReviews()]);
 };
 
@@ -168,6 +170,17 @@ const saveNotifications = async () => {
     toast.error(e.response?.data?.message || 'Ошибка сохранения настроек.');
   } finally {
     savingNotify.value = false;
+  }
+};
+
+const savePrivacy = async () => {
+  try {
+    const { data } = await api.put('/auth/profile', privacyForm.value);
+    if (data.user) authStore.setUser(data.user);
+    privacyForm.value.library_public = data.user?.library_public ?? privacyForm.value.library_public;
+    toast.success('Настройки приватности сохранены');
+  } catch (e) {
+    toast.error('Не удалось сохранить.');
   }
 };
 
@@ -631,6 +644,33 @@ onMounted(() => {
                   <div v-if="savingNotify" class="notify-saving">
                     <span class="btn-spin"></span> Сохранение...
                   </div>
+                </div>
+              </div>
+
+              <!-- Приватность (Phase 3 / Batch C) -->
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <div class="settings-card-icon">🛡</div>
+                  <div>
+                    <h3>Приватность</h3>
+                    <p>Что видят другие воины в вашем публичном профиле</p>
+                  </div>
+                </div>
+                <div class="settings-form">
+                  <label class="notify-toggle">
+                    <input
+                      type="checkbox"
+                      v-model="privacyForm.library_public"
+                      @change="savePrivacy"
+                    />
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <span class="toggle-body">
+                      <span class="toggle-title">Показывать библиотеку игр</span>
+                      <span class="toggle-desc">
+                        Купленные игры будут видны на /u/{{ user.username || 'username' }}
+                      </span>
+                    </span>
+                  </label>
                 </div>
               </div>
 

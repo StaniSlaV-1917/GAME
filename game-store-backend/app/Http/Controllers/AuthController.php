@@ -36,6 +36,7 @@ class AuthController extends Controller
             'notify_login'         => (bool) $user->notify_login,
             'notify_order_created' => (bool) $user->notify_order_created,
             'notify_order_status'  => (bool) $user->notify_order_status,
+            'library_public'       => (bool) ($user->library_public ?? true),
             // Модерационный статус — фронт может показать «вы заморожены»
             // если бэк отдаст это (для забаненных юзер не получит токен).
             'banned_at'            => $user->banned_at,
@@ -380,6 +381,7 @@ class AuthController extends Controller
             'notify_login'         => 'sometimes|boolean',
             'notify_order_created' => 'sometimes|boolean',
             'notify_order_status'  => 'sometimes|boolean',
+            'library_public'       => 'sometimes|boolean',
         ], [
             'username.regex' => 'Username: 3-20 символов, латиница, цифры, _ и точка. Должен начинаться с буквы.',
         ]);
@@ -430,7 +432,7 @@ class AuthController extends Controller
             $user->avatar = $data['avatar'];
         }
 
-        foreach (['notify_login', 'notify_order_created', 'notify_order_status'] as $pref) {
+        foreach (['notify_login', 'notify_order_created', 'notify_order_status', 'library_public'] as $pref) {
             if (array_key_exists($pref, $data)) {
                 $user->$pref = (bool) $data[$pref];
             }

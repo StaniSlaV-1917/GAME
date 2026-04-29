@@ -59,8 +59,34 @@ class UserProfileController extends Controller
         $isFollowedByMe = false;
         if ($viewer && $viewer->id !== $user->id) {
             $isFollowedByMe = Follow::where('follower_id', $viewer->id)
-                ->where('followed_id', $user->id)
+                ->where('following_id', $user->id)
                 ->exists();
+        }
+
+        // Phase 3 / Batch C — библиотека игр (cross-ref shop ↔ forum).
+        // Уникальный список игр из orders юзера. Видна по privacy-настройке.
+        $isOwn = $viewer && $viewer->id === $user->id;
+        $libraryVisible = $isOwn || ($user->library_public ?? true);
+
+        $library = [];
+        $libraryCount = 0;
+        if ($libraryVisible) {
+            $library = \DB::table('order_items')
+                ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                ->join('games', 'games.id', '=', 'order_items.game_id')
+                ->where('orders.user_id', $user->id)
+                ->select(
+                    'games.id',
+                    'games.title',
+                    'games.image',
+                    'games.platform',
+                    \DB::raw('MIN(orders.order_date) as purchased_at')
+                )
+                ->groupBy('games.id', 'games.title', 'games.image', 'games.platform')
+                ->orderByDesc('purchased_at')
+                ->limit(20)
+                ->get();
+            $libraryCount = $library->count();
         }
 
         return response()->json([
@@ -78,9 +104,11 @@ class UserProfileController extends Controller
                 'reactions_received' => $reactionsReceived,
                 'followers'          => (int) $user->followers_count,
                 'following'          => (int) $user->following_count,
+                'library'            => $libraryCount,
             ],
-            // Для UI кнопки «Подписаться/Отписаться»
             'is_followed_by_me' => $isFollowedByMe,
+            'library_public'    => (bool) ($user->library_public ?? true),
+            'library'           => $library,
         ]);
     }
 

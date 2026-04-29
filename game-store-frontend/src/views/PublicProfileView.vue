@@ -245,6 +245,29 @@ const handleUnfollow = async () => {
         </div>
       </div>
 
+      <!-- ── Игры в библиотеке (Phase 3 / Batch C) ── -->
+      <div v-if="profile.library && profile.library.length" class="profile-body library-block">
+        <div class="panel-header">
+          <h2>🎮 Игры в библиотеке</h2>
+          <p>Что воин уже добыл из оружейной</p>
+        </div>
+        <div class="library-grid">
+          <RouterLink
+            v-for="g in profile.library"
+            :key="g.id"
+            :to="{ name: 'game', params: { id: g.id } }"
+            class="library-card"
+            :title="g.title"
+          >
+            <div class="lib-cover">
+              <img :src="resolveMediaUrl(g.image)" :alt="g.title" loading="lazy" />
+            </div>
+            <span class="lib-title">{{ g.title }}</span>
+            <span v-if="g.platform" class="lib-platform">{{ g.platform }}</span>
+          </RouterLink>
+        </div>
+      </div>
+
       <!-- ── Лента постов автора ── -->
       <div class="profile-body">
         <div class="panel-header">
@@ -616,6 +639,58 @@ const handleUnfollow = async () => {
 .panel-header p {
   color: var(--text-parchment);
   margin: 0;
+}
+
+/* ═══ Библиотека игр (Phase 3 / Batch C) ═══ */
+.library-block { margin-top: 30px; margin-bottom: 30px; }
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 14px;
+}
+.library-card {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  background: linear-gradient(180deg, var(--ash-stone), var(--ash-coal));
+  border: 1px solid var(--iron-mid);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.2s var(--ease-smoke);
+}
+.library-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--bronze);
+  box-shadow: var(--inset-iron-top), 0 0 18px rgba(239, 74, 24, 0.22);
+}
+.lib-cover {
+  width: 100%;
+  height: 180px;
+  background: var(--ash-obsidian);
+  overflow: hidden;
+}
+.lib-cover img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s var(--ease-smoke);
+}
+.library-card:hover .lib-cover img { transform: scale(1.06); }
+.lib-title {
+  padding: 8px 12px 2px;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  color: var(--text-bone);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lib-platform {
+  padding: 0 12px 8px;
+  font-size: 0.75rem;
+  color: var(--text-ash);
+  font-family: var(--font-ui);
 }
 
 .empty-state {

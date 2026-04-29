@@ -33,12 +33,14 @@ class User extends Authenticatable
         'freeze_reason',
         'followers_count',
         'following_count',
+        'library_public',
     ];
 
     protected $casts = [
         'notify_login'         => 'boolean',
         'notify_order_created' => 'boolean',
         'notify_order_status'  => 'boolean',
+        'library_public'       => 'boolean',
         'banned_at'            => 'datetime',
         'frozen_at'            => 'datetime',
     ];
