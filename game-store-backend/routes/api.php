@@ -7,6 +7,7 @@ use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ReactionController;
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\AuthController;
@@ -198,6 +199,16 @@ Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
 // Возвращает 404 если username не задан, не существует или забанен.
 Route::get('/users/{username}/profile', [UserProfileController::class, 'show']);
 Route::get('/users/{username}/posts',   [UserProfileController::class, 'posts']);
+
+// ── Phase 3 / Forum: подписки ──
+// Список подписчиков и подписок — публично (можно посмотреть кто на кого).
+// Сами действия — auth + throttle:30,1.
+Route::get('/users/{username}/followers', [FollowController::class, 'followers']);
+Route::get('/users/{username}/following', [FollowController::class, 'following']);
+Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
+    Route::post('/users/{username}/follow',   [FollowController::class, 'follow']);
+    Route::delete('/users/{username}/follow', [FollowController::class, 'unfollow']);
+});
 
 // Отзывы для игры
 Route::get('/games/{gameId}/reviews', [ReviewController::class, 'index']);

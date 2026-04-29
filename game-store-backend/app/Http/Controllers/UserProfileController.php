@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Follow;
 use App\Models\Post;
 use App\Models\Reaction;
 use App\Models\User;
@@ -26,7 +27,7 @@ class UserProfileController extends Controller
      *
      * Публичный профиль с базовыми статами.
      */
-    public function show(string $username)
+    public function show(Request $request, string $username)
     {
         $user = $this->findByUsername($username);
 
@@ -53,6 +54,15 @@ class UserProfileController extends Controller
             })
             ->count();
 
+        // Phase 3: подписан ли текущий юзер на этого
+        $viewer = $request->user();
+        $isFollowedByMe = false;
+        if ($viewer && $viewer->id !== $user->id) {
+            $isFollowedByMe = Follow::where('follower_id', $viewer->id)
+                ->where('followed_id', $user->id)
+                ->exists();
+        }
+
         return response()->json([
             'id'         => $user->id,
             'username'   => $user->username,
@@ -60,13 +70,17 @@ class UserProfileController extends Controller
             'avatar'     => $user->avatar,
             'role'       => $user->role,
             'reg_date'   => $user->reg_date,
-            'is_frozen'  => $user->isFrozen(),  // public — чтобы UI показал бейдж «заморожен»
+            'is_frozen'  => $user->isFrozen(),
             'stats'      => [
                 'posts'              => $postsCount,
                 'comments'           => $commentsCount,
                 'reactions_given'    => $reactionsGiven,
                 'reactions_received' => $reactionsReceived,
+                'followers'          => (int) $user->followers_count,
+                'following'          => (int) $user->following_count,
             ],
+            // Для UI кнопки «Подписаться/Отписаться»
+            'is_followed_by_me' => $isFollowedByMe,
         ]);
     }
 

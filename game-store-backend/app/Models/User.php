@@ -31,6 +31,8 @@ class User extends Authenticatable
         'ban_reason',
         'frozen_at',
         'freeze_reason',
+        'followers_count',
+        'following_count',
     ];
 
     protected $casts = [
@@ -68,6 +70,33 @@ class User extends Authenticatable
     public function cartItems()
     {
         return $this->hasMany(\App\Models\CartItem::class);
+    }
+
+    /**
+     * На кого этот юзер подписан (его подписки).
+     * Через pivot follows: follower_id = $this->id, followed_id = target.
+     */
+    public function following()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'follows',
+            'follower_id',
+            'followed_id'
+        )->withTimestamps();
+    }
+
+    /**
+     * Кто подписан на этого юзера (его подписчики).
+     */
+    public function followers()
+    {
+        return $this->belongsToMany(
+            User::class,
+            'follows',
+            'followed_id',
+            'follower_id'
+        )->withTimestamps();
     }
 
     public function isAdmin(): bool

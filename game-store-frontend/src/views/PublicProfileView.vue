@@ -1,19 +1,23 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute, RouterLink } from 'vue-router';
+import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import { useAuthStore } from '../stores/auth';
+import { useToast } from '../composables/useToast';
 import api from '../api/axios';
 import { resolveMediaUrl } from '../utils/media';
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 const profile = ref(null);
 const posts = ref([]);
 const loadingProfile = ref(true);
 const loadingPosts = ref(true);
 const error = ref('');
+const followBusy = ref(false);
 
 // Текущий username из URL — реактивно для смены роута без перезагрузки
 const username = computed(() => route.params.username);
@@ -83,6 +87,52 @@ const reload = async () => {
 
 watch(username, () => reload());
 onMounted(reload);
+
+// ── Follow / Unfollow ─────────────────────────────
+
+const requireAuth = () => {
+  if (!authStore.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } });
+    return false;
+  }
+  return true;
+};
+
+const handleFollow = async () => {
+  if (followBusy.value) return;
+  if (!requireAuth()) return;
+  followBusy.value = true;
+  try {
+    const { data } = await api.post(`/users/${username.value}/follow`);
+    profile.value.is_followed_by_me = data.following;
+    profile.value.stats.followers = data.followers_count;
+    toast.success('Подписка оформлена');
+  } catch (e) {
+    if (e.response?.status === 403) {
+      toast.error(e.response.data?.message || 'Нельзя подписаться.');
+    } else {
+      toast.error('Не удалось подписаться.');
+    }
+  } finally {
+    followBusy.value = false;
+  }
+};
+
+const handleUnfollow = async () => {
+  if (followBusy.value) return;
+  if (!confirm(`Отписаться от @${profile.value.username}?`)) return;
+  followBusy.value = true;
+  try {
+    const { data } = await api.delete(`/users/${username.value}/follow`);
+    profile.value.is_followed_by_me = data.following;
+    profile.value.stats.followers = data.followers_count;
+    toast.info('Подписка отменена');
+  } catch (e) {
+    toast.error('Не удалось отписаться.');
+  } finally {
+    followBusy.value = false;
+  }
+};
 </script>
 
 <template>
@@ -144,31 +194,47 @@ onMounted(reload);
             <p class="hero-since">В оплоте с {{ formatDate(profile.reg_date) }}</p>
           </div>
 
-          <!-- CTA: либо «редактировать» (если свой), либо «подписаться» (заглушка) -->
+          <!-- CTA: «редактировать» (свой), «подписаться/отписаться» (чужой) -->
           <div class="hero-actions">
             <RouterLink v-if="isOwnProfile"
                         to="/profile"
                         class="btn-primary">
               Редактировать
             </RouterLink>
-            <button v-else
-                    class="btn-secondary"
-                    disabled
-                    title="Подписки появятся в Phase 3">
-              Подписаться
-            </button>
+            <template v-else>
+              <button v-if="!profile.is_followed_by_me"
+                      class="btn-primary"
+                      :disabled="followBusy"
+                      @click="handleFollow">
+                <span v-if="followBusy">…</span>
+                <span v-else>+ Подписаться</span>
+              </button>
+              <button v-else
+                      class="btn-secondary following-btn"
+                      :disabled="followBusy"
+                      @click="handleUnfollow"
+                      title="Кликните чтобы отписаться">
+                <span v-if="followBusy">…</span>
+                <span v-else>✓ Подписан</span>
+              </button>
+            </template>
           </div>
 
           <!-- Quick stats -->
           <div class="hero-stats">
             <div class="hs-item">
-              <span class="hs-num">{{ profile.stats.posts }}</span>
-              <span class="hs-label">{{ posts === 1 ? 'пост' : 'постов' }}</span>
+              <span class="hs-num">{{ profile.stats.followers || 0 }}</span>
+              <span class="hs-label">подписчиков</span>
             </div>
             <div class="hs-sep"></div>
             <div class="hs-item">
-              <span class="hs-num">{{ profile.stats.comments }}</span>
-              <span class="hs-label">комментариев</span>
+              <span class="hs-num">{{ profile.stats.following || 0 }}</span>
+              <span class="hs-label">подписок</span>
+            </div>
+            <div class="hs-sep"></div>
+            <div class="hs-item">
+              <span class="hs-num">{{ profile.stats.posts }}</span>
+              <span class="hs-label">постов</span>
             </div>
             <div class="hs-sep"></div>
             <div class="hs-item">
@@ -303,6 +369,34 @@ onMounted(reload);
   transition: all 0.2s var(--ease-smoke);
 }
 .btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* «Подписан» — на hover становится «Отписаться» (красный) */
+.following-btn {
+  position: relative;
+  transition: all 0.2s var(--ease-smoke);
+}
+.following-btn:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(168, 35, 24, 0.55), rgba(122, 28, 20, 0.7));
+  border-color: var(--ember-flame);
+  color: var(--text-bright);
+}
+.following-btn:hover:not(:disabled) span::before {
+  content: '−';
+  margin-right: 4px;
+}
+.following-btn:hover:not(:disabled) span {
+  visibility: hidden;
+  position: relative;
+}
+.following-btn:hover:not(:disabled) span::after {
+  content: '− Отписаться';
+  position: absolute;
+  inset: 0;
+  visibility: visible;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
 /* ═══ Hero ═══ */
 .profile-hero {
