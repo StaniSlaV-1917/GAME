@@ -113,6 +113,14 @@ const routes = [
     props: true,
   },
 
+  // ── Phase 4 / Forum: in-app уведомления ──
+  {
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('../views/NotificationsView.vue'),
+    meta: { requiresAuth: true },
+  },
+
   // --- Админ-панель ---
   {
     path: '/admin',

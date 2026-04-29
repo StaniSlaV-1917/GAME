@@ -8,6 +8,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ReactionController;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\AuthController;
@@ -212,6 +213,20 @@ Route::get('/users/{username}/following', [FollowController::class, 'following']
 Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::post('/users/{username}/follow',   [FollowController::class, 'follow']);
     Route::delete('/users/{username}/follow', [FollowController::class, 'unfollow']);
+});
+
+// ── Phase 4 / Forum: in-app уведомления ──
+// Все эндпоинты под auth. unread-count — лёгкий poll-эндпоинт для bell-badge,
+// throttle:60,1 (раз в секунду — норма для polling).
+// Остальные — стандартный auth, без жёстких лимитов (юзер не может
+// это спамить — только реагирует на свои данные).
+Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
+    Route::get('/',                 [NotificationController::class, 'index']);
+    Route::middleware('throttle:60,1')
+        ->get('/unread-count',      [NotificationController::class, 'unreadCount']);
+    Route::post('/read-all',        [NotificationController::class, 'markAllRead']);
+    Route::post('/{id}/read',       [NotificationController::class, 'markRead']);
+    Route::delete('/{id}',          [NotificationController::class, 'destroy']);
 });
 
 // Отзывы для игры

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Comment;
 use App\Models\Post;
+use App\Notifications\NewCommentOnYourPost;
+use App\Notifications\NewReplyToYourComment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -110,6 +112,37 @@ class CommentController extends Controller
         });
 
         $comment->load('author:id,fullname,username,avatar,role');
+
+        // Phase 4 / Batch A — нотификации в БД.
+        // Логика:
+        //   • Если это реплай — пишем NewReplyToYourComment автору родителя.
+        //   • Иначе (или дополнительно если автор поста ≠ автор родителя) —
+        //     пишем NewCommentOnYourPost автору поста.
+        // Авто-уведомления самому себе подавляем (если автор коммента =
+        // автору цели). Любые ошибки трактуем как warning, не ломаем UX.
+        try {
+            $notifiedUserIds = [];
+
+            if (!empty($data['parent_id']) && isset($parent)) {
+                $parentAuthor = $parent->author;
+                if ($parentAuthor && $parentAuthor->id !== $user->id) {
+                    $parentAuthor->notify(new NewReplyToYourComment($comment, $parent));
+                    $notifiedUserIds[] = $parentAuthor->id;
+                }
+            }
+
+            $postAuthor = $post->author;
+            if ($postAuthor
+                && $postAuthor->id !== $user->id
+                && !in_array($postAuthor->id, $notifiedUserIds)) {
+                $postAuthor->notify(new NewCommentOnYourPost($comment));
+            }
+        } catch (\Throwable $e) {
+            Log::warning('[Comment] notification dispatch failed', [
+                'comment_id' => $comment->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
 
         Log::info('[Comment] created', [
             'comment_id' => $comment->id,

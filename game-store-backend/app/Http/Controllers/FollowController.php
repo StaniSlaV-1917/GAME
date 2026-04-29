@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Follow;
 use App\Models\User;
+use App\Notifications\NewFollower;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -64,6 +66,17 @@ class FollowController extends Controller
 
         $user->refresh();
         $target->refresh();
+
+        // Phase 4 / Batch A — уведомление новой цели подписки
+        try {
+            $target->notify(new NewFollower($user));
+        } catch (\Throwable $e) {
+            Log::warning('[Follow] notification dispatch failed', [
+                'follower_id' => $user->id,
+                'target_id'   => $target->id,
+                'error'       => $e->getMessage(),
+            ]);
+        }
 
         return response()->json([
             'following' => true,

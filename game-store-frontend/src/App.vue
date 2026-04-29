@@ -6,6 +6,7 @@ import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
 import { useCartStore } from './stores/cart';
 import { useModeStore } from './stores/mode';
+import { useNotificationsStore } from './stores/notifications';
 import { storeToRefs } from 'pinia';
 import api from './api/axios';
 import ParticlesBackground from './components/ParticlesBackground.vue';
@@ -20,7 +21,9 @@ const { toasts, remove: removeToast } = useToast();
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
 const modeStore = useModeStore();
+const notificationsStore = useNotificationsStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
+const { badge: notifBadge, unreadCount: notifUnreadCount } = storeToRefs(notificationsStore);
 const router = useRouter();
 const route = useRoute();
 
@@ -83,6 +86,104 @@ const themeOptions = [
 ];
 const themeIconFor = (value) => themeOptions.find(t => t.value === value)?.icon || '☾';
 
+// ──────────────────────────────────────────────────────────────
+// Bell-dropdown — лёгкий превью последних 7 уведомлений.
+// Подгружаем fetchAll при первом открытии (кэш живёт пока юзер не
+// разлогинится). При новых событиях из poll'а unreadCount обновится
+// сам, превью обновится при следующем открытии или при manual reload.
+// ──────────────────────────────────────────────────────────────
+const notifDropdownOpen = ref(false);
+const notifDropdownLoading = computed(() => notificationsStore.loading);
+const bellWrapRef = ref(null);
+
+const notifPreview = computed(() => notificationsStore.items.slice(0, 7));
+
+const onBellClick = async () => {
+  // Toggle
+  if (notifDropdownOpen.value) {
+    notifDropdownOpen.value = false;
+    return;
+  }
+  notifDropdownOpen.value = true;
+  // Если ещё ни разу не загружали или прошло много времени — обновим
+  if (!notificationsStore.loaded) {
+    await notificationsStore.fetchAll();
+  } else {
+    // Тихо обновим в фоне, чтобы превью было свежим
+    notificationsStore.fetchAll();
+  }
+};
+
+const onNotifItemClick = (n) => {
+  notifDropdownOpen.value = false;
+  // Открываем /notifications?expand=<id> чтобы страница автораскрыла
+  // именно это уведомление
+  router.push({ name: 'notifications', query: { expand: n.id } });
+};
+
+const handleNotifMarkAll = (ev) => {
+  ev?.stopPropagation();
+  notificationsStore.markAllRead();
+};
+
+// Сигил/заголовок/превью/дата — те же утилиты что на странице,
+// дублируем сюда чтобы App.vue был самодостаточен.
+const notifSigil = (n) => {
+  switch (n.data?.event) {
+    case 'comment.created':  return '💬';
+    case 'comment.reply':    return '↪';
+    case 'follow.created':   return '⚔';
+    case 'reaction.created': return n.data?.emoji || '✦';
+    default: return '◈';
+  }
+};
+const notifTitle = (n) => {
+  const actor = n?.data?.actor?.fullname || n?.data?.actor?.username || 'Кто-то';
+  switch (n.data?.event) {
+    case 'comment.created': return `${actor} прокомментировал ваш пост`;
+    case 'comment.reply':   return `${actor} ответил на ваш комментарий`;
+    case 'follow.created':  return `${actor} подписался на вас`;
+    case 'reaction.created': return `${actor} отреагировал на ваш пост`;
+    default: return 'Новое уведомление';
+  }
+};
+const notifShortPreview = (n) => {
+  const text = n?.data?.preview || '';
+  if (!text) return '';
+  return text.length > 80 ? text.slice(0, 80) + '…' : text;
+};
+const notifFormatDate = (s) => {
+  if (!s) return '';
+  const d = new Date(s);
+  const diff = (Date.now() - d.getTime()) / 1000;
+  if (diff < 60) return 'только что';
+  if (diff < 3600) return Math.floor(diff / 60) + ' мин';
+  if (diff < 86400) return Math.floor(diff / 3600) + ' ч';
+  if (diff < 604800) return Math.floor(diff / 86400) + ' дн';
+  return d.toLocaleDateString('ru-RU');
+};
+
+// Закрытие дропдауна по клику вне — биндим обработчик на document
+// при открытии и снимаем при закрытии (минимальный listener overhead).
+const onDocClickForBell = (e) => {
+  if (!notifDropdownOpen.value) return;
+  const wrap = bellWrapRef.value;
+  if (wrap && !wrap.contains(e.target)) {
+    notifDropdownOpen.value = false;
+  }
+};
+watch(notifDropdownOpen, (open) => {
+  if (open) {
+    // Use nextTick-ish: wait one tick чтобы текущий клик не закрыл сразу
+    setTimeout(() => document.addEventListener('click', onDocClickForBell), 0);
+  } else {
+    document.removeEventListener('click', onDocClickForBell);
+  }
+});
+
+// Закрытие дропдауна при смене маршрута (если юзер ушёл по ссылке)
+watch(() => route.path, () => { notifDropdownOpen.value = false; });
+
 // ── Global search (всегда развёрнут в шапке) ──
 const searchQuery = ref('');
 const searchResults = ref([]);
@@ -128,6 +229,7 @@ const goToGame = (id) => {
 const isTouch = ref(false);
 
 const handleLogout = async () => {
+  notificationsStore.reset();
   await authStore.logout();
   mobileMenuOpen.value = false;
   router.push({ name: 'login' });
@@ -150,7 +252,22 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll);
   clearTimeout(searchTimer);
+  document.removeEventListener('click', onDocClickForBell);
+  notificationsStore.stopPolling();
 });
+
+// Phase 4 / Batch A — стартуем/останавливаем polling по статусу логина.
+// Реактивно: при login → start, при logout → reset уже вызван в handleLogout,
+// но на всякий — watch на isLoggedIn для случаев когда логин/логаут
+// произошёл из другого места (например, истёк токен и authStore.logout()
+// дёрнулся изнутри).
+watch(isLoggedIn, (logged) => {
+  if (logged) {
+    notificationsStore.startPolling();
+  } else {
+    notificationsStore.reset();
+  }
+}, { immediate: true });
 </script>
 
 <template>
@@ -309,6 +426,76 @@ onUnmounted(() => {
           <RouterLink to="/cart" class="action-btn cart-btn" title="Добыча" aria-label="Корзина">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
           </RouterLink>
+
+          <!-- Bell — уведомления (только для залогиненных).
+               Клик → выпадает dropdown с превью последних 7 (как у темы).
+               Клик по превью → /notifications?expand=<id> (страница развёрнутая).
+               Клик "Все уведомления →" → /notifications. -->
+          <div v-if="isLoggedIn" class="bell-wrap" ref="bellWrapRef">
+            <button
+              class="action-btn bell-btn"
+              :class="{ 'has-unread': notifUnreadCount > 0, active: notifDropdownOpen }"
+              @click="onBellClick"
+              :aria-expanded="notifDropdownOpen"
+              aria-haspopup="true"
+              aria-label="Уведомления"
+              title="Уведомления"
+              type="button"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              <span v-if="notifUnreadCount > 0" class="bell-badge" aria-hidden="true">{{ notifBadge }}</span>
+            </button>
+
+            <Transition name="dropdown">
+              <div v-if="notifDropdownOpen" class="notif-dropdown" role="menu">
+                <header class="notif-dd-head">
+                  <span class="notif-dd-title">Уведомления</span>
+                  <button
+                    v-if="notifUnreadCount > 0"
+                    class="notif-dd-mark"
+                    @click="handleNotifMarkAll"
+                    type="button"
+                  >Прочитать все</button>
+                </header>
+
+                <div v-if="notifDropdownLoading && !notifPreview.length" class="notif-dd-loading">
+                  Раскручиваем свиток…
+                </div>
+
+                <ul v-else-if="notifPreview.length" class="notif-dd-list">
+                  <li
+                    v-for="n in notifPreview"
+                    :key="n.id"
+                    class="notif-dd-item"
+                    :class="{ unread: !n.read_at }"
+                    @click="onNotifItemClick(n)"
+                    role="menuitem"
+                  >
+                    <span class="notif-dd-sigil" aria-hidden="true">{{ notifSigil(n) }}</span>
+                    <span class="notif-dd-body">
+                      <span class="notif-dd-itemtitle">{{ notifTitle(n) }}</span>
+                      <span v-if="notifShortPreview(n)" class="notif-dd-preview">{{ notifShortPreview(n) }}</span>
+                      <span class="notif-dd-time">{{ notifFormatDate(n.created_at) }}</span>
+                    </span>
+                  </li>
+                </ul>
+
+                <div v-else class="notif-dd-empty">
+                  <span class="notif-dd-empty-sigil" aria-hidden="true">◈</span>
+                  <span>Тишина в кузнице</span>
+                </div>
+
+                <footer class="notif-dd-foot">
+                  <RouterLink to="/notifications" class="notif-dd-all" @click="notifDropdownOpen = false">
+                    Все уведомления →
+                  </RouterLink>
+                </footer>
+              </div>
+            </Transition>
+          </div>
 
           <template v-if="isLoggedIn && user">
             <RouterLink :to="profileLinkTarget" class="profile-btn" :title="user.username ? `Публичный профиль @${user.username}` : 'Настройки (задайте username)'">
@@ -1084,6 +1271,234 @@ onUnmounted(() => {
   transform: translateY(-1px);
 }
 .action-btn:hover::before { opacity: 1; }
+
+/* ──────────────────────────────────────────────────────────────
+   BELL BUTTON + DROPDOWN — уведомления.
+   .has-unread пульсирует мягко, и угольно-красный бейдж в углу.
+   Дропдаун — кованый свиток шириной ~360px, шрифт-сетка как у темы.
+   ────────────────────────────────────────────────────────────── */
+.bell-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.bell-btn {
+  position: relative;
+}
+.bell-btn.active {
+  border-color: var(--iron-warm);
+  background: linear-gradient(180deg, var(--ash-coal) 0%, var(--ash-stone) 100%);
+}
+.bell-btn.has-unread {
+  border-color: var(--iron-warm);
+  box-shadow: 0 0 0 1px rgba(226, 67, 16, 0.18) inset;
+}
+.bell-btn.has-unread svg {
+  color: var(--text-bright);
+  filter: drop-shadow(0 0 4px rgba(226, 67, 16, 0.55));
+  animation: bell-tap 2.4s ease-in-out infinite;
+}
+@keyframes bell-tap {
+  0%, 92%, 100%   { transform: rotate(0); }
+  94%             { transform: rotate(-9deg); }
+  96%             { transform: rotate(7deg); }
+  98%             { transform: rotate(-4deg); }
+}
+.bell-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, #b8341a 0%, #7a1f0c 100%);
+  color: #fff5d6;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 200, 140, 0.35);
+  box-shadow: 0 0 8px rgba(226, 67, 16, 0.55), 0 1px 2px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bell-btn.has-unread svg { animation: none; }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   NOTIF DROPDOWN — кованый свиток с превью последних уведомлений.
+   ────────────────────────────────────────────────────────────── */
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 360px;
+  max-width: calc(100vw - 24px);
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  border: 1px solid var(--iron-dark);
+  border-radius: var(--r-md);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.55), var(--inset-iron-top);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+}
+.notif-dd-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--iron-dark);
+  background: rgba(0,0,0,0.25);
+}
+.notif-dd-title {
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--iron-warm);
+}
+.notif-dd-mark {
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: color var(--dur-fast);
+  font-family: inherit;
+}
+.notif-dd-mark:hover { color: var(--text-bright); }
+
+.notif-dd-loading {
+  padding: 24px 14px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.notif-dd-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+.notif-dd-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background var(--dur-fast);
+  border-left: 2px solid transparent;
+}
+.notif-dd-item:hover {
+  background: rgba(226, 67, 16, 0.08);
+}
+.notif-dd-item.unread {
+  border-left-color: #e24310;
+  background: rgba(226, 67, 16, 0.04);
+}
+.notif-dd-sigil {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--iron-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  background: rgba(0,0,0,0.3);
+  color: var(--iron-warm);
+}
+.notif-dd-item.unread .notif-dd-sigil {
+  border-color: var(--iron-warm);
+}
+.notif-dd-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.notif-dd-itemtitle {
+  font-size: 12px;
+  color: var(--text-bright);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notif-dd-preview {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notif-dd-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: lowercase;
+  margin-top: 2px;
+}
+
+.notif-dd-empty {
+  padding: 32px 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.notif-dd-empty-sigil {
+  font-size: 24px;
+  color: var(--iron-warm);
+  opacity: 0.6;
+}
+
+.notif-dd-foot {
+  border-top: 1px solid var(--iron-dark);
+  background: rgba(0,0,0,0.2);
+}
+.notif-dd-all {
+  display: block;
+  padding: 11px 14px;
+  text-align: center;
+  text-decoration: none;
+  color: var(--iron-warm);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all var(--dur-fast);
+}
+.notif-dd-all:hover {
+  background: rgba(226, 67, 16, 0.1);
+  color: var(--text-bright);
+}
+
+/* На мобиле dropdown растягивается под viewport */
+@media (max-width: 600px) {
+  .notif-dropdown {
+    position: fixed;
+    top: 65px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-width: none;
+  }
+}
 
 /* ==========================================================
    THEME DROPDOWN — кнопка-вывеска с тремя вариантами темы

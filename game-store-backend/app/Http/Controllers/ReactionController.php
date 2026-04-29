@@ -6,8 +6,10 @@ use App\Models\Comment;
 use App\Models\Post;
 use App\Models\Reaction;
 use App\Models\ReactionPalette;
+use App\Notifications\NewReactionOnYourPost;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -121,6 +123,25 @@ class ReactionController extends Controller
         // Свежий снапшот: общий счётчик + грouped summary
         $target->refresh();
         $summary = $this->summaryForTarget($type, $data['reactable_id'], $user->id);
+
+        // Phase 4 / Batch A — нотификация автору поста при ДОБАВЛЕНИИ реакции.
+        // На комменты не нотифицируем (слишком шумно), только на посты.
+        // Самому себе не пишем.
+        if ($action === 'added' && $type === Post::class) {
+            try {
+                $author = $target->author;
+                if ($author && $author->id !== $user->id) {
+                    $emoji = ReactionPalette::find($data['palette_emoji_id']);
+                    $emojiId = $emoji?->emoji_char ?? '⚔';
+                    $author->notify(new NewReactionOnYourPost($user, $target, $emojiId));
+                }
+            } catch (\Throwable $e) {
+                Log::warning('[Reaction] notification dispatch failed', [
+                    'post_id' => $target->id,
+                    'error'   => $e->getMessage(),
+                ]);
+            }
+        }
 
         return response()->json([
             'action'        => $action,
