@@ -1,0 +1,47 @@
+name: Deploy backend to Fly.io
+
+# Триггер: любой push в main, который меняет файлы в game-store-backend/
+# или сам этот workflow. Когда меняется только фронт — деплой бэка не
+# запускается, экономим минуты GitHub Actions.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'game-store-backend/**'
+      - '.github/workflows/fly-deploy.yml'
+  # Ручной запуск через UI GitHub Actions (если нужно форс-передеплоить
+  # без пуша в код).
+  workflow_dispatch:
+
+# concurrency group: если в main приходит несколько коммитов подряд,
+# фоновый деплой отменяется и заменяется свежим. Защита от наслоения.
+concurrency:
+  group: fly-deploy-backend
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: flyctl deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Fly CLI
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # release_command в fly.toml автоматически выполнит:
+      #   • migrate --force (накатит новые миграции)
+      #   • db:seed для ролей/палитры реакций
+      #   • storage:link
+      #   • config:cache + route:cache + view:cache
+      # --remote-only — Docker сборка происходит на инфре Fly, не локально
+      # на runner'е (быстрее и без ограничений ресурсов GH Actions).
+      - name: Deploy to Fly
+        working-directory: ./game-store-backend
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --remote-only --config fly.toml --dockerfile Dockerfile
