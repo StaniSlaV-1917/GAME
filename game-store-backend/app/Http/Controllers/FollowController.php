@@ -70,11 +70,17 @@ class FollowController extends Controller
         // Phase 4 / Batch A — уведомление новой цели подписки
         try {
             $target->notify(new NewFollower($user));
+            // Log::warning тк LOG_LEVEL=warning в fly.toml фильтрует info.
+            Log::warning('[Notify/Follow] dispatched', [
+                'follower_id' => $user->id,
+                'target_id'   => $target->id,
+            ]);
         } catch (\Throwable $e) {
-            Log::warning('[Follow] notification dispatch failed', [
+            Log::warning('[Notify/Follow] dispatch failed', [
                 'follower_id' => $user->id,
                 'target_id'   => $target->id,
                 'error'       => $e->getMessage(),
+                'trace'       => $e->getTraceAsString(),
             ]);
         }
 

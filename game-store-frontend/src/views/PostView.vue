@@ -952,7 +952,14 @@ const startReply = (commentId) => {
 .new-comment {
   margin-bottom: 28px;
 }
-.comment-textarea {
+/* .comment-textarea используется и в основной форме (template),
+   и в reply/edit формах (рендерятся через h() в defineComponent
+   ниже). Чтобы scoped CSS пробивал в дочерний рендер — дублируем
+   правило через :deep. Без этого reply/edit textarea получают
+   браузерный белый фон + светлый текст из base.css = невидимо
+   в темной теме. */
+.comment-textarea,
+:deep(.comment-textarea) {
   width: 100%;
   padding: 12px 16px;
   background: linear-gradient(180deg, rgba(8, 6, 10, 0.6), rgba(18, 16, 13, 0.7));
@@ -965,7 +972,8 @@ const startReply = (commentId) => {
   outline: none;
   transition: border-color 0.2s;
 }
-.comment-textarea:focus { border-color: var(--ember-flame); }
+.comment-textarea:focus,
+:deep(.comment-textarea:focus) { border-color: var(--ember-flame); }
 
 .comment-input-actions {
   display: flex;

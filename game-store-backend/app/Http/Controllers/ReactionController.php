@@ -132,13 +132,25 @@ class ReactionController extends Controller
                 $author = $target->author;
                 if ($author && $author->id !== $user->id) {
                     $emoji = ReactionPalette::find($data['palette_emoji_id']);
-                    $emojiId = $emoji?->emoji_char ?? '⚔';
-                    $author->notify(new NewReactionOnYourPost($user, $target, $emojiId));
+                    $emojiChar = $emoji?->emoji_char ?? '⚔';
+                    $author->notify(new NewReactionOnYourPost($user, $target, $emojiChar));
+                    // Log::warning тк LOG_LEVEL=warning в fly.toml.
+                    Log::warning('[Notify/Reaction] dispatched', [
+                        'post_id'  => $target->id,
+                        'actor_id' => $user->id,
+                        'author_id'=> $author->id,
+                    ]);
+                } else {
+                    Log::warning('[Notify/Reaction] skipped', [
+                        'post_id' => $target->id,
+                        'reason'  => $author ? 'self' : 'no_author',
+                    ]);
                 }
             } catch (\Throwable $e) {
-                Log::warning('[Reaction] notification dispatch failed', [
+                Log::warning('[Notify/Reaction] dispatch failed', [
                     'post_id' => $target->id,
                     'error'   => $e->getMessage(),
+                    'trace'   => $e->getTraceAsString(),
                 ]);
             }
         }

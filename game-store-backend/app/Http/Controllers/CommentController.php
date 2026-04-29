@@ -120,14 +120,20 @@ class CommentController extends Controller
         //     пишем NewCommentOnYourPost автору поста.
         // Авто-уведомления самому себе подавляем (если автор коммента =
         // автору цели). Любые ошибки трактуем как warning, не ломаем UX.
+        // Диагностика: логируем результат каждой попытки (success/skip/fail)
+        // чтобы по Fly logs можно было видеть, срабатывает ли триггер.
         try {
             $notifiedUserIds = [];
+            $diagnostics = [];
 
             if (!empty($data['parent_id']) && isset($parent)) {
                 $parentAuthor = $parent->author;
                 if ($parentAuthor && $parentAuthor->id !== $user->id) {
                     $parentAuthor->notify(new NewReplyToYourComment($comment, $parent));
                     $notifiedUserIds[] = $parentAuthor->id;
+                    $diagnostics[] = "reply→parent_author#{$parentAuthor->id}";
+                } else {
+                    $diagnostics[] = $parentAuthor ? 'reply→self_skip' : 'reply→no_parent_author';
                 }
             }
 
@@ -136,11 +142,26 @@ class CommentController extends Controller
                 && $postAuthor->id !== $user->id
                 && !in_array($postAuthor->id, $notifiedUserIds)) {
                 $postAuthor->notify(new NewCommentOnYourPost($comment));
+                $diagnostics[] = "comment→post_author#{$postAuthor->id}";
+            } elseif ($postAuthor && $postAuthor->id === $user->id) {
+                $diagnostics[] = 'comment→self_skip';
+            } elseif ($postAuthor && in_array($postAuthor->id, $notifiedUserIds)) {
+                $diagnostics[] = 'comment→already_notified_skip';
             }
+
+            // Log::warning тк LOG_LEVEL=warning в fly.toml фильтрует
+            // info. Это диагностический лог Phase 4/A — снимем когда
+            // нотификации подтвердятся работающими.
+            Log::warning('[Notify/Comment] dispatched', [
+                'comment_id' => $comment->id,
+                'actor_id'   => $user->id,
+                'actions'    => $diagnostics,
+            ]);
         } catch (\Throwable $e) {
-            Log::warning('[Comment] notification dispatch failed', [
+            Log::warning('[Notify/Comment] dispatch failed', [
                 'comment_id' => $comment->id,
                 'error'      => $e->getMessage(),
+                'trace'      => $e->getTraceAsString(),
             ]);
         }
 
