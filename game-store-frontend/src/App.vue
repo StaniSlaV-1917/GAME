@@ -236,22 +236,24 @@ watch(() => route.path, () => { notifDropdownOpen.value = false; });
 
 // ── Global search (всегда развёрнут в шапке) ──
 const searchQuery = ref('');
-// Универсальный поиск (Phase 4) — теперь весь контент: games/users/posts/mods
-const searchData = ref({ games: [], users: [], posts: [], mods: [] });
+// Универсальный поиск (Phase 4) — весь контент: games/users/posts/mods/news
+const searchData = ref({ games: [], users: [], posts: [], mods: [], news: [] });
 const searchLoading = ref(false);
 const searchInputRef = ref(null);
 let searchTimer = null;
 
 const searchTotal = computed(() => {
   const d = searchData.value;
-  return (d.games?.length || 0) + (d.users?.length || 0) + (d.posts?.length || 0) + (d.mods?.length || 0);
+  return (d.games?.length || 0) + (d.users?.length || 0)
+       + (d.posts?.length || 0) + (d.mods?.length || 0)
+       + (d.news?.length || 0);
 });
 
 const doSearch = async (q) => {
   clearTimeout(searchTimer);
   const trimmed = q.trim();
   if (trimmed.length < 2) {
-    searchData.value = { games: [], users: [], posts: [], mods: [] };
+    searchData.value = { games: [], users: [], posts: [], mods: [], news: [] };
     return;
   }
   searchTimer = setTimeout(async () => {
@@ -263,6 +265,7 @@ const doSearch = async (q) => {
         users: data.users || [],
         posts: data.posts || [],
         mods:  data.mods  || [],
+        news:  data.news  || [],
       };
     } catch (e) {
       console.warn('[search] failed', e);
@@ -276,7 +279,7 @@ watch(searchQuery, (q) => doSearch(q));
 
 const closeSearch = () => {
   searchQuery.value = '';
-  searchData.value = { games: [], users: [], posts: [], mods: [] };
+  searchData.value = { games: [], users: [], posts: [], mods: [], news: [] };
 };
 
 const goToGame = (id) => {
@@ -295,6 +298,10 @@ const goToMod = (gameId) => {
   // У нас пока нет /mods/:id route, ведём на /games/:id где список модов
   closeSearch();
   router.push({ name: 'game', params: { id: gameId } });
+};
+const goToNews = (id) => {
+  closeSearch();
+  router.push({ name: 'news-article', params: { id } });
 };
 
 const formatPostDate = (s) => {
@@ -520,6 +527,25 @@ watch(isLoggedIn, (logged) => {
                       <div class="sr-info">
                         <span class="sr-title">{{ m.title }}</span>
                         <span class="sr-meta">для {{ m.game?.title || 'игры' }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Новости -->
+                  <div v-if="searchData.news.length" class="sr-section">
+                    <div class="sr-section-title">📰 Хроники старейшин</div>
+                    <div
+                      v-for="n in searchData.news" :key="`n-${n.id}`"
+                      class="search-result-item"
+                      @click="goToNews(n.id)"
+                    >
+                      <div class="sr-cover">
+                        <img v-if="n.image" :src="resolveMediaUrl(n.image)" :alt="n.title" loading="lazy" />
+                        <span v-else>📰</span>
+                      </div>
+                      <div class="sr-info">
+                        <span class="sr-title">{{ n.title }}</span>
+                        <span class="sr-meta">{{ formatPostDate(n.published_at) }}</span>
                       </div>
                     </div>
                   </div>

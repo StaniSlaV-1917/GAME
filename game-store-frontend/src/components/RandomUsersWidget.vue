@@ -1,17 +1,18 @@
 <script setup>
 /**
- * Виджет «Случайные воины» — sidebar на /feed.
+ * Виджет «Случайные воины» — вертикальная бегущая лента.
  *
- * Загружает 8 случайных юзеров. Авто-меняет ОДИН элемент каждые 8 сек
- * (slot-machine эффект — намёк на «постоянно идущую ленту»). Кнопка
- * «↻ Обновить» меняет всех сразу.
+ * UX:
+ *   • Загружает 16 случайных юзеров (больше для длинной ленты)
+ *   • CSS-анимация скролит cards снизу вверх непрерывно (~60 сек на цикл)
+ *   • Список рендерится ДВАЖДЫ подряд для seamless loop (когда первый
+ *     набор уезжает наверх, второй сразу за ним — нет видимого «прыжка»)
+ *   • На hover/focus — анимация ставится на паузу (юзер может кликнуть)
+ *   • Каждые 30 сек тихий refresh — подгружаем новых случайных юзеров
+ *   • Клик по карточке → /u/:username
+ *   • Кнопка «✉» появляется на hover карточки → создаёт DM
  *
- * На каждой карточке:
- *   • avatar (или fallback initial)
- *   • fullname + @username + role
- *   • кнопки: «Профиль» → /u/:username, «✉ Написать» → DM
- *
- * Прячется на мобиле (CSS).
+ * Скрывается на мобиле (CSS).
  */
 import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
@@ -27,15 +28,16 @@ const toast = useToast();
 
 const users = ref([]);
 const loading = ref(false);
-const refreshing = ref(false);
-const writingFor = ref(null); // username для которого создаётся DM
-let rotateTimer = null;
+const writingFor = ref(null);
+let refreshTimer = null;
 
-// Загрузить N случайных юзеров (полная замена)
-const loadAll = async (limit = 8) => {
+// Дублированный список для seamless loop
+const looped = computed(() => [...users.value, ...users.value]);
+
+const loadUsers = async () => {
   loading.value = true;
   try {
-    const { data } = await api.get('/users/random', { params: { limit } });
+    const { data } = await api.get('/users/random', { params: { limit: 16 } });
     users.value = data.data || [];
   } catch (e) {
     console.warn('[RandomUsers] load failed', e);
@@ -44,30 +46,9 @@ const loadAll = async (limit = 8) => {
   }
 };
 
-// Подменить один случайный слот новым юзером (slot-machine)
-const rotateOne = async () => {
-  if (!users.value.length) return;
-  try {
-    const { data } = await api.get('/users/random', { params: { limit: 1 } });
-    const fresh = data.data?.[0];
-    if (!fresh) return;
-    // Не вставляем дубль — если уже в списке, пропускаем тик
-    if (users.value.find((u) => u.id === fresh.id)) return;
-    // Заменяем случайный слот
-    const idx = Math.floor(Math.random() * users.value.length);
-    users.value.splice(idx, 1, fresh);
-  } catch (e) {
-    // Молча — это фоновое обновление
-  }
-};
-
-const handleRefresh = async () => {
-  refreshing.value = true;
-  await loadAll(8);
-  refreshing.value = false;
-};
-
-const handleWrite = async (user) => {
+const handleWrite = async (user, ev) => {
+  ev?.stopPropagation();
+  ev?.preventDefault();
   if (!authStore.isLoggedIn) {
     router.push({ name: 'login' });
     return;
@@ -86,182 +67,206 @@ const handleWrite = async (user) => {
 
 const roleBadge = (role) => {
   switch (role) {
-    case 'admin':   return { label: 'админ',   cls: 'rb-admin' };
-    case 'manager': return { label: 'манагер', cls: 'rb-manager' };
+    case 'admin':   return { label: 'А', cls: 'rb-admin', title: 'Админ' };
+    case 'manager': return { label: 'М', cls: 'rb-manager', title: 'Менеджер' };
     default:        return null;
   }
 };
 
 onMounted(async () => {
-  await loadAll(8);
-  // Постоянно идущая лента: меняем один слот каждые 8 секунд
-  rotateTimer = setInterval(() => {
+  await loadUsers();
+  // Каждые 30 сек — подгружаем новый набор случайных юзеров для разнообразия
+  refreshTimer = setInterval(() => {
     if (document.visibilityState !== 'visible') return;
-    rotateOne();
-  }, 8000);
+    loadUsers();
+  }, 30000);
 });
 
 onUnmounted(() => {
-  if (rotateTimer) clearInterval(rotateTimer);
+  if (refreshTimer) clearInterval(refreshTimer);
 });
 </script>
 
 <template>
-  <aside class="random-users-widget">
-    <header class="ru-head">
-      <div class="ru-eyebrow">⚔ Случайные воины</div>
-      <button
-        class="ru-refresh"
-        :disabled="refreshing"
-        @click="handleRefresh"
-        title="Обновить"
-        type="button"
-      >
-        <span :class="{ spinning: refreshing }">↻</span>
-      </button>
+  <aside class="random-users-marquee">
+    <header class="rm-head">
+      <div class="rm-eyebrow">⚔ Воины кузницы</div>
     </header>
 
-    <div v-if="loading && !users.length" class="ru-loading">Зов горна…</div>
+    <div v-if="loading && !users.length" class="rm-loading">Зов горна…</div>
 
-    <ul v-else-if="users.length" class="ru-list">
-      <li
-        v-for="user in users"
-        :key="user.id"
-        class="ru-card"
-      >
+    <div v-else-if="users.length" class="rm-viewport">
+      <!-- Внутренний контейнер с бесконечной анимацией.
+           Список users рендерится дважды — когда первая копия уходит
+           наверх (-50%), вторая сразу за ней → нет видимого reset. -->
+      <div class="rm-track">
         <RouterLink
+          v-for="(user, idx) in looped"
+          :key="`${user.id}-${idx}`"
           :to="{ name: 'user-profile', params: { username: user.username } }"
-          class="ru-avatar"
-          :title="`@${user.username}`"
+          class="rm-card"
         >
-          <img
-            v-if="user.avatar"
-            :src="`/avatars/${encodeURIComponent(user.avatar)}`"
-            :alt="user.fullname"
-          />
-          <span v-else>{{ user.fullname?.[0]?.toUpperCase() ?? '?' }}</span>
-        </RouterLink>
-
-        <div class="ru-body">
-          <RouterLink
-            :to="{ name: 'user-profile', params: { username: user.username } }"
-            class="ru-name"
-          >
-            {{ user.fullname || 'Воин' }}
-          </RouterLink>
-          <div class="ru-meta">
-            <span class="ru-username">@{{ user.username }}</span>
+          <div class="rm-avatar">
+            <img
+              v-if="user.avatar"
+              :src="`/avatars/${encodeURIComponent(user.avatar)}`"
+              :alt="user.fullname"
+            />
+            <span v-else>{{ user.fullname?.[0]?.toUpperCase() ?? '?' }}</span>
             <span
               v-if="roleBadge(user.role)"
-              class="ru-role"
+              class="rm-role"
               :class="roleBadge(user.role).cls"
+              :title="roleBadge(user.role).title"
             >{{ roleBadge(user.role).label }}</span>
           </div>
-          <div v-if="user.followers_count > 0" class="ru-followers">
-            ⚔ {{ user.followers_count }} подписчиков
+          <div class="rm-body">
+            <span class="rm-name">{{ user.fullname || 'Воин' }}</span>
+            <span class="rm-username">@{{ user.username }}</span>
           </div>
-        </div>
+          <button
+            class="rm-write"
+            :disabled="writingFor === user.username"
+            @click="handleWrite(user, $event)"
+            :title="`Написать @${user.username}`"
+            type="button"
+          >
+            <span v-if="writingFor === user.username">…</span>
+            <span v-else>✉</span>
+          </button>
+        </RouterLink>
+      </div>
 
-        <button
-          class="ru-write"
-          :disabled="writingFor === user.username"
-          @click="handleWrite(user)"
-          :title="`Написать @${user.username}`"
-          type="button"
-        >
-          <span v-if="writingFor === user.username">…</span>
-          <span v-else>✉</span>
-        </button>
-      </li>
-    </ul>
+      <!-- Fade-маски сверху и снизу (плавное исчезновение карточек на краях) -->
+      <div class="rm-fade rm-fade-top" aria-hidden="true"></div>
+      <div class="rm-fade rm-fade-bot" aria-hidden="true"></div>
+    </div>
 
-    <div v-else class="ru-empty">Воинов пока нет.</div>
+    <div v-else class="rm-empty">Воинов пока нет.</div>
   </aside>
 </template>
 
 <style scoped>
-.random-users-widget {
+.random-users-marquee {
   border: 1px solid var(--iron-dark);
   border-radius: var(--r-md);
   background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
   overflow: hidden;
-}
-.ru-head {
+  /* Высота фиксированная — задаёт длину видимого окна marquee */
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  height: 540px;
+}
+.rm-head {
   padding: 12px 14px;
   border-bottom: 1px solid var(--iron-dark);
   background: rgba(0,0,0,0.25);
+  flex-shrink: 0;
 }
-.ru-eyebrow {
+.rm-eyebrow {
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--iron-warm);
-}
-.ru-refresh {
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--iron-dark);
-  border-radius: var(--r-sm);
-  background: rgba(0,0,0,0.3);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 14px;
-  font-family: inherit;
-  transition: all var(--dur-fast);
-}
-.ru-refresh:hover:not(:disabled) {
-  border-color: var(--iron-warm);
-  color: var(--iron-warm);
-}
-.ru-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
-.ru-refresh .spinning {
-  display: inline-block;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.ru-loading, .ru-empty {
-  padding: 20px 14px;
   text-align: center;
+}
+
+.rm-loading, .rm-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-muted);
   font-style: italic;
   font-size: 13px;
 }
 
-.ru-list {
-  list-style: none;
-  margin: 0;
-  padding: 4px 0;
+/* ── MARQUEE viewport ── */
+.rm-viewport {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  /* Прячем scrollbar на всякий */
+  scrollbar-width: none;
 }
-.ru-card {
+.rm-viewport::-webkit-scrollbar { display: none; }
+
+.rm-track {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 10px;
+  /* Анимация скролит трек на -50% (ровно высота одной копии списка),
+     создавая иллюзию бесконечного потока — вторая копия как раз
+     встаёт на место первой. */
+  animation: marquee-scroll 60s linear infinite;
+  will-change: transform;
+}
+@keyframes marquee-scroll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+
+/* На hover паузим — юзер может прочитать/кликнуть */
+.rm-viewport:hover .rm-track,
+.rm-viewport:focus-within .rm-track {
+  animation-play-state: paused;
+}
+
+/* Снижение анимации для prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .rm-track {
+    animation: none;
+  }
+}
+
+/* Fade-маски сверху и снизу (плавное затухание у краёв) */
+.rm-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 36px;
+  pointer-events: none;
+  z-index: 2;
+}
+.rm-fade-top {
+  top: 0;
+  background: linear-gradient(180deg, var(--ash-coal) 0%, transparent 100%);
+}
+.rm-fade-bot {
+  bottom: 0;
+  background: linear-gradient(0deg, var(--ash-coal) 0%, transparent 100%);
+}
+
+/* ── Карточка юзера ── */
+.rm-card {
   display: grid;
-  grid-template-columns: 36px 1fr 32px;
+  grid-template-columns: 38px 1fr 30px;
   gap: 10px;
   align-items: center;
-  padding: 10px 14px;
-  border-bottom: 1px solid rgba(60, 50, 40, 0.4);
-  transition: all 0.4s var(--ease-smoke);
+  padding: 8px 10px;
+  border: 1px solid rgba(60, 50, 40, 0.5);
+  border-radius: var(--r-sm);
+  background: rgba(0,0,0,0.18);
+  text-decoration: none;
+  color: inherit;
+  transition: all var(--dur-fast);
+  flex-shrink: 0;
 }
-.ru-card:last-child { border-bottom: none; }
-.ru-card:hover {
-  background: rgba(226, 67, 16, 0.06);
+.rm-card:hover {
+  background: rgba(226, 67, 16, 0.08);
+  border-color: var(--iron-warm);
+  transform: translateX(2px);
+}
+.rm-card:hover .rm-write {
+  opacity: 1;
+  transform: scale(1);
 }
 
-/* Slot-machine fade-in эффект для ротируемых элементов */
-.ru-card {
-  animation: slot-in 0.5s ease-out;
-}
-@keyframes slot-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.ru-avatar {
-  width: 36px;
-  height: 36px;
+.rm-avatar {
+  position: relative;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: 1px solid var(--iron-dark);
   background: rgba(0,0,0,0.4);
@@ -271,73 +276,77 @@ onUnmounted(() => {
   color: var(--text-bright);
   font-weight: 600;
   overflow: hidden;
-  text-decoration: none;
-  transition: border-color var(--dur-fast);
 }
-.ru-avatar:hover { border-color: var(--iron-warm); }
-.ru-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.rm-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.rm-role {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ash-coal);
+  z-index: 1;
+}
+.rm-role.rb-admin {
+  background: linear-gradient(180deg, #e24310 0%, #7a1f0c 100%);
+  color: #fff5d6;
+}
+.rm-role.rb-manager {
+  background: linear-gradient(180deg, #6cbf6c 0%, #3e7d3e 100%);
+  color: #f0fff0;
+}
 
-.ru-body {
+.rm-body {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
-.ru-name {
-  display: block;
-  font-size: 13px;
+.rm-name {
+  font-size: 12px;
   color: var(--text-bright);
-  text-decoration: none;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.ru-name:hover { color: var(--iron-warm); }
-.ru-meta {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-.ru-username { letter-spacing: 0.02em; }
-.ru-role {
-  padding: 1px 5px;
-  border-radius: 8px;
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.ru-role.rb-admin {
-  background: rgba(226, 67, 16, 0.2);
-  color: #ffba78;
-  border: 1px solid rgba(226, 67, 16, 0.4);
-}
-.ru-role.rb-manager {
-  background: rgba(108, 191, 108, 0.15);
-  color: #8edb8e;
-  border: 1px solid rgba(108, 191, 108, 0.3);
-}
-.ru-followers {
+.rm-username {
   font-size: 10px;
   color: var(--text-muted);
-  margin-top: 2px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.ru-write {
-  width: 32px;
-  height: 32px;
+.rm-write {
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--iron-warm);
   border-radius: var(--r-sm);
-  background: linear-gradient(180deg, rgba(226, 67, 16, 0.2) 0%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(180deg, rgba(226, 67, 16, 0.25) 0%, rgba(0,0,0,0) 100%);
   color: var(--text-bright);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   font-family: inherit;
+  /* Скрыта по дефолту, показывается на hover карточки */
+  opacity: 0;
+  transform: scale(0.85);
   transition: all var(--dur-fast);
 }
-.ru-write:hover:not(:disabled) {
-  box-shadow: 0 0 10px rgba(226, 67, 16, 0.4);
-  transform: translateY(-1px);
+.rm-write:hover:not(:disabled) {
+  box-shadow: 0 0 10px rgba(226, 67, 16, 0.5);
 }
-.ru-write:disabled { opacity: 0.4; cursor: not-allowed; }
+.rm-write:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* На touch-устройствах кнопка всегда видна (нет hover) */
+@media (hover: none) {
+  .rm-write { opacity: 1; transform: scale(1); }
+}
 </style>

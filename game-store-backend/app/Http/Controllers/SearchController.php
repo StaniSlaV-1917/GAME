@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Game;
 use App\Models\Mod;
+use App\Models\News;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -12,10 +13,17 @@ use Illuminate\Support\Facades\DB;
 /**
  * Универсальный поиск по всему контенту сайта.
  *
- * GET /api/search?q=<query>&types=games,users,posts,mods (опц.)
+ * GET /api/search?q=<query>&types=games,users,posts,mods,news (опц.)
  *
- * Возвращает: { games:[], users:[], posts:[], mods:[] }
- * Каждая категория ограничена 5 результатами для отзывчивости dropdown.
+ * Возвращает: { games, users, posts, mods, news }
+ * Каждая категория ограничена 5 для отзывчивости dropdown.
+ *
+ * Поиск:
+ *   • Games  — title, genre, description, platform
+ *   • Users  — username, fullname (active only, не забанены)
+ *   • Posts  — title, body, tags (JSONB cast to text для substring match)
+ *   • Mods   — title, description
+ *   • News   — title, content
  *
  * ILIKE для case-insensitive search в Postgres. На MySQL/SQLite
  * автоматически работает через collation.
@@ -28,17 +36,10 @@ class SearchController extends Controller
         $types = $request->query('types');
         $allowed = $types
             ? array_filter(array_map('trim', explode(',', $types)))
-            : ['games', 'users', 'posts', 'mods'];
+            : ['games', 'users', 'posts', 'mods', 'news'];
 
-        // Минимум 2 символа для поиска (защита от мусорных запросов)
         if (mb_strlen($q) < 2) {
-            return response()->json([
-                'games' => [],
-                'users' => [],
-                'posts' => [],
-                'mods'  => [],
-                'q'     => $q,
-            ]);
+            return $this->emptyResponse($q);
         }
 
         $like = '%' . $this->escapeLike($q) . '%';
@@ -51,7 +52,9 @@ class SearchController extends Controller
         if (in_array('games', $allowed, true)) {
             $result['games'] = Game::where(function ($w) use ($likeOp, $like) {
                     $w->where('title', $likeOp, $like)
-                      ->orWhere('genre', $likeOp, $like);
+                      ->orWhere('genre', $likeOp, $like)
+                      ->orWhere('description', $likeOp, $like)
+                      ->orWhere('platform', $likeOp, $like);
                 })
                 ->limit(5)
                 ->get(['id', 'title', 'genre', 'price', 'image']);
@@ -73,16 +76,26 @@ class SearchController extends Controller
             $result['users'] = [];
         }
 
-        // ── Posts (только опубликованные approved) ──
+        // ── Posts (опубликованные approved + поиск по тегам) ──
+        // Tags хранятся как JSONB array. tags::text ilike '%q%' матчит
+        // подстроку в любом теге. Например q="rpg" найдёт "rpg-game".
         if (in_array('posts', $allowed, true)) {
             $result['posts'] = Post::published()
-                ->where(function ($w) use ($likeOp, $like) {
+                ->where(function ($w) use ($likeOp, $like, $isPgsql) {
                     $w->where('title', $likeOp, $like)
                       ->orWhere('body', $likeOp, $like);
+
+                    if ($isPgsql) {
+                        // Postgres: cast jsonb to text и ищем substring
+                        $w->orWhereRaw('tags::text ilike ?', [$like]);
+                    } else {
+                        // MySQL/SQLite: JSON хранится как text, прямой LIKE
+                        $w->orWhere('tags', 'like', $like);
+                    }
                 })
                 ->with('author:id,fullname,username,avatar,role')
                 ->limit(5)
-                ->get(['id', 'title', 'author_id', 'cover_url', 'published_at']);
+                ->get(['id', 'title', 'author_id', 'cover_url', 'tags', 'published_at']);
         } else {
             $result['posts'] = [];
         }
@@ -100,11 +113,31 @@ class SearchController extends Controller
             $result['mods'] = [];
         }
 
+        // ── News ──
+        if (in_array('news', $allowed, true)) {
+            $result['news'] = News::where(function ($w) use ($likeOp, $like) {
+                    $w->where('title', $likeOp, $like)
+                      ->orWhere('content', $likeOp, $like);
+                })
+                ->limit(5)
+                ->get(['id', 'title', 'image', 'published_at']);
+        } else {
+            $result['news'] = [];
+        }
+
         return response()->json($result);
     }
 
+    private function emptyResponse(string $q): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'games' => [], 'users' => [], 'posts' => [], 'mods' => [], 'news' => [],
+            'q' => $q,
+        ]);
+    }
+
     /**
-     * Escape % and _ так чтобы юзер не мог инжектить LIKE wildcards.
+     * Escape % и _ чтобы юзер не мог инжектить LIKE wildcards.
      */
     private function escapeLike(string $value): string
     {
