@@ -6,6 +6,7 @@ use App\Mail\InAppNotificationMail;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Cache;
 
@@ -27,14 +28,13 @@ class NewReactionOnYourPost extends Notification
 
     public function via($notifiable): array
     {
-        $channels = ['database'];
+        // database + broadcast (мгновенный push) + mail (throttle 30 мин)
+        $channels = ['database', 'broadcast'];
 
         if (
             !empty($notifiable->email)
             && ($notifiable->notify_email_reaction ?? true)
         ) {
-            // Throttle на пару (юзер, пост) — один email в 30 мин на
-            // каждый пост даже если он соберёт сотню реакций.
             $key = "mail_dedupe:{$notifiable->id}:reaction.created:{$this->post->id}";
             if (Cache::add($key, true, now()->addMinutes(30))) {
                 $channels[] = 'mail';
@@ -42,6 +42,11 @@ class NewReactionOnYourPost extends Notification
         }
 
         return $channels;
+    }
+
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toDatabase($notifiable));
     }
 
     public function toDatabase($notifiable): array

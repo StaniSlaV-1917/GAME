@@ -1,18 +1,20 @@
 /**
  * Pinia-store для in-app нотификаций.
- * Phase 4 / Batch A.
+ * Phase 4 / Batch A — database + polling
+ * Phase 4 / Batch C — добавлен Reverb broadcast push (мгновенно)
  *
- * Поллим unread-count раз в 60 секунд (только когда юзер залогинен и
- * вкладка активна). Полный список грузим только когда юзер открывает
- * dropdown / страницу /notifications.
+ * Двойной канал: Reverb WebSocket для мгновенной доставки + polling
+ * как safety net (если WS оборвался). Polling после 4C — раз в 5 мин
+ * вместо 60с (Reverb даёт push, polling только resync на случай разрыва).
  *
  * Bell-badge в шапке читает unreadCount; список вешается на NotificationsView.
  */
 import { defineStore } from 'pinia';
 import api from '../api/axios';
 import { useAuthStore } from './auth';
+import { getEcho, disconnectEcho } from '../utils/echo';
 
-const POLL_INTERVAL_MS = 60_000;
+const POLL_INTERVAL_MS = 5 * 60_000; // 5 мин — Reverb primary, polling fallback
 
 export const useNotificationsStore = defineStore('notifications', {
   state: () => ({
@@ -30,6 +32,10 @@ export const useNotificationsStore = defineStore('notifications', {
     lastSeenIds: new Set(),
     peeks: [],            // массив items, выкатываемых пользователю
     suppressPeeks: false, // когда dropdown открыт — peek не нужен
+
+    // ── Reverb subscription (Phase 4/C) ──
+    echoChannel: null,    // ссылка на channel чтобы можно было unsubscribe
+    realtimeConnected: false,
   }),
 
   getters: {
@@ -179,13 +185,83 @@ export const useNotificationsStore = defineStore('notifications', {
     },
 
     /**
-     * Запустить polling unread-count.
-     * Останавливается автоматически на logout (через stopPolling в auth-сторе).
+     * Phase 4/C — обработать notification, прилетевшую через Reverb push.
+     * Payload идентичен toDatabase(): {event, post_id, actor, preview, ...}.
+     * Проблема: при broadcast у нас НЕТ id из таблицы notifications
+     * (broadcast не пишет в БД, это делает database channel параллельно).
+     * Решение: дёргаем fetchAll() чтобы подтянуть только что записанную
+     * запись с реальным id, и diff против lastSeenIds подкинет её в peek.
+     */
+    handleRealtimeNotification(payload) {
+      const auth = useAuthStore();
+      if (!auth.isLoggedIn) return;
+      // Реакция мгновенная — fetchAll с queuePeeks тоже отработает diff
+      // и подкинет новый item в peek-очередь (App.vue его покажет с
+      // bell-homing анимацией).
+      this.fetchAll({ queuePeeks: true });
+    },
+
+    /**
+     * Подписаться на private channel `App.Models.User.{id}` через Reverb.
+     * Echo доставляет broadcast notifications в `.notification` event.
+     */
+    subscribeRealtime() {
+      const auth = useAuthStore();
+      if (!auth.isLoggedIn || !auth.user?.id) return;
+
+      const echo = getEcho();
+      if (!echo) return; // REVERB envs не настроены — продолжаем на polling
+
+      // Если уже подписаны — ничего не делаем
+      if (this.echoChannel) return;
+
+      try {
+        const channelName = `App.Models.User.${auth.user.id}`;
+        this.echoChannel = echo.private(channelName);
+
+        this.echoChannel.notification((payload) => {
+          this.handleRealtimeNotification(payload);
+        });
+
+        // Connection status — для отладки
+        echo.connector.pusher.connection.bind('connected', () => {
+          this.realtimeConnected = true;
+        });
+        echo.connector.pusher.connection.bind('disconnected', () => {
+          this.realtimeConnected = false;
+        });
+      } catch (e) {
+        console.warn('[notifications] subscribeRealtime failed', e);
+      }
+    },
+
+    unsubscribeRealtime() {
+      if (this.echoChannel) {
+        try {
+          const echo = getEcho();
+          const auth = useAuthStore();
+          if (echo && auth.user?.id) {
+            echo.leave(`App.Models.User.${auth.user.id}`);
+          }
+        } catch (e) {
+          console.warn('[notifications] unsubscribe failed', e);
+        }
+        this.echoChannel = null;
+        this.realtimeConnected = false;
+      }
+    },
+
+    /**
+     * Запустить polling unread-count + подписаться на Reverb.
+     * Останавливается на logout.
      */
     startPolling() {
       this.stopPolling();
       // Сразу один fetch для свежего состояния
       this.fetchUnreadCount();
+
+      // Phase 4/C — подписываемся на real-time push
+      this.subscribeRealtime();
 
       this.pollTimer = setInterval(() => {
         // Не дёргаем когда вкладка скрыта (экономия батареи + траффика)
@@ -199,11 +275,13 @@ export const useNotificationsStore = defineStore('notifications', {
         clearInterval(this.pollTimer);
         this.pollTimer = null;
       }
+      this.unsubscribeRealtime();
     },
 
-    /** Сброс при logout. */
+    /** Сброс при logout — отключаем WS и чистим state. */
     reset() {
       this.stopPolling();
+      disconnectEcho(); // полный teardown Echo singleton
       this.items = [];
       this.unreadCount = 0;
       this.loaded = false;

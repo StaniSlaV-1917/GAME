@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Mail\InAppNotificationMail;
 use App\Models\Comment;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Cache;
 
@@ -26,7 +27,10 @@ class NewCommentOnYourPost extends Notification
      */
     public function via($notifiable): array
     {
-        $channels = ['database'];
+        // Phase 4/A: database (для bell + dropdown + page)
+        // Phase 4/C: broadcast (мгновенный push через Reverb WebSocket)
+        // Phase 4/B: mail (email-дубль с throttle 30 мин)
+        $channels = ['database', 'broadcast'];
 
         if (
             !empty($notifiable->email)
@@ -41,6 +45,16 @@ class NewCommentOnYourPost extends Notification
         }
 
         return $channels;
+    }
+
+    /**
+     * Payload для broadcast = тот же что toDatabase, чтобы фронт мог
+     * обработать одинаково независимо от канала. Echo доставляет это
+     * в `.notification` event на private channel `App.Models.User.{id}`.
+     */
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toDatabase($notifiable));
     }
 
     public function toDatabase($notifiable): array

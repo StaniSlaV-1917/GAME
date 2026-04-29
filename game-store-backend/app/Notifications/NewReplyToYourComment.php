@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Mail\InAppNotificationMail;
 use App\Models\Comment;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Cache;
 
@@ -24,14 +25,14 @@ class NewReplyToYourComment extends Notification
 
     public function via($notifiable): array
     {
-        $channels = ['database'];
+        // database + broadcast (без throttle — мгновенный push)
+        // + mail (с throttle 30 мин на одну пару юзер↔коммент)
+        $channels = ['database', 'broadcast'];
 
         if (
             !empty($notifiable->email)
             && ($notifiable->notify_email_reply ?? true)
         ) {
-            // Throttle на пару (юзер, родительский коммент) — если 5 человек
-            // быстро отвечают на один и тот же коммент, шлём только первый email.
             $key = "mail_dedupe:{$notifiable->id}:comment.reply:{$this->parent->id}";
             if (Cache::add($key, true, now()->addMinutes(30))) {
                 $channels[] = 'mail';
@@ -39,6 +40,11 @@ class NewReplyToYourComment extends Notification
         }
 
         return $channels;
+    }
+
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toDatabase($notifiable));
     }
 
     public function toDatabase($notifiable): array

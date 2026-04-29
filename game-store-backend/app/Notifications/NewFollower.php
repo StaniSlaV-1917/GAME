@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Mail\InAppNotificationMail;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Cache;
 
@@ -25,7 +26,8 @@ class NewFollower extends Notification
 
     public function via($notifiable): array
     {
-        $channels = ['database'];
+        // database + broadcast (мгновенный push) + mail (throttle 30 мин per user)
+        $channels = ['database', 'broadcast'];
 
         if (
             !empty($notifiable->email)
@@ -38,6 +40,11 @@ class NewFollower extends Notification
         }
 
         return $channels;
+    }
+
+    public function toBroadcast($notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toDatabase($notifiable));
     }
 
     public function toDatabase($notifiable): array
