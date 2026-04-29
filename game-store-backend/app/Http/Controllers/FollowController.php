@@ -41,7 +41,7 @@ class FollowController extends Controller
 
         // Идемпотентно: если уже подписан — возвращаем текущее состояние
         $existing = Follow::where('follower_id', $user->id)
-            ->where('followed_id', $target->id)
+            ->where('following_id', $target->id)
             ->first();
 
         if ($existing) {
@@ -56,7 +56,7 @@ class FollowController extends Controller
         DB::transaction(function () use ($user, $target) {
             Follow::create([
                 'follower_id' => $user->id,
-                'followed_id' => $target->id,
+                'following_id' => $target->id,
             ]);
             $user->increment('following_count');
             $target->increment('followers_count');
@@ -83,7 +83,7 @@ class FollowController extends Controller
         $target = $this->findByUsername($username);
 
         $existing = Follow::where('follower_id', $user->id)
-            ->where('followed_id', $target->id)
+            ->where('following_id', $target->id)
             ->first();
 
         if (!$existing) {

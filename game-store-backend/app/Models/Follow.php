@@ -13,9 +13,13 @@ class Follow extends Model
 {
     use HasFactory;
 
+    // Phase 1 миграция создала follows только с created_at,
+    // без updated_at. Отключаем updated_at:
+    public const UPDATED_AT = null;
+
     protected $fillable = [
         'follower_id',
-        'followed_id',
+        'following_id',
     ];
 
     public function follower()
@@ -25,6 +29,6 @@ class Follow extends Model
 
     public function followed()
     {
-        return $this->belongsTo(User::class, 'followed_id');
+        return $this->belongsTo(User::class, 'following_id');
     }
 }

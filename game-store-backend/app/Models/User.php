@@ -74,7 +74,8 @@ class User extends Authenticatable
 
     /**
      * На кого этот юзер подписан (его подписки).
-     * Через pivot follows: follower_id = $this->id, followed_id = target.
+     * Pivot follows: follower_id = $this->id, following_id = target.
+     * (Phase 1 миграция использует имя following_id — не followed_id.)
      */
     public function following()
     {
@@ -82,8 +83,8 @@ class User extends Authenticatable
             User::class,
             'follows',
             'follower_id',
-            'followed_id'
-        )->withTimestamps();
+            'following_id'
+        );
     }
 
     /**
@@ -94,9 +95,9 @@ class User extends Authenticatable
         return $this->belongsToMany(
             User::class,
             'follows',
-            'followed_id',
+            'following_id',
             'follower_id'
-        )->withTimestamps();
+        );
     }
 
     public function isAdmin(): bool

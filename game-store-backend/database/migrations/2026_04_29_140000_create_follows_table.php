@@ -5,45 +5,29 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Phase 3 / Batch A — таблица подписок follower → followed.
+ * Phase 3 / Batch A — добавляем счётчики подписок в users.
  *
- * Семантика:
+ * Таблица follows УЖЕ создана Phase 1 миграцией
+ * (2026_04_27_150001_create_social_graph_tables.php) со столбцами
  *   follower_id  — кто подписался
- *   followed_id  — на кого подписался
+ *   following_id — на кого подписался   ← заметь имя
  *
- * Unique constraint защищает от дубликатов (один юзер не может
- * подписаться на одного и того же дважды).
- *
- * Денормализованные счётчики:
- *   users.followers_count — сколько у меня подписчиков
- *   users.following_count — на скольких я подписан
- *
- * Поддерживаются триггерами на insert/delete (в FollowController
- * через DB::transaction → User::increment/decrement).
+ * Эта миграция только добавляет денормализованные счётчики на users.
+ * (Изначально я ошибочно добавил Schema::create — это привело к
+ *  silent fail. Текущая версия — идемпотентная: только колонки.)
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('follows', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('follower_id')
-                  ->constrained('users')
-                  ->cascadeOnDelete();
-            $table->foreignId('followed_id')
-                  ->constrained('users')
-                  ->cascadeOnDelete();
-            $table->timestamps();
-
-            $table->unique(['follower_id', 'followed_id'], 'follows_pair_unique');
-            $table->index('follower_id');
-            $table->index('followed_id');
-        });
-
-        // Денормализованные счётчики на users
+        // Безопасно добавляем только если колонок ещё нет
         Schema::table('users', function (Blueprint $table) {
-            $table->unsignedInteger('followers_count')->default(0)->after('frozen_at');
-            $table->unsignedInteger('following_count')->default(0)->after('followers_count');
+            if (!Schema::hasColumn('users', 'followers_count')) {
+                $table->unsignedInteger('followers_count')->default(0);
+            }
+            if (!Schema::hasColumn('users', 'following_count')) {
+                $table->unsignedInteger('following_count')->default(0);
+            }
         });
     }
 
@@ -52,6 +36,5 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn(['followers_count', 'following_count']);
         });
-        Schema::dropIfExists('follows');
     }
 };
