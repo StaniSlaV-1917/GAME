@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReviewController;
@@ -154,6 +155,12 @@ Route::get('/games/{gameId}/mods', [GameController::class, 'getMods']);
 // Новости
 Route::get('/news', [NewsController::class, 'index']);
 Route::get('/news/{id}', [NewsController::class, 'show']);
+
+// ── Phase 2 / Forum: посты ──
+// Публичные — лента и одиночный пост. Без auth (гости тоже читают).
+// CRUD (POST/PUT/DELETE) добавим в Batch C с auth + throttle.
+Route::get('/posts',      [PostController::class, 'index']);
+Route::get('/posts/{id}', [PostController::class, 'show']);
 
 // Отзывы для игры
 Route::get('/games/{gameId}/reviews', [ReviewController::class, 'index']);

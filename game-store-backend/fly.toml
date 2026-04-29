@@ -59,7 +59,7 @@ primary_region = "ams"
 # Запускается ПОСЛЕ старта Postgres-сайдкара и до публикации новой версии.
 # Если миграции упадут — деплой откатится.
 [deploy]
-  release_command = "sh -c 'php artisan migrate --force && php artisan db:seed --class=RolesPermissionsSeeder --force && php artisan db:seed --class=UserRolesBackfillSeeder --force && php artisan storage:link || true && php artisan config:cache && php artisan route:cache && php artisan view:cache'"
+  release_command = "sh -c 'php artisan migrate --force && php artisan db:seed --class=RolesPermissionsSeeder --force && php artisan db:seed --class=UserRolesBackfillSeeder --force && php artisan db:seed --class=ReactionsPaletteSeeder --force && php artisan storage:link || true && php artisan config:cache && php artisan route:cache && php artisan view:cache'"
 
 # ── Многопроцессная конфигурация ──
 # Apache (HTTP API) и Reverb (WebSocket для realtime в Phase 4)
