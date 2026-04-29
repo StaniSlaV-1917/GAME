@@ -240,7 +240,12 @@ class ReactionController extends Controller
         $result = [];
         foreach ($ids as $id) {
             $rowsForId = $rows->get($id) ?? collect();
-            $myEmojis  = optional($myReactions->get($id))->pluck('palette_emoji_id')->toArray() ?? [];
+            // Безопасный chain: если $myReactions->get() = null, делаем
+            // пустой Collection. optional()->pluck() в Laravel вернул бы
+            // null, и ->toArray() на null упал бы с TypeError.
+            $myEmojis = ($myReactions->get($id) ?? collect())
+                ->pluck('palette_emoji_id')
+                ->toArray();
             $result[$id] = $rowsForId->map(fn ($r) => [
                 'palette_emoji_id' => $r->palette_emoji_id,
                 'emoji_char'       => $r->emoji_char,
