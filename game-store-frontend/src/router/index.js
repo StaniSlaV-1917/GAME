@@ -106,12 +106,11 @@ const routes = [
     component: () => import('../views/PostNewView.vue'),
     meta: { requiresAuth: true },
   },
-  // Одиночный пост /post/:id (Batch D реализует полноценный view)
+  // Одиночный пост /post/:id — Batch D реализует полноценный view
   {
     path: '/post/:id',
     name: 'post',
-    component: ForumStubView,
-    meta: { stub: { title: 'Карточка поста', eyebrow: 'Phase 2 / Batch D', icon: '📜' } },
+    component: () => import('../views/PostView.vue'),
     props: true,
   },
 

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\AuthController;
@@ -169,6 +170,17 @@ Route::middleware(['auth:sanctum', 'throttle:5,1'])->group(function () {
     Route::put('/posts/{id}',            [PostController::class, 'update']);
     Route::delete('/posts/{id}',         [PostController::class, 'destroy']);
     Route::post('/posts/upload-cover',   [PostController::class, 'uploadCover']);
+});
+
+// ── Phase 2 / Forum: комментарии ──
+// Read — публичный (для гостей, чтобы могли смотреть дискуссию).
+// Write — auth + throttle:10,1 (мягче чем посты, тк комменты короче и
+// чаще; 10/мин достаточно для нормальной дискуссии).
+Route::get('/posts/{postId}/comments', [CommentController::class, 'index']);
+Route::middleware(['auth:sanctum', 'throttle:10,1'])->group(function () {
+    Route::post('/posts/{postId}/comments', [CommentController::class, 'store']);
+    Route::put('/comments/{id}',            [CommentController::class, 'update']);
+    Route::delete('/comments/{id}',         [CommentController::class, 'destroy']);
 });
 
 // ── Phase 2 / Forum: публичные профили ──
