@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
 use Illuminate\Support\Facades\Config;
@@ -178,8 +179,21 @@ class CryptoPaymentService
                 'confirmed_at'     => now(),
             ]);
 
+            // Если payment связан с Order — каскадно обновляем его статус.
+            // status='created' (только что создан вместе с payment) →
+            // 'paid' (deal sealed, юзер заплатил).
+            // Не трогаем shipped/completed/cancelled — те выставляются
+            // вручную админом через admin/orders.
+            if ($fresh->order_id) {
+                $order = Order::find($fresh->order_id);
+                if ($order && $order->status === 'created') {
+                    $order->update(['status' => 'paid']);
+                }
+            }
+
             Log::warning('[Payment] CONFIRMED', [
                 'payment_id'    => $fresh->id,
+                'order_id'      => $fresh->order_id,
                 'user_id'       => $fresh->user_id,
                 'currency'      => $fresh->crypto_currency,
                 'amount_crypto' => $fresh->amount_crypto,

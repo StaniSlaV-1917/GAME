@@ -10,12 +10,16 @@ use Illuminate\Support\Facades\Mail;
 
 class AdminOrderController extends Controller
 {
-    // Список всех заказов с пользователем и играми
+    // Список всех заказов с пользователем, играми и крипто-платежами.
+    // Pay/A.3 — добавлен latestPayment чтобы в admin-таблице можно было
+    // показывать инфо о платеже (валюта, сумма крипты, статус, tx hash).
+    // Старые заказы (созданные до Pay/A) не имеют payments → null.
     public function index(Request $request)
     {
         $orders = Order::with([
                 'user',
                 'items.game',
+                'latestPayment',
             ])
             ->orderByDesc('order_date')
             ->get();

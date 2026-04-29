@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\Order;
 use App\Models\Payment;
 use App\Services\CryptoPaymentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
@@ -63,6 +65,7 @@ class PaymentController extends Controller
 
         $total = 0.0;
         $snapshot = [];
+        $itemsData = [];
         foreach ($data['items'] as $item) {
             $game = $games->get($item['game_id']);
             if (!$game) {
@@ -79,6 +82,11 @@ class PaymentController extends Controller
                 'price'    => $price,
                 'quantity' => $qty,
             ];
+            $itemsData[] = [
+                'game_id'  => $game->id,
+                'price'    => $price,
+                'quantity' => $qty,
+            ];
         }
 
         if ($total <= 0) {
@@ -87,14 +95,29 @@ class PaymentController extends Controller
             ]);
         }
 
+        // Pay/A.3 — создаём Order + items + Payment в одной транзакции.
+        // Это объединяет историю заказов и платежей в одной таблице
+        // (admin/orders), даёт связь order ↔ payment через order_id.
         try {
-            $payment = $this->payments->createPending(
-                user: $user,
-                amountRub: $total,
-                currency: $data['currency'] ?? 'USDT_TRC20',
-                metadata: ['cart' => $snapshot],
-                orderId: null  // в MVP не привязываемся к Order — фейк-выдача
-            );
+            $payment = DB::transaction(function () use ($user, $total, $itemsData, $data, $snapshot) {
+                $order = Order::create([
+                    'user_id'    => $user->id,
+                    'status'     => 'created',
+                    'total'      => $total,
+                    'order_date' => now(),
+                ]);
+                foreach ($itemsData as $item) {
+                    $order->items()->create($item);
+                }
+
+                return $this->payments->createPending(
+                    user: $user,
+                    amountRub: $total,
+                    currency: $data['currency'] ?? 'USDT_TRC20',
+                    metadata: ['cart' => $snapshot],
+                    orderId: $order->id
+                );
+            });
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         } catch (\RuntimeException $e) {

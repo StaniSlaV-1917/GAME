@@ -24,7 +24,6 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminSupportController;
 use App\Http\Controllers\Admin\AdminModsController;
-use App\Http\Controllers\Admin\AdminPaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -149,10 +148,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/support',        [AdminSupportController::class, 'index']);
     Route::put('/support/{id}',   [AdminSupportController::class, 'update']);
     Route::delete('/support/{id}',[AdminSupportController::class, 'destroy']);
-
-    // ── Pay/A — админский просмотр всех крипто-платежей ──
-    Route::get('/payments',       [AdminPaymentController::class, 'index']);
-    Route::get('/payments/{id}',  [AdminPaymentController::class, 'show']);
 });
 
 // --- Основные публичные маршруты --- //

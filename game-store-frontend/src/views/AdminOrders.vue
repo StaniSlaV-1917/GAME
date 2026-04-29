@@ -25,9 +25,10 @@
             <th>Заказ ID</th>
             <th>Клиент</th>
             <th>Дата</th>
-            <th>Сумма</th>
+            <th>Сумма ₽</th>
             <th>Статус</th>
-            <th>Кол-во позиций</th>
+            <th>Поз.</th>
+            <th>Оплата</th>
           </tr>
         </thead>
         <tbody>
@@ -37,7 +38,7 @@
               <div>{{ order.user?.fullname || 'N/A' }}</div>
               <div class="user-email">{{ order.user?.email || 'N/A' }}</div>
             </td>
-            <td>{{ new Date(order.order_date).toLocaleString() }}</td>
+            <td>{{ new Date(order.order_date).toLocaleString('ru-RU') }}</td>
             <td>{{ Number(order.total).toFixed(2) }} ₽</td>
             <td>
               <select class="table-select" :class="`status-${order.status}`" v-model="order.status" @change="updateStatus(order, $event.target.value)">
@@ -45,6 +46,32 @@
               </select>
             </td>
             <td>{{ order.items.length }}</td>
+            <!-- Pay/A.3 — колонка с инфо о крипто-платеже.
+                 Старые заказы (до Pay/A) → latest_payment === null → "—".
+                 Новые заказы → блок с валютой, суммой, статусом и tx hash. -->
+            <td class="payment-cell">
+              <template v-if="order.latest_payment">
+                <div class="pay-line">
+                  <span class="pay-curr">{{ currencyLabel(order.latest_payment.crypto_currency) }}</span>
+                  <span class="pay-status" :class="`pst-${effectivePayStatus(order.latest_payment)}`">
+                    {{ payStatusLabel(effectivePayStatus(order.latest_payment)) }}
+                  </span>
+                </div>
+                <div class="pay-amount mono">
+                  {{ Number(order.latest_payment.amount_crypto).toFixed(6) }}
+                  {{ currencyUnit(order.latest_payment.crypto_currency) }}
+                </div>
+                <a
+                  v-if="order.latest_payment.transaction_hash"
+                  :href="explorerUrl(order.latest_payment)"
+                  target="_blank" rel="noopener"
+                  class="pay-tx mono"
+                >
+                  {{ order.latest_payment.transaction_hash.slice(0, 10) }}…
+                </a>
+              </template>
+              <span v-else class="pay-empty">—</span>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -112,6 +139,43 @@ const statusLabel = (status) => {
   return map[status] || status;
 };
 
+// Pay/A.3 — helpers для колонки «Оплата»
+const currencyLabel = (code) => {
+  switch (code) {
+    case 'USDT_TRC20': return 'USDT TRC-20';
+    case 'TRX':        return 'TRX';
+    case 'USDT_BEP20': return 'USDT BEP-20';
+    default:           return code || '—';
+  }
+};
+const currencyUnit = (code) => code === 'TRX' ? 'TRX' : 'USDT';
+
+const payStatusLabel = (s) => {
+  const m = {
+    pending:   'ожид.',
+    confirmed: 'оплачено',
+    expired:   'истёк',
+    failed:    'ошибка',
+  };
+  return m[s] || s;
+};
+
+// Pending с истёкшим expires_at показываем как expired визуально
+const effectivePayStatus = (p) => {
+  if (!p) return null;
+  if (p.status === 'pending' && p.expires_at && new Date(p.expires_at) < new Date()) {
+    return 'expired';
+  }
+  return p.status;
+};
+
+const explorerUrl = (p) => {
+  if (!p?.transaction_hash) return null;
+  return p.crypto_currency === 'USDT_BEP20'
+    ? `https://bscscan.com/tx/${p.transaction_hash}`
+    : `https://tronscan.org/#/transaction/${p.transaction_hash}`;
+};
+
 const updateStatus = async (order, newStatus) => {
   try {
     const { data } = await api.put(`/admin/orders/${order.id}/status`, { status: newStatus });
@@ -167,4 +231,53 @@ onMounted(loadOrders);
 .table-select.status-shipped   { color: var(--ember-glow); }
 .table-select.status-completed { color: var(--ember-gold); }
 .table-select.status-cancelled { color: #ffb4a8; }
+
+/* Pay/A.3 — payment-колонка: компактный stack валюта/сумма/tx */
+.payment-cell {
+  min-width: 180px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+.pay-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+.pay-curr {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  color: var(--text-bright);
+  white-space: nowrap;
+}
+.pay-status {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+}
+.pst-pending   { color: #ffba78; background: rgba(255, 186, 120, 0.1); }
+.pst-confirmed { color: #8edb8e; background: rgba(108, 191, 108, 0.12); }
+.pst-expired,
+.pst-failed    { color: #ff8a4c; background: rgba(184, 52, 26, 0.12); }
+.pay-amount {
+  color: var(--text-parchment);
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+.pay-tx {
+  display: inline-block;
+  color: #ffba78;
+  text-decoration: none;
+  font-size: 10px;
+}
+.pay-tx:hover { text-decoration: underline; }
+.pay-empty {
+  color: var(--text-muted);
+  font-size: 16px;
+}
+.mono { font-family: 'SF Mono', Monaco, Consolas, monospace; }
 </style>

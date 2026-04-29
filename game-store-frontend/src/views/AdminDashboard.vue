@@ -80,13 +80,6 @@ const cards = [
     badge: 'support_new',
     icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg>`,
   },
-  {
-    to: '/admin/payments',
-    title: 'Сокровищница',
-    desc: 'Все крипто-платежи — pending, confirmed, expired. Хэши, суммы, история.',
-    tone: 'brass',
-    icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12"/><path d="M16 9.5a3.5 3.5 0 0 0-3.5-3.5h-1a3.5 3.5 0 0 0 0 7h1a3.5 3.5 0 0 1 0 7h-1a3.5 3.5 0 0 1-3.5-3.5"/></svg>`,
-  },
 ];
 
 const statCards = [
