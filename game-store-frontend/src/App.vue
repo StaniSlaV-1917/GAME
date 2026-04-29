@@ -236,28 +236,36 @@ watch(() => route.path, () => { notifDropdownOpen.value = false; });
 
 // ── Global search (всегда развёрнут в шапке) ──
 const searchQuery = ref('');
-const searchResults = ref([]);
+// Универсальный поиск (Phase 4) — теперь весь контент: games/users/posts/mods
+const searchData = ref({ games: [], users: [], posts: [], mods: [] });
 const searchLoading = ref(false);
 const searchInputRef = ref(null);
-let allGamesCache = null;
 let searchTimer = null;
+
+const searchTotal = computed(() => {
+  const d = searchData.value;
+  return (d.games?.length || 0) + (d.users?.length || 0) + (d.posts?.length || 0) + (d.mods?.length || 0);
+});
 
 const doSearch = async (q) => {
   clearTimeout(searchTimer);
-  if (!q.trim()) { searchResults.value = []; return; }
+  const trimmed = q.trim();
+  if (trimmed.length < 2) {
+    searchData.value = { games: [], users: [], posts: [], mods: [] };
+    return;
+  }
   searchTimer = setTimeout(async () => {
     searchLoading.value = true;
     try {
-      if (!allGamesCache) {
-        const { data } = await api.get('/games');
-        allGamesCache = data;
-      }
-      const lower = q.toLowerCase();
-      searchResults.value = allGamesCache
-        .filter(g => g.title?.toLowerCase().includes(lower) || g.genre?.toLowerCase().includes(lower))
-        .slice(0, 7);
+      const { data } = await api.get('/search', { params: { q: trimmed } });
+      searchData.value = {
+        games: data.games || [],
+        users: data.users || [],
+        posts: data.posts || [],
+        mods:  data.mods  || [],
+      };
     } catch (e) {
-      console.error(e);
+      console.warn('[search] failed', e);
     } finally {
       searchLoading.value = false;
     }
@@ -266,10 +274,32 @@ const doSearch = async (q) => {
 
 watch(searchQuery, (q) => doSearch(q));
 
-const goToGame = (id) => {
+const closeSearch = () => {
   searchQuery.value = '';
-  searchResults.value = [];
+  searchData.value = { games: [], users: [], posts: [], mods: [] };
+};
+
+const goToGame = (id) => {
+  closeSearch();
   router.push({ name: 'game', params: { id } });
+};
+const goToUser = (username) => {
+  closeSearch();
+  router.push({ name: 'user-profile', params: { username } });
+};
+const goToPost = (id) => {
+  closeSearch();
+  router.push({ name: 'post', params: { id } });
+};
+const goToMod = (gameId) => {
+  // У нас пока нет /mods/:id route, ведём на /games/:id где список модов
+  closeSearch();
+  router.push({ name: 'game', params: { id: gameId } });
+};
+
+const formatPostDate = (s) => {
+  if (!s) return '';
+  return new Date(s).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 // Старый orc-cursor (SVG-курсор, заменявший нативный) удалён.
@@ -409,31 +439,92 @@ watch(isLoggedIn, (logged) => {
               ref="searchInputRef"
               v-model="searchQuery"
               class="search-input"
-              placeholder="Искать игру, жанр, платформу..."
-              @keydown.escape="searchQuery = ''"
+              placeholder="Поиск: игры, посты, воины, моды…"
+              @keydown.escape="closeSearch()"
             />
-            <button v-if="searchQuery" class="search-close-btn" @click="searchQuery = ''" title="Очистить">✕</button>
+            <button v-if="searchQuery" class="search-close-btn" @click="closeSearch()" title="Очистить">✕</button>
 
-            <!-- Dropdown results -->
+            <!-- Универсальный dropdown — секции по типам контента -->
             <Transition name="dropdown">
-              <div v-if="searchQuery && (searchResults.length || searchLoading)" class="search-dropdown">
+              <div v-if="searchQuery && (searchTotal > 0 || searchLoading)" class="search-dropdown">
                 <div v-if="searchLoading" class="search-loading">
                   <span class="search-spinner"></span> Разведка ведётся…
                 </div>
                 <template v-else>
-                  <div
-                    v-for="g in searchResults" :key="g.id"
-                    class="search-result-item"
-                    @click="goToGame(g.id)"
-                  >
-                    <img :src="resolveMediaUrl(g.image)" :alt="g.title" class="sr-img" loading="lazy" width="44" height="44" />
-                    <div class="sr-info">
-                      <span class="sr-title">{{ g.title }}</span>
-                      <span class="sr-genre">{{ g.genre }}</span>
+                  <!-- Игры -->
+                  <div v-if="searchData.games.length" class="sr-section">
+                    <div class="sr-section-title">⚔ Оружейная</div>
+                    <div
+                      v-for="g in searchData.games" :key="`g-${g.id}`"
+                      class="search-result-item"
+                      @click="goToGame(g.id)"
+                    >
+                      <img :src="resolveMediaUrl(g.image)" :alt="g.title" class="sr-img" loading="lazy" width="40" height="40" />
+                      <div class="sr-info">
+                        <span class="sr-title">{{ g.title }}</span>
+                        <span class="sr-meta">{{ g.genre }}</span>
+                      </div>
+                      <span class="sr-price">{{ Number(g.price).toFixed(0) }} ₽</span>
                     </div>
-                    <span class="sr-price">{{ Number(g.price).toFixed(0) }} ₽</span>
                   </div>
-                  <div v-if="!searchResults.length" class="search-empty">Разведчики не нашли ничего.</div>
+
+                  <!-- Воины (юзеры) -->
+                  <div v-if="searchData.users.length" class="sr-section">
+                    <div class="sr-section-title">⚔ Воины</div>
+                    <div
+                      v-for="u in searchData.users" :key="`u-${u.id}`"
+                      class="search-result-item"
+                      @click="goToUser(u.username)"
+                    >
+                      <div class="sr-avatar">
+                        <img v-if="u.avatar" :src="`/avatars/${encodeURIComponent(u.avatar)}`" :alt="u.fullname" />
+                        <span v-else>{{ u.fullname?.[0]?.toUpperCase() ?? '?' }}</span>
+                      </div>
+                      <div class="sr-info">
+                        <span class="sr-title">{{ u.fullname || 'Воин' }}</span>
+                        <span class="sr-meta">@{{ u.username }}</span>
+                      </div>
+                      <span v-if="u.role === 'admin'" class="sr-tag">админ</span>
+                      <span v-else-if="u.role === 'manager'" class="sr-tag">манагер</span>
+                    </div>
+                  </div>
+
+                  <!-- Хроники (посты) -->
+                  <div v-if="searchData.posts.length" class="sr-section">
+                    <div class="sr-section-title">📜 Хроники</div>
+                    <div
+                      v-for="p in searchData.posts" :key="`p-${p.id}`"
+                      class="search-result-item"
+                      @click="goToPost(p.id)"
+                    >
+                      <div class="sr-cover">
+                        <img v-if="p.cover_url" :src="resolveMediaUrl(p.cover_url)" :alt="p.title" loading="lazy" />
+                        <span v-else>📜</span>
+                      </div>
+                      <div class="sr-info">
+                        <span class="sr-title">{{ p.title || '(без заголовка)' }}</span>
+                        <span class="sr-meta">{{ p.author?.fullname || '' }} · {{ formatPostDate(p.published_at) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Моды -->
+                  <div v-if="searchData.mods.length" class="sr-section">
+                    <div class="sr-section-title">🛡 Моды</div>
+                    <div
+                      v-for="m in searchData.mods" :key="`m-${m.id}`"
+                      class="search-result-item"
+                      @click="goToMod(m.game_id)"
+                    >
+                      <div class="sr-cover">🛡</div>
+                      <div class="sr-info">
+                        <span class="sr-title">{{ m.title }}</span>
+                        <span class="sr-meta">для {{ m.game?.title || 'игры' }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="searchTotal === 0" class="search-empty">Разведчики не нашли ничего.</div>
                 </template>
               </div>
             </Transition>
@@ -2645,6 +2736,73 @@ watch(isLoggedIn, (logged) => {
   font-family: var(--font-body);
   font-style: italic;
   font-size: 0.88rem;
+}
+
+/* Универсальный поиск (Phase 4) — секции и доп. блоки */
+.sr-section {
+  border-bottom: 1px solid rgba(60, 50, 40, 0.5);
+}
+.sr-section:last-child { border-bottom: none; }
+.sr-section-title {
+  padding: 8px 14px 6px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--iron-warm);
+  background: rgba(0,0,0,0.25);
+  font-family: var(--font-ui);
+}
+.sr-meta {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--text-ash);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sr-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--iron-dark);
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-bright);
+  font-weight: 600;
+  overflow: hidden;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.sr-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.sr-cover {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--r-xs);
+  border: 1px solid var(--iron-dark);
+  background: var(--ash-obsidian);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--iron-warm);
+  overflow: hidden;
+}
+.sr-cover img { width: 100%; height: 100%; object-fit: cover; }
+.sr-tag {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(226, 67, 16, 0.18);
+  color: #ffba78;
+  border: 1px solid rgba(226, 67, 16, 0.4);
 }
 
 /* Transitions */

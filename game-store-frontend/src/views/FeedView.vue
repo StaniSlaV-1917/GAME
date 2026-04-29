@@ -5,6 +5,7 @@ import { useHead } from '@vueuse/head';
 import { useAuthStore } from '../stores/auth';
 import api from '../api/axios';
 import { resolveMediaUrl } from '../utils/media';
+import RandomUsersWidget from '../components/RandomUsersWidget.vue';
 
 const route = useRoute();
 const authStore = useAuthStore();
@@ -55,7 +56,8 @@ onMounted(loadFeed);
 
 <template>
   <div class="feed-page">
-    <div class="feed-wrap">
+    <div class="feed-layout">
+      <div class="feed-wrap">
 
       <!-- ── Header ── -->
       <div class="feed-header">
@@ -168,7 +170,14 @@ onMounted(loadFeed);
         </RouterLink>
       </div>
 
-    </div>
+      </div><!-- /.feed-wrap -->
+
+      <!-- Sidebar: Случайные воины (скрыт на мобиле) -->
+      <aside class="feed-sidebar">
+        <RandomUsersWidget />
+      </aside>
+
+    </div><!-- /.feed-layout -->
   </div>
 </template>
 
@@ -178,12 +187,33 @@ onMounted(loadFeed);
   padding: 40px 24px 80px;
   background: var(--ash-obsidian);
 }
+/* 2-колоночный layout: feed (max 880px) + sidebar (260px) */
+.feed-layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 28px;
+  align-items: start;
+}
 .feed-wrap {
   max-width: 880px;
   margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+.feed-sidebar {
+  position: sticky;
+  top: 92px; /* высота header + небольшой отступ */
+  align-self: start;
+}
+@media (max-width: 1023px) {
+  .feed-layout {
+    grid-template-columns: 1fr;
+  }
+  .feed-sidebar { display: none; }  /* на мобиле прячем чтобы не дублировать главный feed */
 }
 
 .feed-header {

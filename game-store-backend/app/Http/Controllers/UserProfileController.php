@@ -137,6 +137,33 @@ class UserProfileController extends Controller
     }
 
     /**
+     * GET /api/users/random?limit=10
+     *
+     * Случайные активные юзеры с username (для виджета "Случайные воины"
+     * на /feed). Исключает забаненных + юзеров без username (они без
+     * публичного профиля). Опционально исключает текущего юзера, чтобы
+     * виджет не показывал тебя самого.
+     */
+    public function random(Request $request)
+    {
+        $limit = min(20, max(1, (int) $request->query('limit', 10)));
+        $viewer = Auth::guard('sanctum')->user();
+
+        $query = User::whereNull('banned_at')
+            ->whereNotNull('username')
+            ->inRandomOrder()
+            ->limit($limit);
+
+        if ($viewer) {
+            $query->where('id', '!=', $viewer->id);
+        }
+
+        $users = $query->get(['id', 'fullname', 'username', 'avatar', 'role', 'followers_count']);
+
+        return response()->json(['data' => $users]);
+    }
+
+    /**
      * Helper: найти юзера по username.
      * Возвращает 404 если не найден / забанен / удалён.
      */

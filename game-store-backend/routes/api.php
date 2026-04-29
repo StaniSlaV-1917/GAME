@@ -10,6 +10,7 @@ use App\Http\Controllers\ReactionController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\AuthController;
@@ -200,6 +201,15 @@ Route::get('/reactions/summary', [ReactionController::class, 'summary']);
 Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::post('/reactions/toggle', [ReactionController::class, 'toggle']);
 });
+
+// ── Универсальный поиск (games + users + posts + mods) ──
+// throttle:60,1 — frontend дебаунсит по 280мс, реал-юзер не превысит
+Route::get('/search', [SearchController::class, 'index'])->middleware('throttle:60,1');
+
+// ── Виджет "Случайные воины" на /feed ──
+// throttle:30,1 — refresh кнопка может дёргаться часто, лимитируем
+Route::get('/users/random', [UserProfileController::class, 'random'])
+    ->middleware('throttle:30,1');
 
 // ── Phase 2 / Forum: публичные профили ──
 // /u/:username — публичный URL, привязан к username (а не id).
