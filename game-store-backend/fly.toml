@@ -16,6 +16,8 @@ primary_region = "ams"
   APP_ENV = "production"
   APP_DEBUG = "false"
   APP_URL = "https://game-l6voba.fly.dev"
+  # Frontend (Firebase Hosting) — для CTA-ссылок в email
+  FRONTEND_URL = "https://game-45428688-fe94e.web.app"
   LOG_CHANNEL = "stderr"
   LOG_LEVEL = "warning"
   DB_CONNECTION = "pgsql"

@@ -2,13 +2,16 @@
 
 namespace App\Notifications;
 
+use App\Mail\InAppNotificationMail;
 use App\Models\Comment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Кто-то ответил на ваш комментарий.
- * Phase 4 / Batch A.
+ * Phase 4 / Batch A — database channel.
+ * Phase 4 / Batch B — добавлен mail channel с throttle.
  */
 class NewReplyToYourComment extends Notification
 {
@@ -21,7 +24,21 @@ class NewReplyToYourComment extends Notification
 
     public function via($notifiable): array
     {
-        return ['database'];
+        $channels = ['database'];
+
+        if (
+            !empty($notifiable->email)
+            && ($notifiable->notify_email_reply ?? true)
+        ) {
+            // Throttle на пару (юзер, родительский коммент) — если 5 человек
+            // быстро отвечают на один и тот же коммент, шлём только первый email.
+            $key = "mail_dedupe:{$notifiable->id}:comment.reply:{$this->parent->id}";
+            if (Cache::add($key, true, now()->addMinutes(30))) {
+                $channels[] = 'mail';
+            }
+        }
+
+        return $channels;
     }
 
     public function toDatabase($notifiable): array
@@ -43,5 +60,25 @@ class NewReplyToYourComment extends Notification
             'preview'        => mb_substr($this->reply->body, 0, 280),
             'parent_preview' => mb_substr((string) $this->parent->body, 0, 200),
         ];
+    }
+
+    public function toMail($notifiable): InAppNotificationMail
+    {
+        $author = $this->reply->author;
+        $post   = $this->reply->post;
+        $actorName = $author?->fullname ?: $author?->username ?: 'Кто-то';
+        $postTitle = $post?->title ? " в обсуждении «{$post->title}»" : '';
+
+        return new InAppNotificationMail([
+            'subject'        => "Ответ на ваш комментарий — GameStore",
+            'title'          => '↪ Новый ответ на ваш комментарий',
+            'recipient'      => $notifiable->fullname,
+            'intro'          => "{$actorName} ответил на ваш комментарий{$postTitle}.",
+            'preview'        => mb_substr($this->reply->body, 0, 280),
+            'parent_preview' => mb_substr((string) $this->parent->body, 0, 200),
+            'cta_url'        => config('app.frontend_url') . "/post/{$this->reply->post_id}",
+            'cta_label'      => 'К обсуждению →',
+            'pref_label'     => 'Уведомления об ответах',
+        ]);
     }
 }

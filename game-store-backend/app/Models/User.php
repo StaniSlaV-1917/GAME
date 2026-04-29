@@ -28,6 +28,10 @@ class User extends Authenticatable
         'notify_login',
         'notify_order_created',
         'notify_order_status',
+        'notify_email_comment',
+        'notify_email_reply',
+        'notify_email_reaction',
+        'notify_email_follower',
         'banned_at',
         'ban_reason',
         'frozen_at',
@@ -38,12 +42,16 @@ class User extends Authenticatable
     ];
 
     protected $casts = [
-        'notify_login'         => 'boolean',
-        'notify_order_created' => 'boolean',
-        'notify_order_status'  => 'boolean',
-        'library_public'       => 'boolean',
-        'banned_at'            => 'datetime',
-        'frozen_at'            => 'datetime',
+        'notify_login'           => 'boolean',
+        'notify_order_created'   => 'boolean',
+        'notify_order_status'    => 'boolean',
+        'notify_email_comment'   => 'boolean',
+        'notify_email_reply'     => 'boolean',
+        'notify_email_reaction'  => 'boolean',
+        'notify_email_follower'  => 'boolean',
+        'library_public'         => 'boolean',
+        'banned_at'              => 'datetime',
+        'frozen_at'              => 'datetime',
     ];
 
     protected $hidden = [

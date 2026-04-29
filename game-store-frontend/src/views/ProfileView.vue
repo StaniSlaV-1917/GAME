@@ -23,7 +23,16 @@ const orders      = ref([]);
 const userReviews = ref([]);
 
 const profileForm  = ref({ fullname: '', username: '', phone: '' });
-const notifyForm   = ref({ notify_login: true, notify_order_created: true, notify_order_status: true });
+const notifyForm   = ref({
+  notify_login: true,
+  notify_order_created: true,
+  notify_order_status: true,
+  // Phase 4 / Batch B — email-дубли in-app нотификаций
+  notify_email_comment: true,
+  notify_email_reply: true,
+  notify_email_reaction: true,
+  notify_email_follower: true,
+});
 const privacyForm  = ref({ library_public: true });
 const savingNotify = ref(false);
 const passwordForm = ref({ current_password: '', new_password: '', new_password_confirmation: '' });
@@ -111,6 +120,10 @@ const loadInitialData = async () => {
   notifyForm.value.notify_login           = user.value.notify_login           ?? true;
   notifyForm.value.notify_order_created   = user.value.notify_order_created   ?? true;
   notifyForm.value.notify_order_status    = user.value.notify_order_status    ?? true;
+  notifyForm.value.notify_email_comment   = user.value.notify_email_comment   ?? true;
+  notifyForm.value.notify_email_reply     = user.value.notify_email_reply     ?? true;
+  notifyForm.value.notify_email_reaction  = user.value.notify_email_reaction  ?? true;
+  notifyForm.value.notify_email_follower  = user.value.notify_email_follower  ?? true;
   privacyForm.value.library_public        = user.value.library_public         ?? true;
   await Promise.all([loadOrders(), loadUserReviews()]);
 };
@@ -162,9 +175,13 @@ const saveNotifications = async () => {
     if (data.user) authStore.setUser(data.user);
     else await authStore.fetchUser();
     // обновляем локальную форму из ответа
-    notifyForm.value.notify_login         = data.user?.notify_login         ?? notifyForm.value.notify_login;
-    notifyForm.value.notify_order_created = data.user?.notify_order_created ?? notifyForm.value.notify_order_created;
-    notifyForm.value.notify_order_status  = data.user?.notify_order_status  ?? notifyForm.value.notify_order_status;
+    notifyForm.value.notify_login           = data.user?.notify_login           ?? notifyForm.value.notify_login;
+    notifyForm.value.notify_order_created   = data.user?.notify_order_created   ?? notifyForm.value.notify_order_created;
+    notifyForm.value.notify_order_status    = data.user?.notify_order_status    ?? notifyForm.value.notify_order_status;
+    notifyForm.value.notify_email_comment   = data.user?.notify_email_comment   ?? notifyForm.value.notify_email_comment;
+    notifyForm.value.notify_email_reply     = data.user?.notify_email_reply     ?? notifyForm.value.notify_email_reply;
+    notifyForm.value.notify_email_reaction  = data.user?.notify_email_reaction  ?? notifyForm.value.notify_email_reaction;
+    notifyForm.value.notify_email_follower  = data.user?.notify_email_follower  ?? notifyForm.value.notify_email_follower;
     toast.success('Настройки уведомлений сохранены!');
   } catch (e) {
     toast.error(e.response?.data?.message || 'Ошибка сохранения настроек.');
@@ -644,6 +661,51 @@ onMounted(() => {
                   <div v-if="savingNotify" class="notify-saving">
                     <span class="btn-spin"></span> Сохранение...
                   </div>
+                </div>
+              </div>
+
+              <!-- Phase 4 / Batch B — email-дубли in-app нотификаций форума -->
+              <div class="settings-card">
+                <div class="settings-card-header">
+                  <div class="settings-card-icon">⚒</div>
+                  <div>
+                    <h3>Email о форуме</h3>
+                    <p>Дубль колокольчика на почту, когда тебя нет на сайте. Throttle 30 мин — не более одного email на одно событие.</p>
+                  </div>
+                </div>
+                <div class="settings-form">
+                  <label class="notify-toggle">
+                    <input type="checkbox" v-model="notifyForm.notify_email_comment" @change="saveNotifications" />
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <span class="toggle-body">
+                      <span class="toggle-title">💬 Новый комментарий под вашим постом</span>
+                      <span class="toggle-desc">Когда кто-то прокомментировал ваш пост</span>
+                    </span>
+                  </label>
+                  <label class="notify-toggle">
+                    <input type="checkbox" v-model="notifyForm.notify_email_reply" @change="saveNotifications" />
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <span class="toggle-body">
+                      <span class="toggle-title">↪ Ответ на ваш комментарий</span>
+                      <span class="toggle-desc">Когда кто-то ответил на ваш коммент в обсуждении</span>
+                    </span>
+                  </label>
+                  <label class="notify-toggle">
+                    <input type="checkbox" v-model="notifyForm.notify_email_reaction" @change="saveNotifications" />
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <span class="toggle-body">
+                      <span class="toggle-title">✦ Реакция на ваш пост</span>
+                      <span class="toggle-desc">Когда кто-то поставил эмодзи под вашим постом</span>
+                    </span>
+                  </label>
+                  <label class="notify-toggle">
+                    <input type="checkbox" v-model="notifyForm.notify_email_follower" @change="saveNotifications" />
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                    <span class="toggle-body">
+                      <span class="toggle-title">⚔ Новый подписчик</span>
+                      <span class="toggle-desc">Когда кто-то начал следить за вашими хрониками</span>
+                    </span>
+                  </label>
                 </div>
               </div>
 

@@ -33,10 +33,14 @@ class AuthController extends Controller
             'role'                 => $user->role,
             'reg_date'             => $user->reg_date,
             'avatar'               => $user->avatar,
-            'notify_login'         => (bool) $user->notify_login,
-            'notify_order_created' => (bool) $user->notify_order_created,
-            'notify_order_status'  => (bool) $user->notify_order_status,
-            'library_public'       => (bool) ($user->library_public ?? true),
+            'notify_login'           => (bool) $user->notify_login,
+            'notify_order_created'   => (bool) $user->notify_order_created,
+            'notify_order_status'    => (bool) $user->notify_order_status,
+            'notify_email_comment'   => (bool) ($user->notify_email_comment   ?? true),
+            'notify_email_reply'     => (bool) ($user->notify_email_reply     ?? true),
+            'notify_email_reaction'  => (bool) ($user->notify_email_reaction  ?? true),
+            'notify_email_follower'  => (bool) ($user->notify_email_follower  ?? true),
+            'library_public'         => (bool) ($user->library_public ?? true),
             // Модерационный статус — фронт может показать «вы заморожены»
             // если бэк отдаст это (для забаненных юзер не получит токен).
             'banned_at'            => $user->banned_at,
@@ -378,10 +382,14 @@ class AuthController extends Controller
             ],
             'phone'                => 'sometimes|nullable|regex:/^7[0-9]{10}$/',
             'avatar'               => 'sometimes|nullable|string|max:150',
-            'notify_login'         => 'sometimes|boolean',
-            'notify_order_created' => 'sometimes|boolean',
-            'notify_order_status'  => 'sometimes|boolean',
-            'library_public'       => 'sometimes|boolean',
+            'notify_login'           => 'sometimes|boolean',
+            'notify_order_created'   => 'sometimes|boolean',
+            'notify_order_status'    => 'sometimes|boolean',
+            'notify_email_comment'   => 'sometimes|boolean',
+            'notify_email_reply'     => 'sometimes|boolean',
+            'notify_email_reaction'  => 'sometimes|boolean',
+            'notify_email_follower'  => 'sometimes|boolean',
+            'library_public'         => 'sometimes|boolean',
         ], [
             'username.regex' => 'Username: 3-20 символов, латиница, цифры, _ и точка. Должен начинаться с буквы.',
         ]);
@@ -432,7 +440,12 @@ class AuthController extends Controller
             $user->avatar = $data['avatar'];
         }
 
-        foreach (['notify_login', 'notify_order_created', 'notify_order_status', 'library_public'] as $pref) {
+        foreach ([
+            'notify_login', 'notify_order_created', 'notify_order_status',
+            'notify_email_comment', 'notify_email_reply',
+            'notify_email_reaction', 'notify_email_follower',
+            'library_public',
+        ] as $pref) {
             if (array_key_exists($pref, $data)) {
                 $user->$pref = (bool) $data[$pref];
             }
