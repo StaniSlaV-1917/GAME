@@ -98,7 +98,15 @@ const routes = [
     component: () => import('../views/PublicProfileView.vue'),
     props: true,
   },
-  // ── Phase 2 / Forum: одиночный пост /post/:id (Batch D реализует view) ──
+  // ── Phase 2 / Forum: редактор поста (ВАЖНО: до /post/:id, иначе
+  //     :id отматчит "new" как параметр) ──
+  {
+    path: '/post/new',
+    name: 'post-new',
+    component: () => import('../views/PostNewView.vue'),
+    meta: { requiresAuth: true },
+  },
+  // Одиночный пост /post/:id (Batch D реализует полноценный view)
   {
     path: '/post/:id',
     name: 'post',

@@ -158,10 +158,18 @@ Route::get('/news', [NewsController::class, 'index']);
 Route::get('/news/{id}', [NewsController::class, 'show']);
 
 // ── Phase 2 / Forum: посты ──
-// Публичные — лента и одиночный пост. Без auth (гости тоже читают).
-// CRUD (POST/PUT/DELETE) добавим в Batch C с auth + throttle.
+// Публичные read — лента и одиночный пост (гости тоже читают).
 Route::get('/posts',      [PostController::class, 'index']);
 Route::get('/posts/{id}', [PostController::class, 'show']);
+
+// CRUD — auth + throttle. Frozen-юзеры получают 403 (внутри контроллера).
+// throttle:5,1 — 5 действий/мин по user_id. Анти-spam постов.
+Route::middleware(['auth:sanctum', 'throttle:5,1'])->group(function () {
+    Route::post('/posts',                [PostController::class, 'store']);
+    Route::put('/posts/{id}',            [PostController::class, 'update']);
+    Route::delete('/posts/{id}',         [PostController::class, 'destroy']);
+    Route::post('/posts/upload-cover',   [PostController::class, 'uploadCover']);
+});
 
 // ── Phase 2 / Forum: публичные профили ──
 // /u/:username — публичный URL, привязан к username (а не id).
