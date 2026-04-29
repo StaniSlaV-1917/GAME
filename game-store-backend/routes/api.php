@@ -222,8 +222,11 @@ Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
 // это спамить — только реагирует на свои данные).
 Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
     Route::get('/',                 [NotificationController::class, 'index']);
-    Route::middleware('throttle:60,1')
-        ->get('/unread-count',      [NotificationController::class, 'unreadCount']);
+    // ВАЖНО: throttle middleware вешаем на сам route через ->middleware()
+    // ПОСЛЕ ->get(), а не Route::middleware(...)->get(...) — это последнее
+    // стартует новую цепочку и выходит из group (теряет auth+prefix).
+    Route::get('/unread-count',     [NotificationController::class, 'unreadCount'])
+        ->middleware('throttle:60,1');
     Route::post('/read-all',        [NotificationController::class, 'markAllRead']);
     Route::post('/{id}/read',       [NotificationController::class, 'markRead']);
     Route::delete('/{id}',          [NotificationController::class, 'destroy']);
