@@ -111,15 +111,19 @@ primary_region = "ams"
 # Внешний порт 8443 (TLS) → внутренний 8081 на reverb-машине.
 # 8443 потому что 443 уже занят Apache. Frontend Echo подключается к
 #   wss://game-l6voba.fly.dev:8443/
-# Auto_stop как у Apache: WS-машина спит, юзер заходит в чат → wake-up
-# (cold-start ~5-15с), Echo переподключается. После 5 мин idle — sleep.
+#
+# Phase 4/C — изменено auto_stop=off + min_machines_running=1.
+# Причина: WebSocket-коннекты НЕ переживают auto-wake (TLS handshake
+# не ждёт пока Fly запустит машину → клиент получает connection refused).
+# Цена: одна always-on машина ≈ $2-3/мес, но real-time push без этого
+# не работает надёжно.
 [[services]]
   internal_port = 8081
   protocol = "tcp"
   processes = ["reverb"]
-  auto_stop_machines = "stop"
+  auto_stop_machines = "off"
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
 
   [[services.ports]]
     port = 8443
