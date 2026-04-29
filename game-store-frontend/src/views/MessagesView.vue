@@ -54,8 +54,15 @@ onMounted(async () => {
   }
 });
 
+// ВАЖНО: НЕ вызываем chatsStore.close() в onUnmounted!
+// App.vue имеет <RouterView :key="route.fullPath"> — это форсит remount
+// MessagesView при каждой смене URL. При навигации между чатами
+// (/messages/5 → /messages/8) Vue монтирует НОВЫЙ instance ПЕРЕД unmount
+// старого. Если бы старый сделал close() — оно стирало store.activeRoomId
+// уже после того как новый его установил → "Чат не выбран" при отправке.
+// Полный reset выполняется в handleLogout() в App.vue (через store.reset()).
 onUnmounted(() => {
-  chatsStore.close();
+  // no-op
 });
 
 // Авто-scroll вниз при новом сообщении
