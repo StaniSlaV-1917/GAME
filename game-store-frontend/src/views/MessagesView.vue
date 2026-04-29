@@ -15,12 +15,14 @@ import { useHead } from '@vueuse/head';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../stores/auth';
 import { useChatsStore } from '../stores/chats';
+import { useToast } from '../composables/useToast';
 import { resolveMediaUrl } from '../utils/media';
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const chatsStore = useChatsStore();
+const toast = useToast();
 
 const { user } = storeToRefs(authStore);
 const { items: chats, activeRoom, activeMessages, activeLoading, sending } = storeToRefs(chatsStore);
@@ -71,9 +73,16 @@ const scrollToBottom = async () => {
 const onSend = async () => {
   const body = newMessage.value.trim();
   if (!body || sending.value) return;
+  // Optimistic clear — но если send упадёт, восстанавливаем
   newMessage.value = '';
-  await chatsStore.send(body);
-  await scrollToBottom();
+  const result = await chatsStore.send(body);
+  if (result?.ok) {
+    await scrollToBottom();
+  } else {
+    // Восстанавливаем черновик и показываем причину
+    newMessage.value = body;
+    toast.error(result?.error || 'Не удалось отправить сообщение');
+  }
 };
 
 const onSendKey = (e) => {

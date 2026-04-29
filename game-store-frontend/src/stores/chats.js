@@ -212,22 +212,40 @@ export const useChatsStore = defineStore('chats', {
       }
     },
 
-    /** Отправить сообщение в активный чат. */
+    /**
+     * Отправить сообщение в активный чат.
+     * Возвращает {ok:true, data} или {ok:false, error} — фронт показывает
+     * toast и восстанавливает черновик при провале.
+     */
     async send(body, replyToId = null) {
-      if (!this.activeRoomId || !body?.trim() || this.sending) return null;
+      if (!this.activeRoomId) {
+        return { ok: false, error: 'Чат не выбран — открой переписку слева' };
+      }
+      if (!body?.trim()) {
+        return { ok: false, error: 'Пустое сообщение' };
+      }
+      if (this.sending) {
+        return { ok: false, error: 'Уже отправляется…' };
+      }
 
       this.sending = true;
+      // Фиксируем активный чат на момент отправки (защита от race с переключением)
+      const targetRoomId = this.activeRoomId;
+
       try {
-        const { data } = await api.post(`/chats/${this.activeRoomId}/messages`, {
+        const { data } = await api.post(`/chats/${targetRoomId}/messages`, {
           body,
           reply_to_message_id: replyToId,
         });
-        // Optimistic add: своё сообщение появится сразу (broadcast::toOthers
-        // не пришлёт его обратно — мы сами добавляем)
-        this.activeMessages.push(data);
+
+        // Если за время отправки юзер переключил чат — добавляем только в sidebar,
+        // не в activeMessages (чтобы не показывать в чужом thread'е)
+        if (this.activeRoomId === targetRoomId) {
+          this.activeMessages.push(data);
+        }
 
         // Обновляем sidebar preview
-        const it = this.items.find((c) => c.id === this.activeRoomId);
+        const it = this.items.find((c) => c.id === targetRoomId);
         if (it) {
           it.last_message = {
             id: data.id,
@@ -243,10 +261,18 @@ export const useChatsStore = defineStore('chats', {
           }
         }
 
-        return data;
+        return { ok: true, data };
       } catch (e) {
-        console.warn('[chats] send failed', e);
-        return null;
+        const status = e?.response?.status;
+        const msg = e?.response?.data?.message
+          || `Не удалось отправить (HTTP ${status || '???'})`;
+        console.warn('[chats] send failed', {
+          status,
+          message: msg,
+          activeRoomId: this.activeRoomId,
+          targetRoomId,
+        });
+        return { ok: false, error: msg, status };
       } finally {
         this.sending = false;
       }
