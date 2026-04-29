@@ -6,6 +6,7 @@ import { useAuthStore } from '../stores/auth';
 import { useToast } from '../composables/useToast';
 import api from '../api/axios';
 import { renderMarkdown } from '../utils/markdown';
+import { resolveMediaUrl } from '../utils/media';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -203,6 +204,20 @@ const onCoverChange = async (e) => {
   }
 };
 
+/**
+ * Если сохранённый cover_url не загрузился (legacy-битый URL из
+ * старого черновика, удалённый файл и т.п.) — тихо чистим стейт
+ * и возвращаемся к placeholder'у, чтобы юзер мог загрузить заново.
+ */
+const onCoverImageError = () => {
+  if (coverPreviewUrl.value) return; // свежий blob: не трогаем
+  if (form.value.cover_url) {
+    console.warn('[PostNew] cover image failed to load, clearing form.cover_url:', form.value.cover_url);
+    form.value.cover_url = null;
+    toast.info('Старая обложка недоступна, выберите новую');
+  }
+};
+
 const removeCover = () => {
   coverPreviewUrl.value = null;
   coverFile.value = null;
@@ -361,7 +376,15 @@ onBeforeUnmount(() => {
           </label>
         </div>
         <div v-else class="cover-preview">
-          <img :src="coverPreviewUrl || form.cover_url" alt="Обложка" />
+          <!-- coverPreviewUrl — blob: от свежего файла, не трогаем.
+               form.cover_url из бэка/localStorage — прогоняем через
+               resolveMediaUrl: hotpatch для legacy '/storage/storage/'
+               + prepend MEDIA_BASE для относительных путей. -->
+          <img
+            :src="coverPreviewUrl || resolveMediaUrl(form.cover_url, '')"
+            alt="Обложка"
+            @error="onCoverImageError"
+          />
           <button class="cover-remove" @click="removeCover" :disabled="uploadingCover">
             ✕ Убрать
           </button>

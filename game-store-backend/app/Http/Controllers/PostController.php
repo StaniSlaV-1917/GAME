@@ -209,10 +209,11 @@ class PostController extends Controller
             'game_id'           => $data['game_id'] ?? null,
             'tags'              => $tags,
             'visibility'        => $data['visibility'] ?? 'public',
-            // verified-юзеры (manager/admin) — без премодерации, остальные
-            // в queue. Можно расширить через Spatie permissions в Phase 8.
-            'moderation_status' => in_array($user->role, ['admin', 'manager'])
-                                    ? 'approved' : 'pending',
+            // Премодерация выключена до Phase 8 (нет UI модерации).
+            // После того как сделаем модераторскую очередь, вернём логику
+            // verified=approved / остальные=pending. Сейчас все идут в
+            // 'approved' чтобы посты были сразу видны в ленте.
+            'moderation_status' => 'approved',
             'published_at'      => $request->boolean('publish_now', true)
                                     ? now() : null,
         ]);
@@ -262,11 +263,8 @@ class PostController extends Controller
             'visibility' => $data['visibility'] ?? $post->visibility,
         ]);
 
-        // Сбрасываем pending, если юзер не verified
-        if (!in_array($user->role, ['admin', 'manager'])) {
-            $post->moderation_status = 'pending';
-        }
-
+        // Премодерация выключена до Phase 8 — после правки оставляем
+        // approved (раньше сбрасывали в pending для не-verified).
         $post->save();
 
         return response()->json($post->load('author:id,fullname,username,avatar,role'));
