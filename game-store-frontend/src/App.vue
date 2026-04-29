@@ -23,7 +23,7 @@ const themeStore = useThemeStore();
 const modeStore = useModeStore();
 const notificationsStore = useNotificationsStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
-const { badge: notifBadge, unreadCount: notifUnreadCount } = storeToRefs(notificationsStore);
+const { badge: notifBadge, unreadCount: notifUnreadCount, peeks: notifPeeks } = storeToRefs(notificationsStore);
 const router = useRouter();
 const route = useRoute();
 
@@ -102,9 +102,13 @@ const onBellClick = async () => {
   // Toggle
   if (notifDropdownOpen.value) {
     notifDropdownOpen.value = false;
+    notificationsStore.setPeekSuppression(false);
     return;
   }
   notifDropdownOpen.value = true;
+  // Открыли dropdown — peek'и больше не нужны (они висят как промокашка
+  // когда dropdown закрыт; пока открыт — юзер видит полный список)
+  notificationsStore.setPeekSuppression(true);
   // Если ещё ни разу не загружали или прошло много времени — обновим
   if (!notificationsStore.loaded) {
     await notificationsStore.fetchAll();
@@ -125,6 +129,47 @@ const handleNotifMarkAll = (ev) => {
   ev?.stopPropagation();
   notificationsStore.markAllRead();
 };
+
+// ──────────────────────────────────────────────────────────────
+// Peek-карточки — выпрыгивают из bell при новых событиях.
+// Каждый peek живёт PEEK_TTL_MS, потом ауто-схлопывается обратно в bell.
+// Клик по peek → открыть /notifications?expand=<id>. Клик по ✕ → dismiss.
+// Когда юзер открывает dropdown — все peek'и скрываются (suppressPeeks).
+// ──────────────────────────────────────────────────────────────
+const PEEK_TTL_MS = 5500;
+const peekTimers = new Map(); // id → timeoutId
+
+const onPeekClick = (p) => {
+  notificationsStore.dismissPeek(p.id);
+  router.push({ name: 'notifications', query: { expand: p.id } });
+};
+
+const onPeekDismiss = (id) => {
+  notificationsStore.dismissPeek(id);
+};
+
+// Watcher: для каждого нового peek в очереди стартуем таймер
+// автодисмисса. При ухода peek'а из массива (через dismiss или TTL) —
+// чистим таймер.
+watch(notifPeeks, (curr) => {
+  const liveIds = new Set(curr.map((p) => p.id));
+  // Чистим таймеры для исчезнувших
+  for (const id of peekTimers.keys()) {
+    if (!liveIds.has(id)) {
+      clearTimeout(peekTimers.get(id));
+      peekTimers.delete(id);
+    }
+  }
+  // Стартуем таймеры для новых
+  for (const p of curr) {
+    if (!peekTimers.has(p.id)) {
+      const t = setTimeout(() => {
+        notificationsStore.dismissPeek(p.id);
+      }, PEEK_TTL_MS);
+      peekTimers.set(p.id, t);
+    }
+  }
+}, { deep: true });
 
 // Сигил/заголовок/превью/дата — те же утилиты что на странице,
 // дублируем сюда чтобы App.vue был самодостаточен.
@@ -173,6 +218,8 @@ const onDocClickForBell = (e) => {
   }
 };
 watch(notifDropdownOpen, (open) => {
+  // Toggle peek suppression: пока dropdown открыт — peek'и не нужны
+  notificationsStore.setPeekSuppression(open);
   if (open) {
     // Use nextTick-ish: wait one tick чтобы текущий клик не закрыл сразу
     setTimeout(() => document.addEventListener('click', onDocClickForBell), 0);
@@ -254,6 +301,9 @@ onUnmounted(() => {
   clearTimeout(searchTimer);
   document.removeEventListener('click', onDocClickForBell);
   notificationsStore.stopPolling();
+  // Чистим все peek-таймеры
+  for (const t of peekTimers.values()) clearTimeout(t);
+  peekTimers.clear();
 });
 
 // Phase 4 / Batch A — стартуем/останавливаем polling по статусу логина.
@@ -495,6 +545,39 @@ watch(isLoggedIn, (logged) => {
                 </footer>
               </div>
             </Transition>
+
+            <!-- Peek-стек: появляется когда poll детектит новые непрочитанные.
+                 Карточка выпрыгивает из колокольчика (transform-origin: top right
+                 → scale 0→1), висит ~5с, потом схлопывается обратно в bell.
+                 Намёк юзеру: «там что-то новое, нажми меня». -->
+            <TransitionGroup
+              tag="div"
+              name="peek"
+              class="peek-stack"
+              v-if="!notifDropdownOpen"
+            >
+              <div
+                v-for="(p, i) in notifPeeks"
+                :key="p.id"
+                class="peek-card"
+                :class="{ unread: !p.read_at }"
+                :style="{ '--peek-stack-offset': i * 6 + 'px' }"
+                @click="onPeekClick(p)"
+                role="alert"
+              >
+                <span class="peek-sigil" aria-hidden="true">{{ notifSigil(p) }}</span>
+                <span class="peek-body">
+                  <span class="peek-title">{{ notifTitle(p) }}</span>
+                  <span v-if="notifShortPreview(p)" class="peek-preview">{{ notifShortPreview(p) }}</span>
+                </span>
+                <button
+                  class="peek-close"
+                  @click.stop="onPeekDismiss(p.id)"
+                  aria-label="Скрыть"
+                  type="button"
+                >✕</button>
+              </div>
+            </TransitionGroup>
           </div>
 
           <template v-if="isLoggedIn && user">
@@ -1493,6 +1576,193 @@ watch(isLoggedIn, (logged) => {
   .notif-dropdown {
     position: fixed;
     top: 65px;
+    right: 8px;
+    left: 8px;
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────
+   PEEK STACK — карточки выпрыгивающие из колокольчика при новых
+   событиях. Стэк под bell (top: 100%+6px, right: 0). Каждая карточка
+   смещена вниз через --peek-stack-offset (эффект колоды).
+   transform-origin: top right — точка от/до которой scale: масштабируется
+   к/от bell-кнопки (она в правом верхнем углу карточки). Чувствуется
+   будто карточка вылазит из колокольчика и потом туда же ныряет.
+   ────────────────────────────────────────────────────────────── */
+.peek-stack {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 999;
+}
+.peek-card {
+  position: relative;
+  pointer-events: auto;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  border: 1px solid var(--iron-warm);
+  border-radius: var(--r-sm);
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.55),
+    0 0 14px rgba(226, 67, 16, 0.25),
+    var(--inset-iron-top);
+  cursor: pointer;
+  transform-origin: top right;
+  margin-top: var(--peek-stack-offset, 0);
+  transition: transform 0.18s var(--ease-smoke), box-shadow 0.18s var(--ease-smoke);
+}
+.peek-card:hover {
+  transform: translateX(-2px) scale(1.02);
+  box-shadow:
+    0 10px 28px rgba(0,0,0,0.6),
+    0 0 18px rgba(226, 67, 16, 0.4),
+    var(--inset-iron-top);
+}
+.peek-card.unread {
+  border-color: rgba(226, 67, 16, 0.7);
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.55),
+    0 0 18px rgba(226, 67, 16, 0.45),
+    var(--inset-iron-top);
+}
+
+.peek-sigil {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--iron-warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  background: rgba(0,0,0,0.35);
+  color: var(--iron-warm);
+  filter: drop-shadow(0 0 4px rgba(226, 67, 16, 0.45));
+}
+.peek-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.peek-title {
+  font-size: 12px;
+  color: var(--text-bright);
+  line-height: 1.4;
+  font-weight: 500;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.peek-preview {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  font-style: italic;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.peek-close {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--dur-fast);
+  font-family: inherit;
+}
+.peek-close:hover {
+  color: var(--text-bright);
+  background: rgba(226, 67, 16, 0.15);
+}
+
+/* Анимация появления — выпрыгиваем из колокольчика
+   (transform-origin: top right совпадает с правым верхним углом — там bell).
+   От scale(0.05) с translate(чуть к bell) до scale(1) с лёгким overshoot. */
+.peek-enter-active {
+  animation: peek-emerge 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.peek-leave-active {
+  animation: peek-retract 0.42s cubic-bezier(0.55, 0, 0.7, 0);
+  position: absolute; /* leave из flow чтобы остальные не прыгали */
+  right: 0;
+  width: 100%;
+}
+@keyframes peek-emerge {
+  0% {
+    transform: scale(0.05) translate(18px, -14px);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  60% {
+    transform: scale(1.06) translate(0, 4px);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 1;
+  }
+}
+@keyframes peek-retract {
+  0% {
+    transform: scale(1) translate(0, 0);
+    opacity: 1;
+  }
+  35% {
+    transform: scale(0.85) translate(4px, -4px);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(0.04) translate(20px, -16px);
+    opacity: 0;
+    filter: blur(3px);
+  }
+}
+
+/* Когда стек переставляется (один peek ушёл — соседи поднимаются плавно) */
+.peek-move {
+  transition: transform 0.32s var(--ease-smoke);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .peek-enter-active,
+  .peek-leave-active {
+    animation: none;
+    transition: opacity 0.2s;
+  }
+  .peek-enter-from,
+  .peek-leave-to { opacity: 0; }
+}
+
+/* Мобильный peek — растягиваем на всю ширину под bell */
+@media (max-width: 600px) {
+  .peek-stack {
+    position: fixed;
+    top: 60px;
     right: 8px;
     left: 8px;
     width: auto;

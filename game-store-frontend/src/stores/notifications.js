@@ -21,6 +21,15 @@ export const useNotificationsStore = defineStore('notifications', {
     loaded: false,        // был ли хотя бы один успешный fetchAll
     loading: false,
     pollTimer: null,
+
+    // ── Peek-очередь (Phase 4/A.1) ──
+    // Когда poll детектит увеличение unreadCount, мы делаем fetchAll и
+    // diff'аем по `lastSeenIds`. Новые ID попадают в peeks — App.vue
+    // рендерит их как маленькие карточки под колокольчиком, которые
+    // через ~5с уезжают обратно в bell. Намёк юзеру: «загляни сюда».
+    lastSeenIds: new Set(),
+    peeks: [],            // массив items, выкатываемых пользователю
+    suppressPeeks: false, // когда dropdown открыт — peek не нужен
   }),
 
   getters: {
@@ -35,16 +44,39 @@ export const useNotificationsStore = defineStore('notifications', {
   actions: {
     /**
      * Загрузить все уведомления (50 последних).
-     * Вызывается на /notifications странице или при открытии dropdown.
+     * Вызывается на /notifications странице, при открытии dropdown,
+     * и при детектировании прироста unreadCount.
+     *
+     * @param {object} opts
+     * @param {boolean} opts.queuePeeks  — диффать ли по lastSeenIds и
+     *   подкидывать новые в peek-очередь. Включено при автоподгрузке
+     *   из poll'а (когда unreadCount вырос). Выключено при manual
+     *   fetchAll из dropdown/page (там peek не нужен, юзер УЖЕ смотрит).
      */
-    async fetchAll() {
+    async fetchAll(opts = {}) {
       const auth = useAuthStore();
       if (!auth.isLoggedIn) return;
 
       this.loading = true;
       try {
         const { data } = await api.get('/notifications');
-        this.items = data.data || [];
+        const incoming = data.data || [];
+
+        // Diff против lastSeenIds — то что есть в incoming но не в Set'е,
+        // считается «новым» и идёт в peek-очередь. Берём только непрочитанные
+        // (read_at=null) — прочитанные показывать peek'ом нелогично.
+        if (opts.queuePeeks && this.loaded && !this.suppressPeeks) {
+          const fresh = incoming.filter(
+            (n) => !n.read_at && !this.lastSeenIds.has(n.id)
+          );
+          // Лимит 3 одновременно — больше визуально шумно. Берём свежайшие.
+          const toQueue = fresh.slice(0, 3);
+          toQueue.forEach((n) => this.peeks.push(n));
+        }
+
+        // Обновляем lastSeenIds полным актуальным набором (для следующего diff)
+        this.lastSeenIds = new Set(incoming.map((n) => n.id));
+        this.items = incoming;
         this.unreadCount = data.unread_count || 0;
         this.loaded = true;
       } catch (e) {
@@ -57,6 +89,11 @@ export const useNotificationsStore = defineStore('notifications', {
     /**
      * Лёгкий poll — только число непрочитанных.
      * Используется для bell-badge в header.
+     *
+     * Если число выросло (новое событие пришло) — автоматически дёргаем
+     * fetchAll({queuePeeks:true}), чтобы загрузить полный список и
+     * подкинуть свежие в peek-очередь. Это даёт пользователю мгновенную
+     * визуальную обратную связь без необходимости открывать колокольчик.
      */
     async fetchUnreadCount() {
       const auth = useAuthStore();
@@ -66,13 +103,42 @@ export const useNotificationsStore = defineStore('notifications', {
       }
       try {
         const { data } = await api.get('/notifications/unread-count');
-        this.unreadCount = data.unread_count || 0;
+        const newCount = data.unread_count || 0;
+        const grew = newCount > this.unreadCount;
+        this.unreadCount = newCount;
+        // Прирост → подгружаем свежие и кидаем в peek-очередь.
+        // Не блокируем основной poll — fire-and-forget.
+        if (grew) {
+          this.fetchAll({ queuePeeks: true });
+        }
       } catch (e) {
         // 401 при разлогине — норма, остальные warn
         if (e?.response?.status !== 401) {
           console.warn('[notifications] fetchUnreadCount failed', e);
         }
       }
+    },
+
+    /**
+     * Убрать peek по id (когда юзер кликнул, или истёк таймер).
+     */
+    dismissPeek(id) {
+      this.peeks = this.peeks.filter((n) => n.id !== id);
+    },
+
+    /**
+     * Сброс всех peek'ов (когда юзер открыл dropdown — там уже всё видно).
+     */
+    clearPeeks() {
+      this.peeks = [];
+    },
+
+    /**
+     * Запретить/разрешить рендер peek'ов (когда dropdown открыт).
+     */
+    setPeekSuppression(value) {
+      this.suppressPeeks = !!value;
+      if (this.suppressPeeks) this.clearPeeks();
     },
 
     /** Пометить одну как прочитанную. */
@@ -141,6 +207,9 @@ export const useNotificationsStore = defineStore('notifications', {
       this.items = [];
       this.unreadCount = 0;
       this.loaded = false;
+      this.lastSeenIds = new Set();
+      this.peeks = [];
+      this.suppressPeeks = false;
     },
   },
 });
