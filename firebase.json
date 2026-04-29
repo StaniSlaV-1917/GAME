@@ -14,6 +14,20 @@
     ],
     "headers": [
       {
+        "comment": "index.html НИКОГДА не кешировать — всегда подтягивать свежий, иначе старая версия будет ссылаться на удалённые JS-чанки → MIME-ошибка",
+        "source": "/index.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        ]
+      },
+      {
+        "comment": "Vite chunks /assets/* — хеш в имени гарантирует immutability. Кешируем агрессивно на год.",
+        "source": "/assets/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+        ]
+      },
+      {
         "source": "/hero/**",
         "headers": [
           { "key": "Cache-Control", "value": "public, max-age=2592000, immutable" }

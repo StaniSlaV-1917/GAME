@@ -176,6 +176,35 @@ const router = createRouter({
   routes,
 });
 
+/**
+ * Защита от stale chunks после деплоя.
+ *
+ * Проблема: SPA с Vite-чанками. У юзера в браузере открыт старый
+ * index.html, ссылающийся на старые имена JS-файлов. Деплой создал
+ * новые имена (с другими хешами), старые удалены. При попытке lazy-
+ * load чанка приложение получает 404 → Firebase rewrite на index.html
+ * → MIME error «Expected JavaScript got text/html».
+ *
+ * Решение: ловим router.onError, и если ошибка содержит признаки
+ * dynamic-import-failure — перезагружаем страницу. Юзер получает
+ * fresh index.html с актуальными именами чанков.
+ */
+router.onError((err, to) => {
+  const msg = String(err?.message || err || '');
+  const isChunkError =
+    msg.includes('Failed to fetch dynamically imported module') ||
+    msg.includes('Importing a module script failed') ||
+    msg.includes('Failed to load module script') ||
+    msg.includes('error loading dynamically imported module') ||
+    msg.includes('Loading chunk') ||
+    msg.includes('Loading CSS chunk');
+
+  if (isChunkError && to?.fullPath) {
+    // Сохраняем куда пользователь хотел и перезагружаем
+    window.location.href = to.fullPath;
+  }
+});
+
 // <<< ГЛОБАЛЬНЫЙ НАВИГАЦИОННЫЙ ХУК
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
