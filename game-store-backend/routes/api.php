@@ -8,6 +8,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ReactionController;
 use App\Http\Controllers\FollowController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\CartController;
@@ -214,6 +215,27 @@ Route::get('/users/{username}/following', [FollowController::class, 'following']
 Route::middleware(['auth:sanctum', 'throttle:30,1'])->group(function () {
     Route::post('/users/{username}/follow',   [FollowController::class, 'follow']);
     Route::delete('/users/{username}/follow', [FollowController::class, 'unfollow']);
+});
+
+// ── Phase 4 / Batch D — DM (личные сообщения) ──
+// Throttle:
+//   send — 30/мин, защита от спама. Реал-юзер физически не наберёт больше.
+//   create-dm — 10/мин, защита от создания мусорных чатов.
+//   read/index/show — без жёстких лимитов, обычные read-эндпоинты.
+Route::middleware('auth:sanctum')->prefix('chats')->group(function () {
+    Route::get('/',                 [ChatController::class, 'index']);
+    Route::get('/unread-count',     [ChatController::class, 'unreadCount']);
+    Route::post('/dm',              [ChatController::class, 'createDm'])
+         ->middleware('throttle:10,1');
+    Route::get('/{id}',             [ChatController::class, 'show'])
+         ->whereNumber('id');
+    Route::get('/{id}/messages',    [ChatController::class, 'messages'])
+         ->whereNumber('id');
+    Route::post('/{id}/messages',   [ChatController::class, 'send'])
+         ->whereNumber('id')
+         ->middleware('throttle:30,1');
+    Route::post('/{id}/read',       [ChatController::class, 'markRead'])
+         ->whereNumber('id');
 });
 
 // ── Phase 4 / Forum: in-app уведомления ──

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { useHead } from '@vueuse/head';
 import { useAuthStore } from '../stores/auth';
+import { useChatsStore } from '../stores/chats';
 import { useToast } from '../composables/useToast';
 import api from '../api/axios';
 import { resolveMediaUrl } from '../utils/media';
@@ -18,6 +19,26 @@ const loadingProfile = ref(true);
 const loadingPosts = ref(true);
 const error = ref('');
 const followBusy = ref(false);
+const writing = ref(false);
+const chatsStore = useChatsStore();
+
+/** Phase 4/D — открыть DM с этим пользователем. */
+const handleWriteMessage = async () => {
+  if (!authStore.isLoggedIn) {
+    router.push({ name: 'login', query: { redirect: route.fullPath } });
+    return;
+  }
+  if (writing.value || !username.value) return;
+  writing.value = true;
+  try {
+    const data = await chatsStore.createDmByUsername(username.value);
+    router.push({ name: 'messages-room', params: { roomId: data.id } });
+  } catch (e) {
+    toast.error(e.response?.data?.message || 'Не удалось открыть чат');
+  } finally {
+    writing.value = false;
+  }
+};
 
 // Текущий username из URL — реактивно для смены роута без перезагрузки
 const username = computed(() => route.params.username);
@@ -216,6 +237,19 @@ const handleUnfollow = async () => {
                       title="Кликните чтобы отписаться">
                 <span v-if="followBusy">…</span>
                 <span v-else>✓ Подписан</span>
+              </button>
+
+              <!-- Phase 4/D — Написать в DM. Создаёт чат на лету и
+                   редиректит на /messages/:roomId -->
+              <button
+                v-if="authStore.isLoggedIn"
+                class="btn-secondary write-btn"
+                :disabled="writing"
+                @click="handleWriteMessage"
+                title="Открыть личную переписку"
+              >
+                <span v-if="writing">…</span>
+                <span v-else>✉ Написать</span>
               </button>
             </template>
           </div>

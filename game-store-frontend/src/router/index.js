@@ -121,6 +121,21 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
+  // ── Phase 4 / Batch D — DM (личные сообщения) ──
+  {
+    path: '/messages',
+    name: 'messages',
+    component: () => import('../views/MessagesView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/messages/:roomId(\\d+)',
+    name: 'messages-room',
+    component: () => import('../views/MessagesView.vue'),
+    props: true,
+    meta: { requiresAuth: true },
+  },
+
   // ── Pay/A — крипто-платежи (USDT TRC-20) ──
   {
     path: '/payment/:id(\\d+)',

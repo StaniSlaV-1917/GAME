@@ -7,6 +7,7 @@ import { useThemeStore } from './stores/theme';
 import { useCartStore } from './stores/cart';
 import { useModeStore } from './stores/mode';
 import { useNotificationsStore } from './stores/notifications';
+import { useChatsStore } from './stores/chats';
 import { storeToRefs } from 'pinia';
 import api from './api/axios';
 import ParticlesBackground from './components/ParticlesBackground.vue';
@@ -22,8 +23,10 @@ const authStore = useAuthStore();
 const themeStore = useThemeStore();
 const modeStore = useModeStore();
 const notificationsStore = useNotificationsStore();
+const chatsStore = useChatsStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
 const { badge: notifBadge, unreadCount: notifUnreadCount, peeks: notifPeeks } = storeToRefs(notificationsStore);
+const { badge: chatsBadge, totalUnread: chatsUnread } = storeToRefs(chatsStore);
 const router = useRouter();
 const route = useRoute();
 
@@ -277,6 +280,7 @@ const isTouch = ref(false);
 
 const handleLogout = async () => {
   notificationsStore.reset();
+  chatsStore.reset();
   await authStore.logout();
   mobileMenuOpen.value = false;
   router.push({ name: 'login' });
@@ -314,8 +318,10 @@ onUnmounted(() => {
 watch(isLoggedIn, (logged) => {
   if (logged) {
     notificationsStore.startPolling();
+    chatsStore.startPolling();
   } else {
     notificationsStore.reset();
+    chatsStore.reset();
   }
 }, { immediate: true });
 </script>
@@ -475,6 +481,21 @@ watch(isLoggedIn, (logged) => {
 
           <RouterLink to="/cart" class="action-btn cart-btn" title="Добыча" aria-label="Корзина">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          </RouterLink>
+
+          <!-- Phase 4/D — DM-инбокс. Только для залогиненных. -->
+          <RouterLink
+            v-if="isLoggedIn"
+            to="/messages"
+            class="action-btn chat-btn"
+            :class="{ 'has-unread': chatsUnread > 0 }"
+            title="Сообщения"
+            aria-label="Сообщения"
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <span v-if="chatsUnread > 0" class="bell-badge" aria-hidden="true">{{ chatsBadge }}</span>
           </RouterLink>
 
           <!-- Bell — уведомления (только для залогиненных).
