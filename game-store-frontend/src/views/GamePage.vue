@@ -311,6 +311,70 @@ watch(gameId, (id) => { if (id) loadGame(id); });
             <div v-if="loadingReviews" class="reviews-loading">Собираем свитки рецензий…</div>
             <ReviewList v-else :reviews="reviews" />
           </section>
+
+          <!-- ═══ Phase 2 / Batch F: Развёрнутые обзоры воинов с форума ═══ -->
+          <section class="content-card forum-reviews-card reveal">
+            <h2 class="sec-title">
+              <span class="sec-rune">📜</span> Обзоры от воинов
+              <span class="review-count">({{ (game.forum_reviews || []).length }})</span>
+            </h2>
+            <p class="sec-sub">Развёрнутые гайды и обзоры из хроник клана</p>
+
+            <div v-if="!(game.forum_reviews || []).length" class="forum-empty">
+              <p>Пока ни одного обзора. Может, написать первый?</p>
+              <RouterLink
+                v-if="authStore.isLoggedIn"
+                :to="{ name: 'post-new' }"
+                class="btn-primary"
+              >
+                ⚒ Написать обзор
+              </RouterLink>
+              <RouterLink v-else to="/login" class="btn-primary">Войти, чтобы написать</RouterLink>
+            </div>
+
+            <div v-else class="forum-reviews-list">
+              <RouterLink
+                v-for="p in game.forum_reviews"
+                :key="p.id"
+                :to="{ name: 'post', params: { id: p.id } }"
+                class="forum-review-card"
+              >
+                <div v-if="p.cover_url" class="frc-cover">
+                  <img :src="resolveMediaUrl(p.cover_url)" :alt="p.title || 'Обзор'" loading="lazy" />
+                </div>
+                <div class="frc-body">
+                  <h3 v-if="p.title" class="frc-title">{{ p.title }}</h3>
+                  <p class="frc-excerpt">{{ p.body.length > 200 ? p.body.slice(0, 200) + '…' : p.body }}</p>
+                  <div class="frc-footer">
+                    <div class="frc-author" v-if="p.author">
+                      <span class="frc-avatar">
+                        <img v-if="p.author.avatar"
+                             :src="`/avatars/${encodeURIComponent(p.author.avatar)}`"
+                             :alt="p.author.fullname || p.author.username" />
+                        <span v-else>{{ (p.author.fullname || p.author.username || '?')[0].toUpperCase() }}</span>
+                      </span>
+                      <span class="frc-name">
+                        {{ p.author.fullname || ('@' + p.author.username) }}
+                      </span>
+                    </div>
+                    <div class="frc-stats">
+                      <span>🔥 {{ p.reaction_count }}</span>
+                      <span>💬 {{ p.comment_count }}</span>
+                      <span>👁 {{ p.view_count }}</span>
+                    </div>
+                  </div>
+                </div>
+              </RouterLink>
+
+              <RouterLink
+                v-if="authStore.isLoggedIn"
+                :to="{ name: 'post-new' }"
+                class="btn-primary forum-add-btn"
+              >
+                ⚒ Написать ещё обзор
+              </RouterLink>
+            </div>
+          </section>
         </div>
 
         <!-- RIGHT SIDEBAR -->
@@ -1322,6 +1386,126 @@ watch(gameId, (id) => { if (id) loadGame(id); });
    SIMILAR GAMES
    ========================================================== */
 .similar-section { margin-top: var(--sp-10); }
+
+/* ═══ Forum reviews (Phase 2 / Batch F) ═══ */
+.forum-reviews-card { margin-top: var(--sp-6); }
+.forum-reviews-card .sec-sub {
+  margin: 0 0 18px;
+  color: var(--text-parchment);
+  font-size: 0.92rem;
+}
+.forum-empty {
+  text-align: center;
+  padding: 36px 24px;
+  background: rgba(8, 6, 10, 0.3);
+  border: 1px dashed var(--iron-mid);
+  border-radius: 6px;
+}
+.forum-empty p {
+  color: var(--text-parchment);
+  margin: 0 0 16px;
+}
+.forum-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.forum-review-card {
+  display: flex;
+  gap: 16px;
+  padding: 14px;
+  background: linear-gradient(180deg, rgba(8, 6, 10, 0.5), rgba(18, 16, 13, 0.6));
+  border: 1px solid var(--iron-mid);
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s var(--ease-smoke);
+}
+.forum-review-card:hover {
+  border-color: var(--bronze);
+  box-shadow: var(--inset-iron-top), 0 0 18px rgba(239, 74, 24, 0.2);
+  transform: translateY(-1px);
+}
+.frc-cover {
+  flex-shrink: 0;
+  width: 140px;
+  height: 90px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--ash-coal);
+}
+.frc-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.frc-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.frc-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--text-bright);
+  margin: 0;
+  line-height: 1.3;
+}
+.frc-excerpt {
+  font-size: 0.88rem;
+  color: var(--text-parchment);
+  line-height: 1.55;
+  margin: 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.frc-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-ash);
+}
+.frc-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.frc-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ash-stone);
+  color: var(--ember-gold);
+  font-weight: var(--fw-bold);
+  font-size: 0.78rem;
+  overflow: hidden;
+}
+.frc-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.frc-name { color: var(--text-bone); font-size: 0.85rem; }
+.frc-stats { display: flex; gap: 12px; }
+.forum-add-btn {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 10px 22px;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .forum-review-card { flex-direction: column; }
+  .frc-cover { width: 100%; height: 160px; }
+}
 .sec-header {
   display: flex;
   align-items: center;

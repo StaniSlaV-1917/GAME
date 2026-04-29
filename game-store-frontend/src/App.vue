@@ -1,6 +1,6 @@
 <script setup>
 import { useRoute } from 'vue-router';
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
@@ -23,6 +23,18 @@ const modeStore = useModeStore();
 const { user, isLoggedIn } = storeToRefs(authStore);
 const router = useRouter();
 const route = useRoute();
+
+// Линк аватара/имени в шапке.
+//   • Если у юзера есть username → публичный профиль /u/:username
+//     (там кнопка «Редактировать» ведёт обратно на /profile)
+//   • Если username не задан — отправляем сразу в /profile (settings),
+//     чтобы юзер заполнил поле username.
+const profileLinkTarget = computed(() => {
+  if (user.value?.username) {
+    return { name: 'user-profile', params: { username: user.value.username } };
+  }
+  return { name: 'profile' };
+});
 
 // Scroll to top on route change
 watch(() => route.path, () => {
@@ -299,7 +311,7 @@ onUnmounted(() => {
           </RouterLink>
 
           <template v-if="isLoggedIn && user">
-            <RouterLink to="/profile" class="profile-btn">
+            <RouterLink :to="profileLinkTarget" class="profile-btn" :title="user.username ? `Публичный профиль @${user.username}` : 'Настройки (задайте username)'">
               <div class="avatar-ring">
                 <div class="avatar">
                   <img v-if="user.avatar" :src="`/avatars/${encodeURIComponent(user.avatar)}`" class="avatar-img" :alt="user.fullname" />

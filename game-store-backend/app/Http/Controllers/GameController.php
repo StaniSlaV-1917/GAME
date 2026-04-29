@@ -62,7 +62,25 @@ class GameController extends Controller
             'reviews.user',
         ])->findOrFail($id);
 
-        return response()->json($game);
+        // Phase 2 / Batch F — cross-references shop ↔ forum.
+        // Подтягиваем посты с тегом #обзор привязанные к этой игре.
+        // Развёрнутые форум-обзоры идут параллельно классическим reviews.
+        $forumPosts = \App\Models\Post::published()
+            ->where('game_id', $game->id)
+            ->withTag('#обзор')
+            ->with('author:id,fullname,username,avatar,role')
+            ->orderByDesc('published_at')
+            ->limit(5)
+            ->get([
+                'id', 'author_id', 'title', 'body', 'cover_url',
+                'tags', 'reaction_count', 'comment_count', 'view_count',
+                'published_at',
+            ]);
+
+        $gameArr = $game->toArray();
+        $gameArr['forum_reviews'] = $forumPosts;
+
+        return response()->json($gameArr);
     }
 
     // GET /api/games/{gameId}/mods
