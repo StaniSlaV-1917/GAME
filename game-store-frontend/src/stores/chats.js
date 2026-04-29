@@ -111,7 +111,10 @@ export const useChatsStore = defineStore('chats', {
           avatar_url: data.avatar_url,
           counterpart: data.counterpart,
         };
-        this.activeMessages = data.messages || [];
+        // Defense-in-depth: всегда сортируем ASC by id перед assign,
+        // чтобы рендер top-down всегда был oldest→newest независимо
+        // от того что вернул бэк.
+        this.activeMessages = (data.messages || []).slice().sort((a, b) => a.id - b.id);
 
         // Real-time подписка
         this.subscribeToRoom(id);
@@ -140,7 +143,7 @@ export const useChatsStore = defineStore('chats', {
       if (!this.activeRoomId) return;
       try {
         const { data } = await api.get(`/chats/${this.activeRoomId}`);
-        this.activeMessages = data.messages || [];
+        this.activeMessages = (data.messages || []).slice().sort((a, b) => a.id - b.id);
       } catch (e) {
         console.warn('[chats] refresh failed', e);
       }

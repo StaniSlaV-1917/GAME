@@ -190,12 +190,16 @@ class ChatController extends Controller
         $user = $request->user();
         $room = $this->getRoomForUser($user, $id);
 
+        // Берём 50 НОВЕЙШИХ через ORDER BY id DESC LIMIT, потом
+        // sortBy('id') разворачивает в ASC (oldest-first) для top-down
+        // рендера. ->values() ресетит ключи в 0..N чтобы JSON был
+        // массивом (а не объектом).
         $messages = $room->messages()->approved()
             ->with('sender:id,fullname,username,avatar,role')
             ->orderByDesc('id')
             ->limit(50)
             ->get()
-            ->reverse()  // oldest first для рендера сверху вниз
+            ->sortBy('id')
             ->values();
 
         $counterpart = null;
@@ -240,7 +244,8 @@ class ChatController extends Controller
             $q->where('id', '<', $beforeId);
         }
 
-        $items = $q->get()->reverse()->values();
+        // Та же логика: фетчим DESC по id, sortBy ASC для рендера, ->values() ресетит keys
+        $items = $q->get()->sortBy('id')->values();
 
         return response()->json(['data' => $items]);
     }

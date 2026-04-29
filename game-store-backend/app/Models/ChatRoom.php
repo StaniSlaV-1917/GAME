@@ -39,9 +39,15 @@ class ChatRoom extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * Все сообщения чата БЕЗ default-order — order применяется каждым
+     * caller'ом явно. Раньше тут было ->orderBy('created_at') что
+     * конфликтовало с ->orderByDesc('id') в контроллере (оба ORDER BY
+     * добавлялись, ASC выигрывал, ->reverse() на коллекции давал DESC).
+     */
     public function messages()
     {
-        return $this->hasMany(Message::class)->orderBy('created_at');
+        return $this->hasMany(Message::class);
     }
 
     public function latestMessage()
