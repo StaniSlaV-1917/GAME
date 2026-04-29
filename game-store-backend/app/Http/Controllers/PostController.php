@@ -93,7 +93,10 @@ class PostController extends Controller
      */
     public function feed(Request $request)
     {
-        $user = $request->user();
+        // Маршрут публичный (без auth:sanctum middleware) — Sanctum не
+        // резолвит Bearer-токен сам. Явно через guard, чтобы залогиненный
+        // юзер получал followers-feed, а не гостевой trending.
+        $user = \Illuminate\Support\Facades\Auth::guard('sanctum')->user();
         $perPage = min(50, max(1, (int) $request->input('per_page', 15)));
 
         if ($user) {
@@ -164,7 +167,9 @@ class PostController extends Controller
         $post->view_count++;
 
         // Реакции — сводка с reacted_by_me флагом для текущего юзера
-        $userId = optional($request->user())->id;
+        // Public route — резолвим viewer'а явно через guard,
+        // иначе reacted_by_me всегда false для залогиненных
+        $userId = optional(\Illuminate\Support\Facades\Auth::guard('sanctum')->user())->id;
         $post->reactions_summary = ReactionController::batchSummary(
             Post::class,
             [$id],

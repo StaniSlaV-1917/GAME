@@ -23,7 +23,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const toast = useToast();
 
-const form = ref({ fullname: '', email: '', phone: '', password: '', password_confirmation: '' });
+const form = ref({ fullname: '', username: '', email: '', phone: '', password: '', password_confirmation: '' });
 const isLoading = ref(false);
 const error = ref('');
 const wrapperEl = ref(null);
@@ -121,6 +121,21 @@ const submit = async () => {
               autocomplete="name"
               @focus="handleFocus(true)" @blur="handleFocus(false)"
             />
+          </div>
+          <div class="field">
+            <label for="username">Username (публичный @ник)</label>
+            <input
+              id="username"
+              v-model="form.username"
+              placeholder="vasya_warrior"
+              required type="text"
+              minlength="3" maxlength="20"
+              pattern="[a-z][a-z0-9_.]{1,18}[a-z0-9_]"
+              autocomplete="username"
+              @input="form.username = form.username.toLowerCase()"
+              @focus="handleFocus(true)" @blur="handleFocus(false)"
+            />
+            <small class="field-hint">3-20 символов: латиница, цифры, _ и точка. Должен начинаться с буквы. Это ваш URL: /u/&lt;username&gt;</small>
           </div>
           <div class="field">
             <label for="email">Email</label>
@@ -380,6 +395,13 @@ const submit = async () => {
     var(--inset-iron-top),
     0 0 0 3px rgba(226, 67, 16, 0.15),
     0 0 14px rgba(255, 122, 43, 0.25);
+}
+.field-hint {
+  margin-top: 6px;
+  font-size: 0.74rem;
+  color: var(--text-ash);
+  font-family: var(--font-body);
+  line-height: 1.4;
 }
 
 .forge-btn {

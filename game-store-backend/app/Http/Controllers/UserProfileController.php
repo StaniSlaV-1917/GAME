@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\Reaction;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * Публичный API профилей пользователей.
@@ -54,8 +55,15 @@ class UserProfileController extends Controller
             })
             ->count();
 
-        // Phase 3: подписан ли текущий юзер на этого
-        $viewer = $request->user();
+        // Phase 3: подписан ли текущий юзер на этого.
+        //
+        // ВАЖНО: маршрут /api/users/{username}/profile публичный (без
+        // auth:sanctum middleware) → $request->user() ВСЕГДА null даже
+        // для залогиненного юзера с валидным Bearer-токеном (Sanctum
+        // не резолвит токен без middleware).
+        // Решение: явно резолвим через guard('sanctum')->user() —
+        // работает независимо от middleware, возвращает null если токена нет.
+        $viewer = Auth::guard('sanctum')->user();
         $isFollowedByMe = false;
         if ($viewer && $viewer->id !== $user->id) {
             $isFollowedByMe = Follow::where('follower_id', $viewer->id)

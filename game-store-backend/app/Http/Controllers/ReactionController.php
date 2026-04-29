@@ -176,7 +176,8 @@ class ReactionController extends Controller
         ]);
 
         $type = $data['reactable_type'] === 'post' ? Post::class : Comment::class;
-        $userId = optional($request->user())->id;
+        // Public route — резолвим viewer'а явно через guard
+        $userId = optional(\Illuminate\Support\Facades\Auth::guard('sanctum')->user())->id;
 
         return response()->json([
             'summary' => $this->summaryForTarget($type, $data['reactable_id'], $userId),

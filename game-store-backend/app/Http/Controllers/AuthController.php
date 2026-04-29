@@ -108,10 +108,41 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'fullname' => 'required|string|max:255',
+            // Phase 4 — username обязателен с регистрации (раньше задавался
+            // позже в /profile, что давало юзерам без публичного профиля).
+            // Регекс/правила те же что в updateProfile для консистентности.
+            'username' => [
+                'required', 'string',
+                'min:3', 'max:20',
+                'regex:/^[a-z][a-z0-9_.]{1,18}[a-z0-9_]$/',
+            ],
             'email'    => 'required|email',
             'phone'    => 'required|regex:/^7[0-9]{10}$/',
             'password' => 'required|string|min:6|confirmed',
+        ], [
+            'username.required' => 'Username обязателен — это ваш публичный @ник.',
+            'username.regex'    => 'Username: 3-20 символов, латиница, цифры, _ и точка. Должен начинаться с буквы.',
         ]);
+
+        // Нормализация и проверка username (как в updateProfile)
+        $username = mb_strtolower(trim($data['username']));
+        $reserved = [
+            'admin','root','support','system','api','help','about','login',
+            'register','logout','profile','settings','user','users','u',
+            'post','posts','feed','community','soviet','catalog','news',
+            'cart','order','orders','review','reviews','mod','mods',
+            'gamestore','staff','moderator','manager','official',
+        ];
+        if (in_array($username, $reserved, true)) {
+            throw ValidationException::withMessages([
+                'username' => ['Этот username зарезервирован системой.'],
+            ]);
+        }
+        if (User::where('username', $username)->exists()) {
+            throw ValidationException::withMessages([
+                'username' => ['Этот username уже занят.'],
+            ]);
+        }
 
         $emailHash = hash('sha256', $data['email']);
         $phoneHash = hash('sha256', $data['phone']);
@@ -126,6 +157,7 @@ class AuthController extends Controller
 
         $user = User::create([
             'fullname'   => $data['fullname'],
+            'username'   => $username,
             'email'      => $data['email'],
             'phone'      => $data['phone'],
             'password'   => Hash::make($data['password']),
@@ -133,7 +165,7 @@ class AuthController extends Controller
             'email_hash' => $emailHash,
             'phone_hash' => $phoneHash,
         ]);
-        
+
         // Создаем токен для нового пользователя
         $token = $user->createToken('auth_token')->plainTextToken;
 

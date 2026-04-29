@@ -42,7 +42,9 @@ class CommentController extends Controller
             ]);
 
         // Батчевая загрузка реакций для всех комментов разом (N+1 защита)
-        $userId  = optional($request->user())->id;
+        // Public route — резолвим viewer'а явно через guard,
+        // иначе reacted_by_me на комментах всегда false для залогиненных
+        $userId  = optional(\Illuminate\Support\Facades\Auth::guard('sanctum')->user())->id;
         $summary = \App\Http\Controllers\ReactionController::batchSummary(
             Comment::class,
             $comments->pluck('id')->all(),
