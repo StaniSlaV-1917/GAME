@@ -17,10 +17,21 @@ const mode = ref('trending'); // 'following' | 'trending'
 const isEmpty = ref(false);
 const total = ref(0);
 
+const SITE_URL = 'https://game-45428688-fe94e.web.app';
+
 useHead({
-  title: 'Лента — GameStore',
+  title: 'Лента сообщества — посты и обсуждения | GameStore',
+  link: [
+    { rel: 'canonical', href: `${SITE_URL}/feed` },
+  ],
   meta: [
-    { name: 'description', content: 'Свежие хроники сообщества GameStore.' },
+    { name: 'description', content: 'Свежие посты и обсуждения сообщества GameStore. Игровые новости, советы и живое общение.' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: `${SITE_URL}/feed` },
+    { property: 'og:title', content: 'Лента сообщества — посты и обсуждения | GameStore' },
+    { property: 'og:description', content: 'Свежие посты и обсуждения сообщества GameStore.' },
+    { property: 'og:image', content: `${SITE_URL}/images.png` },
+    { name: 'robots', content: 'index, follow' },
   ],
 });
 

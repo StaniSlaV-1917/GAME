@@ -53,16 +53,31 @@ const isOwnProfile = computed(() =>
 const roleLabels = { user: 'Воин', manager: 'Кузнец', admin: 'Старейшина' };
 const roleIcons  = { user: '⚔', manager: '🔨', admin: '👑' };
 
-useHead(() => ({
-  title: profile.value
-    ? `${profile.value.fullname || '@' + profile.value.username} — GameStore`
-    : 'Профиль воина — GameStore',
-  meta: [
-    { name: 'description', content: profile.value
-      ? `Профиль ${profile.value.fullname || '@' + profile.value.username} на GameStore — посты, реакции, активность.`
-      : 'Публичный профиль пользователя GameStore.' },
-  ],
-}));
+const SITE_URL = 'https://game-45428688-fe94e.web.app';
+
+useHead(() => {
+  const name = profile.value?.fullname || (profile.value ? `@${profile.value.username}` : null);
+  const title = name ? `${name} — профиль | GameStore` : 'Профиль воина — GameStore';
+  const desc = name
+    ? `Профиль ${name} на GameStore — посты, реакции, активность в сообществе.`
+    : 'Публичный профиль пользователя GameStore.';
+  const pageUrl = `${SITE_URL}/u/${username.value}`;
+  return {
+    title,
+    link: [
+      { rel: 'canonical', href: pageUrl },
+    ],
+    meta: [
+      { name: 'description', content: desc },
+      { property: 'og:type', content: 'profile' },
+      { property: 'og:url', content: pageUrl },
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: desc },
+      { property: 'og:image', content: `${SITE_URL}/images.png` },
+      { name: 'robots', content: 'index, follow' },
+    ],
+  };
+});
 
 const formatDate = (s) => {
   if (!s) return '—';

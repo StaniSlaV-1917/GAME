@@ -1,6 +1,7 @@
 <script setup>
 import { useRoute } from 'vue-router';
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useHead } from '@vueuse/head';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useThemeStore } from './stores/theme';
@@ -29,6 +30,12 @@ const { badge: notifBadge, unreadCount: notifUnreadCount, peeks: notifPeeks } = 
 const { badge: chatsBadge, totalUnread: chatsUnread } = storeToRefs(chatsStore);
 const router = useRouter();
 const route = useRoute();
+
+useHead(computed(() => ({
+  meta: route.meta?.requiresAuth
+    ? [{ name: 'robots', content: 'noindex, nofollow' }]
+    : [],
+})));
 
 // Линк аватара/имени в шапке.
 //   • Если у юзера есть username → публичный профиль /u/:username

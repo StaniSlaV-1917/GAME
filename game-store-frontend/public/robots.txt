@@ -1,7 +1,12 @@
 User-agent: *
 Disallow: /admin/
+Disallow: /admin
 Disallow: /profile
 Disallow: /cart
+Disallow: /messages
+Disallow: /notifications
+Disallow: /payment/
+Disallow: /soviet
 Allow: /
 
-Sitemap: https://gamestore-frontend.web.app/sitemap.xml
+Sitemap: https://game-45428688-fe94e.web.app/sitemap.xml
