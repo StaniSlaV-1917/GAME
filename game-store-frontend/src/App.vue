@@ -2157,11 +2157,20 @@ watch(isLoggedIn, (logged) => {
    широких мониторах (≥1600px). Между 1381–1599 действует компакт по дефолту,
    иначе на 1440-laptop'ах хедер переполнялся. */
 @media (min-width: 1600px) {
+  /* При ≥1600px все подписи (mode, theme, profile, logout) возвращаются,
+     поэтому расширяем контейнер хедера чтобы nav не давился overflow:hidden */
+  .header-content { max-width: 1760px; gap: 12px; }
+  .user-actions { gap: 10px; }
+  .search-wrap { flex: 0 1 280px; }
   .logout-label { display: inline; }
   .logout-btn { padding: 8px 14px; font-size: 0.82rem; }
   .search-input { width: 280px; padding: 10px 40px 10px 36px; font-size: 0.9rem; }
   .nav-link { padding: 10px 14px; font-size: 0.84rem; }
   .profile-name { max-width: 110px; font-size: 0.84rem; }
+}
+@media (min-width: 1920px) {
+  .header-content { max-width: 1860px; gap: 16px; }
+  .user-actions { gap: 12px; }
 }
 .logout-btn:hover {
   color: var(--ember-spark);
