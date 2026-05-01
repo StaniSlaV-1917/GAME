@@ -14,8 +14,14 @@
     ],
     "headers": [
       {
-        "comment": "index.html НИКОГДА не кешировать — всегда подтягивать свежий, иначе старая версия будет ссылаться на удалённые JS-чанки → MIME-ошибка",
+        "comment": "index.html + все prerendered entry points НИКОГДА не кешировать — всегда подтягивать свежий, иначе старая версия будет ссылаться на удалённые JS-чанки → MIME-ошибка",
         "source": "/index.html",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        ]
+      },
+      {
+        "source": "/*/index.html",
         "headers": [
           { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
         ]
