@@ -118,22 +118,48 @@ const hasSystemRequirements = computed(() => {
   );
 });
 
+const SITE_URL = 'https://game-45428688-fe94e.web.app';
+
 useHead(computed(() => {
   if (!game.value) return { title: 'Загрузка...' };
-  const title = `Купить ${game.value.title} — GameStore`;
-  const desc = `Купите ${game.value.title} для ${game.value.platform}. Мгновенная доставка ключа, низкие цены.`;
+  const title = `Купить ключ ${game.value.title} для ${game.value.platform} — GameStore`;
+  const desc = `Купите ${game.value.title} для ${game.value.platform} по лучшей цене ${game.value.price} ₽. Лицензионный ключ, мгновенная доставка на e-mail.`;
   const img = resolveMediaUrl(game.value.image);
+  const pageUrl = `${SITE_URL}/games/${game.value.id}`;
   return {
     title,
+    link: [
+      { rel: 'canonical', href: pageUrl },
+    ],
     meta: [
       { name: 'description', content: desc },
       { property: 'og:type', content: 'product' },
+      { property: 'og:url', content: pageUrl },
       { property: 'og:title', content: title },
       { property: 'og:description', content: desc },
       { property: 'og:image', content: img },
       { name: 'robots', content: 'index, follow' },
     ],
-    script: [{ type: 'application/ld+json', children: JSON.stringify({ '@context': 'https://schema.org', '@type': 'Product', name: game.value.title, image: img, offers: { '@type': 'Offer', priceCurrency: 'RUB', price: game.value.price, availability: 'https://schema.org/InStock' } }) }]
+    script: [{
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: game.value.title,
+        image: img,
+        description: desc,
+        url: pageUrl,
+        brand: { '@type': 'Brand', name: game.value.platform },
+        offers: {
+          '@type': 'Offer',
+          url: pageUrl,
+          priceCurrency: 'RUB',
+          price: game.value.price,
+          availability: 'https://schema.org/InStock',
+          seller: { '@type': 'Organization', name: 'GameStore', url: `${SITE_URL}/` },
+        },
+      }),
+    }],
   };
 }));
 

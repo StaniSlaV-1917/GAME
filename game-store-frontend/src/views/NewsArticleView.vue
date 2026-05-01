@@ -13,22 +13,54 @@ const readProgress = ref(0);
 const articleId = computed(() => route.params.id);
 let revealObs = null;
 
+const SITE_URL = 'https://game-45428688-fe94e.web.app';
+
 useHead(computed(() => {
   const title = article.value ? `${article.value.title} — GameStore` : 'Загрузка...';
   const desc = article.value?.excerpt || article.value?.title || 'Хроники GameStore';
-  const img = article.value?.image ? resolveMediaUrl(article.value.image) : '/images.png';
+  const img = article.value?.image ? resolveMediaUrl(article.value.image) : `${SITE_URL}/images.png`;
+  const pageUrl = `${SITE_URL}/news/${articleId.value}`;
+  const publishedAt = article.value?.published_at || null;
   return {
     title,
+    link: [
+      { rel: 'canonical', href: pageUrl },
+    ],
     meta: [
       { name: 'description', content: desc },
       { property: 'og:type', content: 'article' },
+      { property: 'og:url', content: pageUrl },
       { property: 'og:title', content: title },
       { property: 'og:description', content: desc },
       { property: 'og:image', content: img },
-      { name: 'robots', content: 'index, follow' }, 
+      { property: 'og:locale', content: 'ru_RU' },
+      ...(publishedAt ? [{ property: 'article:published_time', content: publishedAt }] : []),
+      { property: 'article:section', content: 'Игровые новости' },
+      { name: 'robots', content: 'index, follow' },
     ],
+    script: article.value ? [{
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'NewsArticle',
+        headline: article.value.title,
+        description: desc,
+        image: img,
+        url: pageUrl,
+        ...(publishedAt ? { datePublished: publishedAt, dateModified: publishedAt } : {}),
+        author: { '@type': 'Organization', name: 'GameStore', url: `${SITE_URL}/` },
+        publisher: {
+          '@type': 'Organization',
+          name: 'GameStore',
+          url: `${SITE_URL}/`,
+          logo: { '@type': 'ImageObject', url: `${SITE_URL}/images.png` },
+        },
+        mainEntityOfPage: { '@type': 'WebPage', '@id': pageUrl },
+        inLanguage: 'ru-RU',
+      }),
+    }] : [],
   };
-})); 
+}));
 
 const onScroll = () => {
   const el = document.documentElement;

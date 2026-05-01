@@ -232,15 +232,53 @@ import { useHead } from '@vueuse/head';
 import GameCarousel from '../components/GameCarousel.vue';
 import SvgIcon from '@/components/SvgIcon.vue';
 
+const SITE_URL = 'https://game-45428688-fe94e.web.app';
+
 useHead({
-  title: 'GameStore — Кузница воина',
+  title: 'GameStore — Купить ключи Steam, Epic Games, GOG дёшево',
+  link: [
+    { rel: 'canonical', href: `${SITE_URL}/` },
+  ],
   meta: [
-    { name: 'description', content: 'Магазин лицензионных ключей для игр. Steam, Epic Games, GOG и другие платформы по выгодным ценам.' },
+    { name: 'description', content: 'Магазин лицензионных ключей для игр. Steam, Epic Games, GOG и другие платформы по выгодным ценам. Мгновенная доставка на e-mail.' },
     { property: 'og:type', content: 'website' },
-    { property: 'og:title', content: 'GameStore — Кузница воина' },
-    { property: 'og:description', content: 'Магазин лицензионных ключей для игр. Steam, Epic Games, GOG и другие платформы по выгодным ценам.' },
-    { property: 'og:image', content: '/images.png' },
+    { property: 'og:url', content: `${SITE_URL}/` },
+    { property: 'og:title', content: 'GameStore — Купить ключи Steam, Epic Games, GOG дёшево' },
+    { property: 'og:description', content: 'Магазин лицензионных ключей для игр. Steam, Epic Games, GOG по выгодным ценам. Мгновенная доставка.' },
+    { property: 'og:image', content: `${SITE_URL}/images.png` },
     { name: 'robots', content: 'index, follow' },
+  ],
+  script: [
+    {
+      type: 'application/ld+json',
+      children: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'Organization',
+            '@id': `${SITE_URL}/#organization`,
+            name: 'GameStore',
+            url: `${SITE_URL}/`,
+            logo: { '@type': 'ImageObject', url: `${SITE_URL}/images.png` },
+            sameAs: [],
+          },
+          {
+            '@type': 'WebSite',
+            '@id': `${SITE_URL}/#website`,
+            url: `${SITE_URL}/`,
+            name: 'GameStore',
+            description: 'Магазин лицензионных ключей для игр',
+            publisher: { '@id': `${SITE_URL}/#organization` },
+            potentialAction: {
+              '@type': 'SearchAction',
+              target: { '@type': 'EntryPoint', urlTemplate: `${SITE_URL}/catalog?genre={search_term_string}` },
+              'query-input': 'required name=search_term_string',
+            },
+            inLanguage: 'ru-RU',
+          },
+        ],
+      }),
+    },
   ],
 });
 

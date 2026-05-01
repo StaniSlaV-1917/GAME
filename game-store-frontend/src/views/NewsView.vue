@@ -188,15 +188,34 @@ import { useHead } from '@vueuse/head';
 import api from '../api/axios';
 import { resolveMediaUrl } from '../utils/media';
 
+const SITE_URL = 'https://game-45428688-fe94e.web.app';
+
 useHead({
-  title: 'Хроники — GameStore',
+  title: 'Новости игр — анонсы, обзоры, события | GameStore',
+  link: [
+    { rel: 'canonical', href: `${SITE_URL}/news` },
+  ],
   meta: [
-    { name: 'description', content: 'Свежие хроники из мира игр: анонсы, обзоры и события. Блог GameStore.' },
+    { name: 'description', content: 'Свежие новости из мира игр: анонсы релизов, обзоры и события. Следи за хрониками GameStore.' },
     { property: 'og:type', content: 'website' },
-    { property: 'og:title', content: 'Хроники — GameStore' },
-    { property: 'og:description', content: 'Свежие хроники из мира игр: анонсы, обзоры и события. Блог GameStore.' },
+    { property: 'og:url', content: `${SITE_URL}/news` },
+    { property: 'og:title', content: 'Новости игр — анонсы, обзоры, события | GameStore' },
+    { property: 'og:description', content: 'Свежие новости из мира игр: анонсы релизов, обзоры и события.' },
+    { property: 'og:image', content: `${SITE_URL}/images.png` },
     { name: 'robots', content: 'index, follow' },
   ],
+  script: [{
+    type: 'application/ld+json',
+    children: JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'Новости игр — GameStore',
+      description: 'Свежие новости из мира игр: анонсы релизов, обзоры и события.',
+      url: `${SITE_URL}/news`,
+      publisher: { '@type': 'Organization', name: 'GameStore', url: `${SITE_URL}/` },
+      inLanguage: 'ru-RU',
+    }),
+  }],
 });
 
 const newsItems = ref([]);

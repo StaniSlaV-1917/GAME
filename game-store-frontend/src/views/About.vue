@@ -22,13 +22,20 @@ const getRoleInfo = (role) => roleInfo[role] || { label: role || 'Воин', ton
 const getInitials = (name) =>
   name ? name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() : '?';
 
+const SITE_URL = 'https://game-45428688-fe94e.web.app';
+
 useHead({
-  title: 'О клане — GameStore',
+  title: 'О магазине GameStore — лицензионные ключи для игр',
+  link: [
+    { rel: 'canonical', href: `${SITE_URL}/about` },
+  ],
   meta: [
-    { name: 'description', content: 'GameStore — оплот, где ковают цифровые ключи к игровым мирам. Наша миссия, уклад и гарантии.' },
+    { name: 'description', content: 'GameStore — магазин лицензионных игровых ключей. Мгновенная доставка, гарантия качества, поддержка 24/7.' },
     { property: 'og:type', content: 'website' },
-    { property: 'og:title', content: 'О клане — GameStore' },
-    { property: 'og:description', content: 'GameStore — оплот, где ковают цифровые ключи к игровым мирам. Наша миссия, уклад и гарантии.' },
+    { property: 'og:url', content: `${SITE_URL}/about` },
+    { property: 'og:title', content: 'О магазине GameStore — лицензионные ключи для игр' },
+    { property: 'og:description', content: 'GameStore — магазин лицензионных игровых ключей. Мгновенная доставка, гарантия качества, поддержка 24/7.' },
+    { property: 'og:image', content: `${SITE_URL}/images.png` },
     { name: 'robots', content: 'index, follow' },
   ],
 });

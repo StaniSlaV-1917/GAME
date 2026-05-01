@@ -219,19 +219,30 @@ const postId = computed(() => Number(route.params.id));
 const roleLabels = { user: 'Воин', manager: 'Кузнец', admin: 'Старейшина' };
 const roleIcons  = { user: '⚔', manager: '🔨', admin: '👑' };
 
+const SITE_URL = 'https://game-45428688-fe94e.web.app';
+
 // SEO
-useHead(() => ({
-  title: post.value?.title
-    ? `${post.value.title} — GameStore`
-    : 'Хроника — GameStore',
-  meta: [
-    { name: 'description', content: post.value
-      ? (post.value.body || '').slice(0, 160)
-      : 'Пост сообщества GameStore.' },
-    { property: 'og:title', content: post.value?.title || 'Хроника GameStore' },
-    { property: 'og:image', content: post.value?.cover_url || '/images.png' },
-  ],
-}));
+useHead(() => {
+  const title = post.value?.title ? `${post.value.title} — GameStore` : 'Хроника — GameStore';
+  const desc = post.value ? (post.value.body || '').replace(/<[^>]*>/g, '').slice(0, 160) : 'Пост сообщества GameStore.';
+  const img = post.value?.cover_url || `${SITE_URL}/images.png`;
+  const pageUrl = `${SITE_URL}/post/${route.params.id}`;
+  return {
+    title,
+    link: [
+      { rel: 'canonical', href: pageUrl },
+    ],
+    meta: [
+      { name: 'description', content: desc },
+      { property: 'og:type', content: 'article' },
+      { property: 'og:url', content: pageUrl },
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: desc },
+      { property: 'og:image', content: img },
+      { name: 'robots', content: 'index, follow' },
+    ],
+  };
+});
 
 // ── Computed ──────────────────────────────────────────
 

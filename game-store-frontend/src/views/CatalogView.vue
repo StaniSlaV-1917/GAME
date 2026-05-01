@@ -24,16 +24,24 @@ let sentinelObs = null;
 const visibleGames = computed(() => filteredGames.value.slice(0, displayCount.value));
 const hasMore = computed(() => displayCount.value < filteredGames.value.length);
 
+const SITE_URL = 'https://game-45428688-fe94e.web.app';
+
 useHead(computed(() => {
   const g = selectedGenre.value === 'all' ? 'Все игры' : `${selectedGenre.value} игры`;
+  const title = `${g} — купить ключи дёшево | GameStore`;
+  const desc = `${g}: лицензионные ключи Steam, Epic Games, GOG по выгодным ценам. Мгновенная доставка на e-mail.`;
   return {
-    title: `${g} — Оружейная GameStore`,
+    title,
+    link: [
+      { rel: 'canonical', href: `${SITE_URL}/catalog` },
+    ],
     meta: [
-      { name: 'description', content: `Оружейная GameStore. Покупайте лицензионные ключи по выгодным ценам.` },
+      { name: 'description', content: desc },
       { property: 'og:type', content: 'website' },
-      { property: 'og:title', content: `${g} — Оружейная GameStore` },
-      { property: 'og:description', content: 'Лицензионные ключи для игр. Steam, Epic Games, GOG по выгодным ценам.' },
-      { property: 'og:image', content: '/images.png' },
+      { property: 'og:url', content: `${SITE_URL}/catalog` },
+      { property: 'og:title', content: title },
+      { property: 'og:description', content: desc },
+      { property: 'og:image', content: `${SITE_URL}/images.png` },
       { name: 'robots', content: 'index, follow' },
     ],
   };
