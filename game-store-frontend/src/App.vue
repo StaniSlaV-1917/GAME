@@ -2874,10 +2874,12 @@ watch(isLoggedIn, (logged) => {
      Правило ловит ВСЕ ноуты (1366/1440/1536/1600 эффективные) и любые
      промежуточные ширины окна. Премиум-стили — только от 1600px. */
   .header-content { padding: 0 var(--sp-4); gap: 6px; }
-  .main-nav { margin-left: var(--sp-3); }
+  .main-nav { margin-left: var(--sp-3); flex-shrink: 0; }
   .nav-link { padding: 9px 10px; font-size: 0.78rem; }
   .logo-word-sub { display: none; }
-  .search-input { width: 200px; padding: 9px 34px 9px 32px; }
+  /* nav не сжимается — search-wrap берёт на себя всё давление */
+  .search-wrap { flex: 0 5 200px; }
+  .search-input { width: 100%; padding: 9px 34px 9px 32px; }
   /* Mode-toggle: подписи прячутся, остаются только иконки ⚔ / 📜 */
   .mode-btn .mode-label { display: none; }
   .mode-btn { padding: 6px 9px; }
@@ -2906,7 +2908,9 @@ watch(isLoggedIn, (logged) => {
   .brand-col { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; align-items: flex-start; gap: 24px; }
   .footer-tagline { flex: 1; min-width: 220px; }
   .main-nav { margin-left: var(--sp-2); }
-  .search-wrap { flex: 0 1 180px; }
+  /* На 900-1100px поиск убираем из шапки — nav занимает всё доступное место.
+     Поиск остаётся доступен через каталог. При 900px включится hamburger. */
+  .search-wrap { display: none; }
   /* Theme-label / profile-name уже скрыты с 1500 */
 }
 
