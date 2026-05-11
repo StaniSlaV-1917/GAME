@@ -21,6 +21,24 @@ useHead({
 const payment = ref(null);
 const loading = ref(true);
 
+// Key copy
+const keyCopied = ref(false);
+function copyKey() {
+  navigator.clipboard.writeText('0QAB4-0I3CG-AFID2').then(() => {
+    keyCopied.value = true;
+    setTimeout(() => { keyCopied.value = false; }, 2200);
+  });
+}
+
+// Activation instructions
+const instrOpen = ref(false);
+const activeTab = ref('pc');
+const instrTabs = [
+  { id: 'pc',      label: '🖥 Steam на ПК' },
+  { id: 'browser', label: '🌐 Браузер' },
+  { id: 'mobile',  label: '📱 Телефон' },
+];
+
 const tronscanUrl = computed(() => {
   if (!payment.value?.transaction_hash) return null;
   // BEP-20 → BscScan, иначе → TronScan
@@ -116,14 +134,88 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- Stub message about goods -->
-        <div class="stub-block">
-          <div class="stub-eyebrow">Тестовая среда</div>
-          <p>
-            Товар пока не выдаётся — система оплаты на стадии тестирования.
-            Когда добавим инвентарь ключей, здесь появится <strong>«ваш ключ: XXX-XXX-XXX»</strong>
-            с инструкцией активации.
+        <!-- Key delivery block -->
+        <div class="key-block">
+          <div class="key-eyebrow">🗝 Ваш ключ активации</div>
+          <div class="key-row">
+            <a
+              href="https://key-steam.com/ggsel-keys/?uniquecode=385eae80-3720-497b-bb4a-709835e6ba4d#"
+              target="_blank"
+              rel="noopener"
+              class="key-value"
+            >0QAB4-0I3CG-AFID2</a>
+            <button class="key-copy-btn" @click="copyKey" :class="{ copied: keyCopied }">
+              <span v-if="keyCopied">✓ Скопировано</span>
+              <span v-else>Копировать</span>
+            </button>
+          </div>
+          <p class="key-hint">
+            Нажмите на ключ, чтобы перейти на страницу активации, или скопируйте его вручную.
           </p>
+        </div>
+
+        <!-- Activation instructions (accordion) -->
+        <div class="instr-block">
+          <button class="instr-toggle" @click="instrOpen = !instrOpen">
+            <span>Инструкция активации</span>
+            <span class="instr-chevron" :class="{ open: instrOpen }">▾</span>
+          </button>
+
+          <div v-show="instrOpen" class="instr-body">
+            <p class="instr-lead">
+              Активируйте ключ только в том регионе, для которого предназначен товар.
+              Если указан <strong>ROW</strong>, ключ подходит для большинства регионов,
+              но итоговая активация зависит от ограничений Steam.
+            </p>
+
+            <div class="instr-tabs">
+              <button
+                v-for="tab in instrTabs"
+                :key="tab.id"
+                class="instr-tab"
+                :class="{ active: activeTab === tab.id }"
+                @click="activeTab = tab.id"
+              >{{ tab.label }}</button>
+            </div>
+
+            <!-- PC Steam -->
+            <ol v-if="activeTab === 'pc'" class="instr-steps">
+              <li>Откройте клиент Steam и войдите в нужный аккаунт.</li>
+              <li>В верхнем меню нажмите <strong>Игры → Активировать в Steam…</strong></li>
+              <li>Нажмите <strong>Далее</strong>, затем <strong>Согласен</strong>.</li>
+              <li>Вставьте ключ полностью — без лишних пробелов в начале и конце.</li>
+              <li>Подтвердите активацию и дождитесь сообщения об успешном добавлении игры в библиотеку.</li>
+              <li>Перейдите в <strong>Библиотеку</strong>, найдите игру и нажмите <strong>Установить</strong>.</li>
+            </ol>
+
+            <!-- Browser -->
+            <ol v-else-if="activeTab === 'browser'" class="instr-steps">
+              <li>
+                Откройте прямую ссылку:
+                <a href="https://store.steampowered.com/account/registerkey" target="_blank" rel="noopener" class="instr-link">
+                  store.steampowered.com/account/registerkey
+                </a>
+              </li>
+              <li>Авторизуйтесь на сайте Steam под нужным аккаунтом.</li>
+              <li>Подтвердите лицензионное соглашение, если Steam его запросит.</li>
+              <li>Вставьте ключ в поле и нажмите <strong>Продолжить</strong>.</li>
+              <li>После успешной активации убедитесь, что игра появилась в библиотеке аккаунта.</li>
+            </ol>
+
+            <!-- Mobile -->
+            <ol v-else-if="activeTab === 'mobile'" class="instr-steps">
+              <li>На телефоне удобнее использовать браузерную ссылку — откройте <a href="https://store.steampowered.com/account/registerkey" target="_blank" rel="noopener" class="instr-link">registerkey</a> в браузере.</li>
+              <li>Если мобильное приложение Steam не показывает нужную форму, используйте именно браузерную версию сайта.</li>
+              <li>Вставьте ключ вручную или из буфера обмена и подтвердите активацию.</li>
+              <li>В мобильном приложении можно открыть раздел <strong>Поддержка</strong> и найти активацию через поиск.</li>
+            </ol>
+
+            <div class="instr-warn">
+              <span class="instr-warn-icon">⚠</span>
+              Если Steam пишет, что ключ уже использован, не подходит по региону или введён с ошибкой —
+              сначала перепроверьте символы. Чаще всего путают <strong>0&nbsp;и&nbsp;O</strong>, <strong>1&nbsp;и&nbsp;I</strong>.
+            </div>
+          </div>
         </div>
 
         <!-- Actions -->
@@ -246,28 +338,212 @@ onMounted(async () => {
   margin-right: 4px;
 }
 
-.stub-block {
-  margin-bottom: 24px;
-  padding: 16px 20px;
-  border: 1px dashed var(--iron-dark);
-  border-radius: var(--r-sm);
-  background: rgba(0,0,0,0.2);
+/* ── Key delivery block ───────────────────────── */
+.key-block {
+  margin-bottom: 16px;
+  padding: 20px 24px;
+  border: 1px solid var(--iron-warm);
+  border-radius: var(--r-md);
+  background: linear-gradient(160deg, rgba(226,67,16,0.10) 0%, rgba(0,0,0,0) 60%),
+              linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
+  box-shadow: 0 0 24px rgba(226,67,16,0.18), var(--inset-iron-top);
   text-align: left;
 }
-.stub-eyebrow {
+.key-eyebrow {
   font-size: 10px;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 6px;
+  color: var(--iron-warm);
+  margin-bottom: 10px;
 }
-.stub-block p {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
+.key-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.key-value {
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-bright);
+  background: rgba(0,0,0,0.35);
+  border: 1px dashed rgba(226,67,16,0.5);
+  border-radius: var(--r-sm);
+  padding: 8px 16px;
+  text-decoration: none;
+  user-select: all;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  flex: 1;
+  text-align: center;
+  word-break: break-all;
+}
+.key-value:hover {
+  border-color: var(--iron-warm);
+  box-shadow: 0 0 12px rgba(226,67,16,0.35);
+  color: #ffba78;
+}
+.key-copy-btn {
+  flex-shrink: 0;
+  padding: 9px 18px;
+  border: 1px solid var(--iron-dark);
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, var(--ash-stone) 0%, var(--ash-coal) 100%);
   color: var(--text-parchment);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
 }
-.stub-block strong { color: var(--text-bright); }
+.key-copy-btn:hover,
+.key-copy-btn.copied {
+  border-color: var(--iron-warm);
+  color: var(--text-bright);
+  box-shadow: 0 0 8px rgba(226,67,16,0.35);
+}
+.key-copy-btn.copied {
+  background: linear-gradient(180deg, rgba(226,67,16,0.20) 0%, rgba(0,0,0,0) 100%);
+}
+.key-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* ── Activation instructions ──────────────────── */
+.instr-block {
+  margin-bottom: 24px;
+  border: 1px solid var(--iron-dark);
+  border-radius: var(--r-md);
+  background: rgba(0,0,0,0.2);
+  overflow: hidden;
+  text-align: left;
+}
+.instr-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-parchment);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  transition: color 0.18s, background 0.18s;
+}
+.instr-toggle:hover {
+  color: var(--text-bright);
+  background: rgba(226,67,16,0.06);
+}
+.instr-chevron {
+  font-size: 16px;
+  color: var(--iron-warm);
+  transition: transform 0.22s;
+}
+.instr-chevron.open { transform: rotate(180deg); }
+
+.instr-body {
+  padding: 4px 20px 20px;
+  border-top: 1px solid var(--iron-dark);
+}
+.instr-lead {
+  margin: 14px 0 16px;
+  font-size: 13px;
+  color: var(--text-parchment);
+  line-height: 1.55;
+}
+.instr-lead strong { color: var(--text-bright); }
+
+.instr-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.instr-tab {
+  padding: 7px 14px;
+  border: 1px solid var(--iron-dark);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.instr-tab:hover {
+  color: var(--text-parchment);
+  border-color: rgba(226,67,16,0.4);
+}
+.instr-tab.active {
+  border-color: var(--iron-warm);
+  color: var(--text-bright);
+  background: rgba(226,67,16,0.12);
+}
+
+.instr-steps {
+  margin: 0 0 16px;
+  padding-left: 0;
+  counter-reset: step;
+  list-style: none;
+}
+.instr-steps li {
+  counter-increment: step;
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--text-parchment);
+  line-height: 1.55;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.instr-steps li:last-child { border-bottom: none; }
+.instr-steps li::before {
+  content: counter(step);
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--iron-warm);
+  color: var(--iron-warm);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+.instr-steps li strong { color: var(--text-bright); }
+.instr-link {
+  color: #ffba78;
+  text-decoration: none;
+  border-bottom: 1px dashed;
+  word-break: break-all;
+}
+.instr-link:hover { color: var(--text-bright); }
+
+.instr-warn {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: rgba(226,67,16,0.08);
+  border: 1px solid rgba(226,67,16,0.25);
+  font-size: 12px;
+  color: var(--text-parchment);
+  line-height: 1.5;
+}
+.instr-warn strong { color: var(--text-bright); }
+.instr-warn-icon {
+  flex-shrink: 0;
+  color: var(--iron-warm);
+  font-size: 14px;
+}
 
 .success-actions {
   display: flex;
