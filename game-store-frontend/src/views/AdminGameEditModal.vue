@@ -402,6 +402,21 @@ watch(() => form.value.discount_percent, (newDiscount) => {
     }
 });
 
+// ✅ 1. Сначала объявляем функцию
+const loadKeys = async (gameId) => {
+  keysLoading.value = true;
+  try {
+    const { data } = await api.get(`/admin/games/${gameId}/keys`);
+    keysList.value = data.keys;
+    keysInfo.value = { total: data.total, available: data.available, issued: data.issued };
+  } catch (e) {
+    console.error('Keys load error:', e);
+  } finally {
+    keysLoading.value = false;
+  }
+};
+
+// ✅ 2. Потом watch, который её использует
 watch(() => props.game, (newGame) => {
   if (props.isEditing && newGame) {
     form.value = { ...getInitialForm(), ...newGame };
@@ -419,19 +434,6 @@ watch(() => props.game, (newGame) => {
     loadKeys(newGame.id);
   }
 }, { immediate: true, deep: true });
-
-const loadKeys = async (gameId) => {
-  keysLoading.value = true;
-  try {
-    const { data } = await api.get(`/admin/games/${gameId}/keys`);
-    keysList.value = data.keys;
-    keysInfo.value = { total: data.total, available: data.available, issued: data.issued };
-  } catch (e) {
-    console.error('Keys load error:', e);
-  } finally {
-    keysLoading.value = false;
-  }
-};
 
 const submitKeys = async () => {
   if (!props.game?.id || !newKeysText.value.trim()) return;
