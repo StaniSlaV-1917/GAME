@@ -34,6 +34,7 @@
             <th>Платформа / Жанр</th>
             <th>Цена</th>
             <th>Статус</th>
+            <th>Ключи</th>
             <th>Год</th>
             <th></th>
           </tr>
@@ -58,6 +59,12 @@
                 <span v-if="game.discount_percent" class="status-badge discount">-{{ game.discount_percent }}%</span>
                 <span v-if="game.is_featured" class="status-badge featured">Хит</span>
                 <span v-if="game.is_new" class="status-badge new">Новинка</span>
+            </td>
+            <td>
+              <span v-if="game.total_keys_count > 0" :class="['keys-badge', game.available_keys_count > 0 ? 'keys-ok' : 'keys-empty']">
+                {{ game.available_keys_count }}/{{ game.total_keys_count }}
+              </span>
+              <span v-else class="keys-badge keys-none">—</span>
             </td>
             <td>{{ game.release_year ?? '—' }}</td>
             <td class="action-buttons">
@@ -159,10 +166,11 @@ const closeModal = () => {
 };
 
 const handleSaveGame = async (payload) => {
-  const { gameData, gameId, galleryFormData } = payload;
+  const { gameData, gameId, galleryFormData, coverFile } = payload;
   const isEditing = !!gameId;
 
   try {
+    // 1. Сохраняем основные данные игры
     let savedGameResponse;
     if (isEditing) {
       savedGameResponse = await api.put(`/admin/games/${gameId}`, gameData);
@@ -172,15 +180,26 @@ const handleSaveGame = async (payload) => {
 
     const savedGameId = isEditing ? gameId : savedGameResponse.data.id;
 
-    if (galleryFormData && galleryFormData.has('gallery[]')) {
-        await api.post(`/admin/games/${savedGameId}/gallery`, galleryFormData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-        });
+    // 2. Загружаем обложку если был выбран файл
+    if (coverFile) {
+      const coverFormData = new FormData();
+      coverFormData.append('cover', coverFile);
+      await api.post(`/admin/games/${savedGameId}/cover`, coverFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
     }
-    
+
+    // 3. Загружаем галерею если есть новые файлы
+    if (galleryFormData && galleryFormData.has('gallery[]')) {
+      await api.post(`/admin/games/${savedGameId}/gallery`, galleryFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+
     await loadGames();
 
-    const message = isEditing ? `Игра "${gameData.title}" успешно обновлена` : `Игра "${gameData.title}" успешно создана`;
+    const title = gameData.title || savedGameResponse.data?.title || '';
+    const message = isEditing ? `Игра "${title}" успешно обновлена` : `Игра "${title}" успешно создана`;
     showToast(message);
 
   } catch (e) {
@@ -258,6 +277,14 @@ onMounted(loadGames);
 
 .old-price { text-decoration: line-through; color: var(--text-ash); opacity: 0.7; }
 .old-price-sub { font-size: 0.8rem; color: var(--text-ash); font-family: var(--font-ui); }
+
+.keys-badge {
+  display: inline-block; padding: 3px 9px; border-radius: 20px;
+  font-size: 0.78rem; font-weight: 700; font-family: var(--font-ui);
+}
+.keys-ok { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.25); }
+.keys-empty { background: rgba(239, 68, 68, 0.15); color: #ffb4a8; border: 1px solid rgba(239, 68, 68, 0.25); }
+.keys-none { background: transparent; color: var(--text-smoke); font-size: 0.9rem; }
 
 /* Mobile responsive — таблицу превращаем в карточки */
 @media (max-width: 768px) {

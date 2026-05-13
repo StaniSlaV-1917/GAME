@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminReviewController;
 use App\Http\Controllers\Admin\AdminSupportController;
 use App\Http\Controllers\Admin\AdminModsController;
+use App\Http\Controllers\Admin\AdminGameKeysController;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,6 +119,12 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::delete('/games/{game}', [AdminGamesController::class, 'destroy']);  // было {id}
     Route::post('/games/{game}/gallery', [AdminGamesController::class, 'uploadGallery']);
     Route::delete('/games/{game}/gallery/{image}', [AdminGamesController::class, 'deleteGalleryImage']);
+    Route::post('/games/{game}/cover', [AdminGamesController::class, 'uploadCover']);
+
+    // Ключи к играм
+    Route::get('/games/{game}/keys',        [AdminGameKeysController::class, 'index']);
+    Route::post('/games/{game}/keys',       [AdminGameKeysController::class, 'store']);
+    Route::delete('/games/{game}/keys/{key}', [AdminGameKeysController::class, 'destroy']);
 
     // Моды для игр
     Route::get('/games/{game}/mods', [AdminModsController::class, 'index']);

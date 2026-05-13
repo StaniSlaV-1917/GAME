@@ -79,7 +79,6 @@
             <label for="stopgame_url_code">Код страницы на StopGame</label>
             <input id="stopgame_url_code" v-model="form.stopgame_url_code" type="text" placeholder="izumrudnyy_gorod">
         </div>
-        
 
         <hr class="form-divider" />
 
@@ -113,12 +112,24 @@
 
         <!-- Обложка -->
         <h3 class="subsection-title">Обложка</h3>
-        <div class="form-group">
-          <label for="image">URL текущей обложки</label>
-           <input id="image" v-model="form.image" type="text" placeholder="/images/image.jpg">
-           <div v-if="isEditing && form.image" class="image-preview-container">
-            <p>Текущая обложка:</p>
-            <img :src="resolveMediaUrl(form.image)" alt="Текущая обложка" class="image-preview" />
+        <div class="cover-upload-area">
+          <!-- Превью текущей обложки -->
+          <div v-if="form.image" class="cover-preview-wrap">
+            <img :src="resolveMediaUrl(form.image)" alt="Обложка" class="cover-preview-img" />
+          </div>
+          <div class="cover-inputs">
+            <!-- Загрузка файла -->
+            <div class="form-group">
+              <label for="cover_file">Загрузить новую обложку</label>
+              <input id="cover_file" type="file" accept="image/jpeg,image/png,image/webp"
+                     @change="handleCoverFileChange" class="file-input">
+              <p v-if="pendingCoverFile" class="file-hint">Файл выбран: {{ pendingCoverFile.name }} — будет загружен при сохранении</p>
+            </div>
+            <!-- Или вручную ввести URL -->
+            <div class="form-group">
+              <label for="image">Или URL обложки</label>
+              <input id="image" v-model="form.image" type="text" placeholder="/images/image.jpg">
+            </div>
           </div>
         </div>
 
@@ -129,21 +140,87 @@
         <div v-if="isEditing && form.images && form.images.length" class="gallery-grid">
           <div v-for="image in form.images" :key="image.id" class="gallery-item">
             <img :src="resolveMediaUrl(image.path)" :alt="`Gallery image ${image.id}`"/>
-            <button type="button" @click="requestImageDelete(image)" class="btn-delete-img">Удалить</button>
+            <button type="button" @click="requestImageDelete(image)" class="btn-delete-img">✕</button>
           </div>
         </div>
-        <p v-else-if="isEditing">У этой игры пока нет галереи.</p>
+        <p v-else-if="isEditing" class="hint-text">У этой игры пока нет галереи.</p>
         <div class="form-group" style="margin-top: 20px;">
           <label for="gallery_files">Добавить изображения в галерею</label>
-          <input id="gallery_files" type="file" multiple @change="handleGalleryFilesChange" accept="image/*">
+          <input id="gallery_files" type="file" multiple @change="handleGalleryFilesChange" accept="image/*" class="file-input">
         </div>
         <div v-if="newGalleryFiles.length" class="gallery-grid">
             <div v-for="(preview, index) in newGalleryFiles" :key="index" class="gallery-item new-preview">
                 <img :src="preview.url" :alt="`Preview ${preview.name}`" />
                 <span class="file-name">{{ preview.name }}</span>
-                <button type="button" @click="removeNewGalleryFile(index)" class="btn-delete-img">Отменить</button>
+                <button type="button" @click="removeNewGalleryFile(index)" class="btn-delete-img">✕</button>
             </div>
         </div>
+
+        <hr class="form-divider" />
+
+        <!-- Ключи -->
+        <h3 class="subsection-title">
+          Ключи активации
+          <span v-if="keysInfo" class="keys-stat">
+            <span class="key-badge available">{{ keysInfo.available }} своб.</span>
+            <span class="key-badge total">{{ keysInfo.total }} всего</span>
+          </span>
+        </h3>
+
+        <div v-if="!isEditing" class="hint-text">Добавьте ключи после создания игры.</div>
+        <template v-else>
+          <!-- Список ключей -->
+          <div v-if="keysLoading" class="hint-text">Загрузка ключей...</div>
+          <div v-else-if="keysList.length" class="keys-table-wrap">
+            <table class="keys-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Ключ</th>
+                  <th>Статус</th>
+                  <th>Выдан</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="key in keysList" :key="key.id" :class="{ 'issued-row': key.is_issued }">
+                  <td class="key-id">{{ key.id }}</td>
+                  <td class="key-code">{{ key.is_issued ? '••••••••••••' : key.key_code }}</td>
+                  <td>
+                    <span :class="['key-status', key.is_issued ? 'issued' : 'free']">
+                      {{ key.is_issued ? 'Выдан' : 'Свободен' }}
+                    </span>
+                  </td>
+                  <td class="key-issued-to">
+                    <template v-if="key.issued_to">
+                      {{ key.issued_to.email }}
+                    </template>
+                    <span v-else class="text-muted">—</span>
+                  </td>
+                  <td>
+                    <button v-if="!key.is_issued" type="button"
+                            @click="deleteKey(key)" class="btn-delete-key">✕</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p v-else class="hint-text">Ключей пока нет. Добавьте ниже.</p>
+
+          <!-- Форма добавления ключей -->
+          <div class="keys-add-form">
+            <div class="form-group">
+              <label for="new_keys">Добавить ключи (каждый с новой строки или через запятую)</label>
+              <textarea id="new_keys" v-model="newKeysText" rows="4"
+                        placeholder="XXXXX-XXXXX-XXXXX&#10;YYYYY-YYYYY-YYYYY"></textarea>
+            </div>
+            <button type="button" @click="submitKeys" :disabled="!newKeysText.trim() || keysSubmitting"
+                    class="btn-add-keys">
+              {{ keysSubmitting ? 'Добавляем...' : 'Добавить ключи' }}
+            </button>
+            <p v-if="keysMessage" class="keys-message">{{ keysMessage }}</p>
+          </div>
+        </template>
 
         <hr class="form-divider" />
 
@@ -167,7 +244,7 @@
             </div>
           </div>
         </div>
-        <p v-else-if="isEditing">У этой игры пока нет модов.</p>
+        <p v-else-if="isEditing" class="hint-text">У этой игры пока нет модов.</p>
 
         <div class="form-group" style="margin-top: 20px;">
           <button type="button" @click="showAddModForm = true" class="btn-add-mod">
@@ -230,7 +307,9 @@
 
         <!-- Кнопки -->
         <div class="form-actions">
-          <button type="submit" class="btn-save">{{ isEditing ? 'Сохранить изменения' : 'Создать игру' }}</button>
+          <button type="submit" class="btn-save" :disabled="saving">
+            {{ saving ? 'Сохраняем...' : (isEditing ? 'Сохранить изменения' : 'Создать игру') }}
+          </button>
           <button type="button" @click="close" class="btn-cancel">Отмена</button>
         </div>
       </form>
@@ -247,7 +326,18 @@ const props = defineProps({ game: Object, isEditing: Boolean });
 const emit = defineEmits(['close', 'save', 'delete-image']);
 
 const form = ref({});
+const saving = ref(false);
 const newGalleryFiles = ref([]);
+const pendingCoverFile = ref(null);
+
+// Keys state
+const keysInfo = ref(null);
+const keysList = ref([]);
+const keysLoading = ref(false);
+const newKeysText = ref('');
+const keysSubmitting = ref(false);
+const keysMessage = ref('');
+
 const showAddModForm = ref(false);
 const editingMod = ref(null);
 const modForm = ref({
@@ -287,7 +377,6 @@ const getInitialForm = () => ({
     mods: [],
 });
 
-// Watch for price changes to calculate discount
 watch(() => form.value.price, (newPrice) => {
     if (form.value.old_price && newPrice) {
         const discount = Math.round(((form.value.old_price - newPrice) / form.value.old_price) * 100);
@@ -295,7 +384,6 @@ watch(() => form.value.price, (newPrice) => {
     }
 });
 
-// Watch for old_price changes to calculate discount
 watch(() => form.value.old_price, (newOldPrice) => {
     if (newOldPrice && form.value.price) {
         const discount = Math.round(((newOldPrice - form.value.price) / newOldPrice) * 100);
@@ -305,7 +393,6 @@ watch(() => form.value.old_price, (newOldPrice) => {
     }
 });
 
-// Watch for discount_percent changes to calculate old_price
 watch(() => form.value.discount_percent, (newDiscount) => {
     if (newDiscount && form.value.price) {
         const oldPrice = Math.round(form.value.price / (1 - newDiscount / 100));
@@ -322,7 +409,63 @@ watch(() => props.game, (newGame) => {
     form.value = getInitialForm();
   }
   newGalleryFiles.value = [];
+  pendingCoverFile.value = null;
+  keysList.value = [];
+  keysInfo.value = null;
+  keysMessage.value = '';
+  newKeysText.value = '';
+
+  if (props.isEditing && newGame?.id) {
+    loadKeys(newGame.id);
+  }
 }, { immediate: true, deep: true });
+
+const loadKeys = async (gameId) => {
+  keysLoading.value = true;
+  try {
+    const { data } = await api.get(`/admin/games/${gameId}/keys`);
+    keysList.value = data.keys;
+    keysInfo.value = { total: data.total, available: data.available, issued: data.issued };
+  } catch (e) {
+    console.error('Keys load error:', e);
+  } finally {
+    keysLoading.value = false;
+  }
+};
+
+const submitKeys = async () => {
+  if (!props.game?.id || !newKeysText.value.trim()) return;
+  keysSubmitting.value = true;
+  keysMessage.value = '';
+  try {
+    const { data } = await api.post(`/admin/games/${props.game.id}/keys`, { keys: newKeysText.value });
+    keysMessage.value = data.message + (data.skipped.length ? ` (пропущено дубликатов: ${data.skipped.length})` : '');
+    newKeysText.value = '';
+    await loadKeys(props.game.id);
+  } catch (e) {
+    keysMessage.value = e.response?.data?.message || 'Ошибка при добавлении ключей';
+  } finally {
+    keysSubmitting.value = false;
+  }
+};
+
+const deleteKey = async (key) => {
+  if (!confirm('Удалить этот ключ?')) return;
+  try {
+    await api.delete(`/admin/games/${props.game.id}/keys/${key.id}`);
+    await loadKeys(props.game.id);
+  } catch (e) {
+    alert(e.response?.data?.message || 'Ошибка при удалении ключа');
+  }
+};
+
+const handleCoverFileChange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  pendingCoverFile.value = file;
+  // Показываем превью локально
+  form.value.image = URL.createObjectURL(file);
+};
 
 const handleGalleryFilesChange = (event) => {
   const files = Array.from(event.target.files);
@@ -338,17 +481,23 @@ const removeNewGalleryFile = (index) => {
 };
 
 const handleSubmit = () => {
-  // Создаем чистый объект данных для отправки
   const gameData = { ...form.value };
-
-  // Преобразуем булевы значения в 0 или 1 для бэкенда
   gameData.is_featured = gameData.is_featured ? 1 : 0;
   gameData.is_new = gameData.is_new ? 1 : 0;
-
-  // Удаляем реактивные и ненужные для бэкенда свойства
   delete gameData.images;
+  delete gameData.mods;
   delete gameData.average_review_rating;
   delete gameData.reviews_count;
+  delete gameData.total_keys_count;
+  delete gameData.available_keys_count;
+  delete gameData.in_stock;
+
+  // Если была выбрана обложка файлом — URL пока локальный blob, очищаем.
+  // Реальный upload произойдёт в handleSaveGame в AdminGames.vue через coverFile.
+  if (pendingCoverFile.value) {
+    // Не отправляем blob-url на бэкенд — удалим из gameData, покроем при upload
+    delete gameData.image;
+  }
 
   const galleryFormData = new FormData();
   if (newGalleryFiles.value.length > 0) {
@@ -360,7 +509,8 @@ const handleSubmit = () => {
   emit('save', {
     gameData,
     gameId: props.game?.id,
-    galleryFormData: newGalleryFiles.value.length > 0 ? galleryFormData : null
+    galleryFormData: newGalleryFiles.value.length > 0 ? galleryFormData : null,
+    coverFile: pendingCoverFile.value || null,
   });
 
   close();
@@ -394,7 +544,6 @@ const saveMod = async () => {
             await api.post(`/admin/games/${props.game.id}/mods`, modData);
         }
 
-        // Reload mods
         const response = await api.get(`/admin/games/${props.game.id}/mods`);
         form.value.mods = response.data;
 
@@ -435,7 +584,6 @@ const cancelModEdit = () => {
 };
 
 const close = () => { emit('close'); };
-
 </script>
 
 <style scoped>
@@ -443,13 +591,9 @@ const close = () => { emit('close'); };
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
   background: rgba(0,0,0,0.75);
   backdrop-filter: blur(6px);
-  /* flex-start + padding-top = модалка под хедером (раньше align: center
-     уезжала вершиной за вьюпорт). Внутренний скролл .modal-content
-     сохранён через max-height + overflow-y, чтобы вкладки галерея/моды
-     и поля внутри прокручивались как раньше. */
   display: flex; justify-content: center; align-items: flex-start;
   padding: calc(73px + 16px) 20px 16px;
-  z-index: 9999;     /* выше любого футера/секции на странице */
+  z-index: 9999;
   animation: fadeIn 0.18s ease;
 }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -460,7 +604,6 @@ const close = () => { emit('close'); };
   border-radius: 20px;
   padding: 32px;
   width: 90%; max-width: 780px;
-  /* max-height учитывает: 100vh − 73 хедер − 32px паддинги оверлея */
   max-height: calc(100vh - 73px - 32px);
   overflow-y: auto;
   box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
@@ -471,9 +614,6 @@ const close = () => { emit('close'); };
 .modal-content::-webkit-scrollbar-track { background: transparent; }
 .modal-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
-.modal-content::-webkit-scrollbar { width: 4px; }
-.modal-content::-webkit-scrollbar-track { background: transparent; }
-.modal-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
 .modal-title {
   margin: 0 0 28px;
@@ -492,6 +632,7 @@ const close = () => { emit('close'); };
   margin: 28px 0 16px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(226, 67, 16, 0.25);
+  display: flex; align-items: center; gap: 10px;
 }
 
 .form-divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 24px 0; }
@@ -528,7 +669,7 @@ const close = () => { emit('close'); };
 .form-group input[type="number"] { -moz-appearance: textfield; }
 .form-group input[type="number"]::-webkit-outer-spin-button,
 .form-group input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.form-group input[type="file"] {
+.file-input {
   padding: 10px;
   color: var(--text-parchment);
   cursor: pointer;
@@ -562,7 +703,8 @@ const close = () => { emit('close'); };
   box-shadow: 0 4px 16px rgba(226, 67, 16, 0.4);
   transition: all 0.2s;
 }
-.btn-save:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(226, 67, 16, 0.5); }
+.btn-save:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(226, 67, 16, 0.5); }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 .btn-cancel {
   padding: 12px 24px; border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.12);
@@ -572,9 +714,22 @@ const close = () => { emit('close'); };
 }
 .btn-cancel:hover { border-color: rgba(255,255,255,0.25); color: var(--text-bone); background: rgba(255,255,255,0.08); }
 
-.image-preview-container { margin-top: 12px; }
-.image-preview { max-width: 140px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); }
+/* Cover upload */
+.cover-upload-area {
+  display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;
+}
+.cover-preview-wrap {
+  flex-shrink: 0;
+}
+.cover-preview-img {
+  width: 140px; height: 90px; object-fit: cover;
+  border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+  display: block;
+}
+.cover-inputs { flex: 1; min-width: 260px; }
+.file-hint { margin: 6px 0 0; font-size: 0.82rem; color: var(--ember-spark); }
 
+/* Gallery */
 .gallery-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
   gap: 12px; margin-top: 12px;
@@ -600,6 +755,76 @@ const close = () => { emit('close'); };
 }
 .gallery-item.new-preview .btn-delete-img { opacity: 1; }
 
+/* Keys */
+.keys-stat { display: inline-flex; gap: 6px; margin-left: 8px; }
+.key-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: none;
+}
+.key-badge.available { background: rgba(34, 197, 94, 0.2); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.3); }
+.key-badge.total { background: rgba(255,255,255,0.06); color: var(--text-ash); border: 1px solid rgba(255,255,255,0.1); }
+
+.keys-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.keys-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 0.88rem;
+}
+.keys-table th {
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-ash); font-size: 0.75rem; letter-spacing: 1px;
+  text-transform: uppercase; text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.keys-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  color: var(--text-bone);
+}
+.keys-table tr:last-child td { border-bottom: none; }
+.keys-table tr.issued-row td { opacity: 0.5; }
+.key-id { color: var(--text-ash); font-size: 0.8rem; }
+.key-code { font-family: monospace; letter-spacing: 1.5px; color: var(--ember-spark); }
+.key-issued-to { font-size: 0.82rem; color: var(--text-ash); }
+.text-muted { color: var(--text-smoke); }
+
+.key-status {
+  display: inline-block; padding: 2px 8px; border-radius: 20px;
+  font-size: 0.75rem; font-weight: 700;
+}
+.key-status.free { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.25); }
+.key-status.issued { background: rgba(255,255,255,0.06); color: var(--text-ash); border: 1px solid rgba(255,255,255,0.1); }
+
+.btn-delete-key {
+  background: rgba(239,68,68,0.2); color: #ffb4a8;
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 6px; padding: 3px 8px;
+  font-size: 0.8rem; cursor: pointer; transition: background 0.2s;
+}
+.btn-delete-key:hover { background: rgba(239,68,68,0.35); }
+
+.keys-add-form { margin-top: 16px; }
+.btn-add-keys {
+  padding: 10px 20px; border-radius: 8px; border: none;
+  font-size: 0.9rem; font-weight: 600; cursor: pointer;
+  background: linear-gradient(135deg, var(--ember-flame), var(--ember-heart));
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(226, 67, 16, 0.35);
+  transition: all 0.2s;
+}
+.btn-add-keys:hover:not(:disabled) { transform: translateY(-1px); }
+.btn-add-keys:disabled { opacity: 0.5; cursor: not-allowed; }
+.keys-message { margin: 10px 0 0; font-size: 0.88rem; color: #86efac; }
+
+.hint-text { color: var(--text-ash); font-size: 0.88rem; font-style: italic; margin: 8px 0; }
+
+/* Mods */
 .mods-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px; margin-top: 12px;
@@ -631,9 +856,6 @@ const close = () => { emit('close'); };
   display: flex; flex-wrap: wrap; gap: 12px;
   margin-bottom: 12px; font-size: 0.8rem; color: var(--text-ash);
 }
-.mod-author, .mod-version, .mod-downloads {
-  display: flex; align-items: center;
-}
 .mod-link {
   display: inline-block;
   color: var(--ember-flame); text-decoration: none;
@@ -663,7 +885,6 @@ const close = () => { emit('close'); };
 }
 .btn-delete-mod:hover {
   background: rgba(239,68,68,0.3);
-  color: #ffb4a8;
 }
 .btn-add-mod {
   padding: 10px 20px; border-radius: 8px; border: none;

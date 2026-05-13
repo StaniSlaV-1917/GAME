@@ -14,12 +14,22 @@ class AdminGamesController extends Controller
 {
     public function index()
     {
-        return Game::with('images')->orderBy('id', 'desc')->get();
+        return Game::with('images')
+            ->withCount([
+                'keys as total_keys_count',
+                'keys as available_keys_count' => fn ($q) => $q->where('is_issued', false),
+            ])
+            ->orderBy('id', 'desc')
+            ->get();
     }
 
     public function show(Game $game)
     {
         $game->load('images');
+        $game->loadCount([
+            'keys as total_keys_count',
+            'keys as available_keys_count' => fn ($q) => $q->where('is_issued', false),
+        ]);
         return $game;
     }
 
@@ -49,6 +59,10 @@ class AdminGamesController extends Controller
 
         $game = Game::create($validated);
         $game->load('images');
+        $game->loadCount([
+            'keys as total_keys_count',
+            'keys as available_keys_count' => fn ($q) => $q->where('is_issued', false),
+        ]);
 
         return response()->json($game, 201);
     }
@@ -89,6 +103,10 @@ class AdminGamesController extends Controller
         Log::info('ADMIN UPDATE GAME AFTER UPDATE', $game->fresh()->toArray());
 
         $game->load('images');
+        $game->loadCount([
+            'keys as total_keys_count',
+            'keys as available_keys_count' => fn ($q) => $q->where('is_issued', false),
+        ]);
 
         return response()->json($game);
     }
@@ -97,8 +115,7 @@ class AdminGamesController extends Controller
     {
         DB::transaction(function () use ($game) {
             foreach ($game->images as $image) {
-                $path = str_replace('/storage', 'public', $image->path);
-                Storage::delete($path);
+                $this->deleteImageFile($image->path);
                 $image->delete();
             }
             $game->delete();
@@ -107,18 +124,26 @@ class AdminGamesController extends Controller
         return response()->json(null, 204);
     }
 
+    /**
+     * POST /admin/games/{game}/gallery
+     * Загружает несколько изображений в галерею игры.
+     */
     public function uploadGallery(Request $request, Game $game)
     {
         $request->validate([
             'gallery'   => 'required|array',
-            'gallery.*' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048'
+            'gallery.*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:4096',
         ]);
 
         foreach ($request->file('gallery') as $imageFile) {
-            $path = $imageFile->store('public/gallery/game_' . $game->id);
+            // Явно используем диск 'public', чтобы файл попал в storage/app/public/
+            // и был доступен через /storage/ после php artisan storage:link
+            $path = $imageFile->store('gallery/game_' . $game->id, 'public');
+            $url  = Storage::disk('public')->url($path); // → /storage/gallery/game_X/file.jpg
+
             $game->images()->create([
-                'path'    => Storage::url($path),
-                'game_id' => $game->id
+                'path'    => $url,
+                'game_id' => $game->id,
             ]);
         }
 
@@ -132,10 +157,46 @@ class AdminGamesController extends Controller
             return response()->json(['message' => 'Image does not belong to this game.'], 403);
         }
 
-        $path = str_replace('/storage', 'public', $image->path);
-        Storage::delete($path);
+        $this->deleteImageFile($image->path);
         $image->delete();
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * POST /admin/games/{game}/cover
+     * Загружает обложку для игры и возвращает URL.
+     * Вызывается отдельно от сохранения данных игры (фронт получает URL
+     * и затем подставляет его в поле image при PUT/POST игры).
+     */
+    public function uploadCover(Request $request, Game $game)
+    {
+        $request->validate([
+            'cover' => 'required|image|mimes:jpeg,png,jpg,webp|max:4096',
+        ]);
+
+        // Удаляем старую обложку, если она была загружена через нас (путь /storage/...)
+        if ($game->image && str_starts_with($game->image, '/storage/covers/')) {
+            $this->deleteImageFile($game->image);
+        }
+
+        $path = $request->file('cover')->store('covers', 'public');
+        $url  = Storage::disk('public')->url($path); // → /storage/covers/filename.jpg
+
+        $game->update(['image' => $url]);
+
+        return response()->json(['url' => $url]);
+    }
+
+    /**
+     * Удаляет физический файл, зная его публичный URL вида /storage/...
+     */
+    private function deleteImageFile(string $publicUrl): void
+    {
+        // /storage/gallery/game_1/file.jpg → gallery/game_1/file.jpg (на диске public)
+        $relativePath = ltrim(str_replace('/storage', '', parse_url($publicUrl, PHP_URL_PATH) ?? $publicUrl), '/');
+        if ($relativePath) {
+            Storage::disk('public')->delete($relativePath);
+        }
     }
 }

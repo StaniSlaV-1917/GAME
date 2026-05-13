@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Game;
+use App\Models\GameKey;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Builder;
 
 class GameController extends Controller
 {
@@ -35,16 +35,22 @@ class GameController extends Controller
                 $query->orderBy('average_review_rating', 'desc');
             }
         } else {
-            // Сортировка по умолчанию
             $query->orderByDesc('id');
         }
 
-        $games = $query->with('images')->get();
+        $games = $query
+            ->with('images')
+            ->withCount([
+                'keys as total_keys_count',
+                'keys as available_keys_count' => fn ($q) => $q->where('is_issued', false),
+            ])
+            ->get()
+            ->map(fn ($g) => $this->appendInStock($g));
 
         return response()->json($games);
     }
 
-    // GET /api/genres - Новый метод для получения списка жанров
+    // GET /api/genres
     public function getGenres()
     {
         $genres = Game::select('genre')->distinct()->whereNotNull('genre')->orderBy('genre')->pluck('genre');
@@ -60,11 +66,13 @@ class GameController extends Controller
                 $query->where('status', 'approved')->orderByDesc('created_at');
             },
             'reviews.user',
-        ])->findOrFail($id);
+        ])
+        ->withCount([
+            'keys as total_keys_count',
+            'keys as available_keys_count' => fn ($q) => $q->where('is_issued', false),
+        ])
+        ->findOrFail($id);
 
-        // Phase 2 / Batch F — cross-references shop ↔ forum.
-        // Подтягиваем посты с тегом #обзор привязанные к этой игре.
-        // Развёрнутые форум-обзоры идут параллельно классическим reviews.
         $forumPosts = \App\Models\Post::published()
             ->where('game_id', $game->id)
             ->withTag('#обзор')
@@ -77,7 +85,7 @@ class GameController extends Controller
                 'published_at',
             ]);
 
-        $gameArr = $game->toArray();
+        $gameArr = $this->appendInStock($game)->toArray();
         $gameArr['forum_reviews'] = $forumPosts;
 
         return response()->json($gameArr);
@@ -90,5 +98,22 @@ class GameController extends Controller
         $mods = $game->mods()->orderBy('sort_order')->orderBy('popularity_score', 'desc')->get();
 
         return response()->json($mods);
+    }
+
+    /**
+     * Добавляет поле in_stock к объекту Game.
+     *  – true  если у игры нет управляемых ключей (keys not tracked)
+     *  – true  если есть хотя бы один свободный ключ
+     *  – false если ключи управляются, но все выданы
+     */
+    private function appendInStock(Game $game): Game
+    {
+        $total     = (int) ($game->total_keys_count ?? 0);
+        $available = (int) ($game->available_keys_count ?? 0);
+
+        // total = 0 → ключи не управляются → в наличии
+        $game->in_stock = ($total === 0) || ($available > 0);
+
+        return $game;
     }
 }

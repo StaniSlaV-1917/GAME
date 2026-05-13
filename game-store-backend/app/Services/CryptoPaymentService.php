@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
+use App\Services\GameKeyService;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -166,7 +167,9 @@ class CryptoPaymentService
      */
     public function markConfirmed(Payment $payment, string $txHash, int $confirmations = 1): bool
     {
-        return DB::transaction(function () use ($payment, $txHash, $confirmations) {
+        $paidOrder = null;
+
+        $confirmed = DB::transaction(function () use ($payment, $txHash, $confirmations, &$paidOrder) {
             $fresh = Payment::lockForUpdate()->find($payment->id);
             if (!$fresh || $fresh->status !== 'pending') {
                 return false;
@@ -180,14 +183,12 @@ class CryptoPaymentService
             ]);
 
             // Если payment связан с Order — каскадно обновляем его статус.
-            // status='created' (только что создан вместе с payment) →
-            // 'paid' (deal sealed, юзер заплатил).
-            // Не трогаем shipped/completed/cancelled — те выставляются
-            // вручную админом через admin/orders.
+            // status='created' → 'paid'. Не трогаем shipped/completed/cancelled.
             if ($fresh->order_id) {
                 $order = Order::find($fresh->order_id);
                 if ($order && $order->status === 'created') {
                     $order->update(['status' => 'paid']);
+                    $paidOrder = $order; // выдадим ключи после транзакции
                 }
             }
 
@@ -202,6 +203,20 @@ class CryptoPaymentService
 
             return true;
         });
+
+        // Выдаём ключи вне транзакции чтобы избежать вложенных BEGIN
+        if ($confirmed && $paidOrder) {
+            try {
+                app(GameKeyService::class)->issueForOrder($paidOrder);
+            } catch (\Throwable $e) {
+                Log::error('[GameKey] issue failed after payment confirm', [
+                    'order_id' => $paidOrder->id,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return (bool) $confirmed;
     }
 
     /**

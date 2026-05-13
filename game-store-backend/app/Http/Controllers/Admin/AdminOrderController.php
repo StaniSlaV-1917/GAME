@@ -5,15 +5,15 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Mail\OrderStatusChangedMail;
 use App\Models\Order;
+use App\Services\GameKeyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
 class AdminOrderController extends Controller
 {
+    public function __construct(private readonly GameKeyService $keyService) {}
+
     // Список всех заказов с пользователем, играми и крипто-платежами.
-    // Pay/A.3 — добавлен latestPayment чтобы в admin-таблице можно было
-    // показывать инфо о платеже (валюта, сумма крипты, статус, tx hash).
-    // Старые заказы (созданные до Pay/A) не имеют payments → null.
     public function index(Request $request)
     {
         $orders = Order::with([
@@ -35,10 +35,20 @@ class AdminOrderController extends Controller
         ]);
 
         $order = Order::findOrFail($id);
-        $order->status = $data['status'];
+        $previousStatus = $order->status;
+        $order->status  = $data['status'];
         $order->save();
 
         $order->load(['user', 'items.game']);
+
+        // Выдаём ключи при переходе в статус 'paid' (если ранее не был paid/shipped/completed)
+        if ($data['status'] === 'paid' && !in_array($previousStatus, ['paid', 'shipped', 'completed'])) {
+            try {
+                $this->keyService->issueForOrder($order);
+            } catch (\Throwable $e) {
+                // Не прерываем ответ, ключи можно перевыдать вручную
+            }
+        }
 
         // Отправляем email-уведомление об изменении статуса (если включено у пользователя)
         try {

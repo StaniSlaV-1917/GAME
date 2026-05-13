@@ -74,6 +74,11 @@ class Game extends Model
         return $this->hasMany(Mod::class)->orderBy('sort_order')->orderBy('popularity_score', 'desc');
     }
 
+    public function keys()
+    {
+        return $this->hasMany(GameKey::class);
+    }
+
     public function getAverageReviewRatingAttribute(): ?float
     {
         $avg = $this->reviews()->avg('rating');
