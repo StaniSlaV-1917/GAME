@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 class CartController extends Controller
 {
     // POST /api/cart/sync
-    // Новый метод для синхронизации корзины из localStorage
+    // Синхронизация корзины из localStorage
     public function sync(Request $request)
     {
         $data = $request->validate([
@@ -23,32 +23,36 @@ class CartController extends Controller
             return response()->json(['items' => [], 'total' => 0]);
         }
 
-        // Получаем игры и индексируем по ID для быстрого доступа
-        $games = Game::whereIn('id', $gameIds)->get();
+        $games = Game::whereIn('id', $gameIds)
+            ->withCount([
+                'keys as total_keys_count',
+                'keys as available_keys_count' => fn($q) => $q->where('is_issued', false),
+            ])
+            ->get();
 
         $items = [];
         $total = 0;
 
-        // Считаем количество каждого товара
         $quantities = array_count_values($gameIds);
 
         foreach ($games as $game) {
             $quantity = $quantities[$game->id] ?? 1;
             $sum = $game->price * $quantity;
+            $inStock = ($game->total_keys_count === 0) || ($game->available_keys_count > 0);
             $items[] = [
-                'id'       => $game->id,
-                'title'    => $game->title,
-                'genre'    => $game->genre,
-                'platform' => $game->platform,
-                'image'    => $game->image,
-                'price'    => $game->price,
-                'quantity' => $quantity,
-                'sum'      => $sum,
+                'id'        => $game->id,
+                'title'     => $game->title,
+                'genre'     => $game->genre,
+                'platform'  => $game->platform,
+                'image'     => $game->image,
+                'price'     => $game->price,
+                'quantity'  => $quantity,
+                'sum'       => $sum,
+                'in_stock'  => $inStock,
             ];
             $total += $sum;
         }
 
-        // Сортируем, чтобы порядок товаров в корзине был предсказуемым
         usort($items, fn($a, $b) => $a['id'] <=> $b['id']);
 
         return response()->json([
@@ -66,7 +70,12 @@ class CartController extends Controller
         }
 
         $cartItems = CartItem::where('user_id', $user->id)
-            ->with('game')
+            ->with(['game' => function ($query) {
+                $query->withCount([
+                    'keys as total_keys_count',
+                    'keys as available_keys_count' => fn($q) => $q->where('is_issued', false),
+                ]);
+            }])
             ->get();
 
         if ($cartItems->isEmpty()) {
@@ -80,15 +89,17 @@ class CartController extends Controller
             $game = $cartItem->game;
             if ($game) {
                 $sum = $game->price * $cartItem->quantity;
+                $inStock = ($game->total_keys_count === 0) || ($game->available_keys_count > 0);
                 $items[] = [
-                    'id'       => $game->id,
-                    'title'    => $game->title,
-                    'genre'    => $game->genre,
-                    'platform' => $game->platform,
-                    'image'    => $game->image,
-                    'price'    => $game->price,
-                    'quantity' => $cartItem->quantity,
-                    'sum'      => $sum,
+                    'id'        => $game->id,
+                    'title'     => $game->title,
+                    'genre'     => $game->genre,
+                    'platform'  => $game->platform,
+                    'image'     => $game->image,
+                    'price'     => $game->price,
+                    'quantity'  => $cartItem->quantity,
+                    'sum'       => $sum,
+                    'in_stock'  => $inStock,
                 ];
                 $total += $sum;
             }
@@ -114,10 +125,20 @@ class CartController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $gameId = $data['game_id'];
+        $game = Game::withCount([
+            'keys as total_keys_count',
+            'keys as available_keys_count' => fn($q) => $q->where('is_issued', false),
+        ])->findOrFail($data['game_id']);
+
+        // Если ключи управляются — проверяем наличие свободных
+        if ($game->total_keys_count > 0 && $game->available_keys_count === 0) {
+            return response()->json([
+                'message' => 'Игра временно недоступна: нет ключей активации.',
+            ], 422);
+        }
 
         $cartItem = CartItem::where('user_id', $user->id)
-            ->where('game_id', $gameId)
+            ->where('game_id', $game->id)
             ->first();
 
         if ($cartItem) {
@@ -125,8 +146,8 @@ class CartController extends Controller
             $cartItem->save();
         } else {
             CartItem::create([
-                'user_id' => $user->id,
-                'game_id' => $gameId,
+                'user_id'  => $user->id,
+                'game_id'  => $game->id,
                 'quantity' => 1,
             ]);
         }
@@ -147,15 +168,12 @@ class CartController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $gameId = $data['game_id'];
-        $quantity = $data['quantity'];
-
         $cartItem = CartItem::where('user_id', $user->id)
-            ->where('game_id', $gameId)
+            ->where('game_id', $data['game_id'])
             ->first();
 
         if ($cartItem) {
-            $cartItem->quantity = $quantity;
+            $cartItem->quantity = $data['quantity'];
             $cartItem->save();
         }
 
@@ -174,10 +192,8 @@ class CartController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $gameId = $data['game_id'];
-
         CartItem::where('user_id', $user->id)
-            ->where('game_id', $gameId)
+            ->where('game_id', $data['game_id'])
             ->delete();
 
         return $this->index($request);

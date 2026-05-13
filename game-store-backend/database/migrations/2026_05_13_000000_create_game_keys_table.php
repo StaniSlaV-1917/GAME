@@ -27,6 +27,8 @@ return new class extends Migration {
                 ->nullable()
                 ->constrained('orders')
                 ->nullOnDelete();
+            
+            $table->foreignId('order_item_id')->nullable()->constrained('order_items')->nullOnDelete();
 
             $table->timestamp('issued_at')->nullable();
 

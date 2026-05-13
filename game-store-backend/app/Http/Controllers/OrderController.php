@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Validator;
 class OrderController extends Controller
 {
     /**
-     * Создает новый заказ на основе товаров, переданных в теле запроса.
+     * Создает новый заказ, резервирует и выдаёт ключи активации.
      *
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -25,39 +25,43 @@ class OrderController extends Controller
 
         // 1. Валидация входных данных
         $validator = Validator::make($request->all(), [
-            'items'          => 'required|array|min:1',
-            'items.*.game_id'  => 'required|integer|exists:games,id',
-            'items.*.quantity' => 'required|integer|min:1',
+            'items'              => 'required|array|min:1',
+            'items.*.game_id'    => 'required|integer|exists:games,id',
+            'items.*.quantity'   => 'required|integer|min:1',
         ], [
-            'items.required' => 'Корзина не может быть пустой.',
-            'items.array'    => 'Неверный формат корзины.',
-            'items.min'      => 'В корзине должен быть хотя бы один товар.',
-            'items.*.game_id.exists' => 'Один из товаров в корзине не найден в базе данных.',
+            'items.required'             => 'Корзина не может быть пустой.',
+            'items.array'                => 'Неверный формат корзины.',
+            'items.min'                  => 'В корзине должен быть хотя бы один товар.',
+            'items.*.game_id.exists'     => 'Один из товаров в корзине не найден в базе данных.',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()->first()], 422); // 422 Unprocessable Entity
+            return response()->json(['message' => $validator->errors()->first()], 422);
         }
 
         $orderItems = $validator->validated()['items'];
-        
-        $gameIds = array_column($orderItems, 'game_id');
-        $games = Game::whereIn('id', $gameIds)->get()->keyBy('id');
 
+        $gameIds = array_column($orderItems, 'game_id');
+        $games = Game::whereIn('id', $gameIds)
+            ->withCount([
+                'keys as total_keys_count',
+                'keys as available_keys_count' => fn($q) => $q->where('is_issued', false),
+            ])
+            ->get()
+            ->keyBy('id');
+
+        // 2. Расчёт стоимости и подготовка данных
         $total = 0;
         $itemsData = [];
 
-        // 2. Расчет общей стоимости и подготовка данных для заказа
         foreach ($orderItems as $item) {
             $game = $games->get($item['game_id']);
             if (!$game) {
-                // Теоретически, exists:games,id уже это проверяет, но это дополнительная защита
-                continue; 
+                continue;
             }
-            
+
             $quantity = $item['quantity'];
-            $sum = $game->price * $quantity;
-            $total += $sum;
+            $total += $game->price * $quantity;
 
             $itemsData[] = [
                 'game_id'  => $game->id,
@@ -70,44 +74,76 @@ class OrderController extends Controller
             return response()->json(['message' => 'Не удалось рассчитать стоимость заказа.'], 400);
         }
 
-        // 3. Транзакция для создания заказа
+        // 3. Транзакция: резервирование ключей + создание заказа
         DB::beginTransaction();
 
         try {
+            // Резервируем ключи с блокировкой строк (защита от race condition)
+            $keysToIssue = []; // game_id => GameKey
+
+            foreach ($itemsData as $item) {
+                $game = $games->get($item['game_id']);
+
+                // Если у игры нет управляемых ключей — пропускаем (in_stock = true по умолчанию)
+                if ($game->total_keys_count === 0) {
+                    continue;
+                }
+
+                // Ключи управляются — берём первый свободный с блокировкой
+                $key = $game->keys()
+                    ->where('is_issued', false)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$key) {
+                    DB::rollBack();
+                    return response()->json([
+                        'message' => "Игра «{$game->title}» закончилась. Пожалуйста, удалите её из корзины.",
+                    ], 422);
+                }
+
+                $keysToIssue[$game->id] = $key;
+            }
+
+            // Создаём заказ
             $order = Order::create([
                 'user_id'    => $user->id,
-                'status'     => 'created', // 'pending' или 'processing' тоже хорошие варианты
+                'status'     => 'created',
                 'total'      => $total,
                 'order_date' => now(),
             ]);
 
-            // Привязка элементов к заказу
+            // Создаём позиции заказа и выдаём ключи
             foreach ($itemsData as $item) {
-                $order->items()->create($item);
+                $orderItem = $order->items()->create($item);
+
+                if (isset($keysToIssue[$item['game_id']])) {
+                    $key = $keysToIssue[$item['game_id']];
+                    $key->is_issued     = true;
+                    $key->order_item_id = $orderItem->id;
+                    $key->save();
+                }
             }
 
             DB::commit();
 
-            // Отправляем email-уведомление об оформлении заказа (если включено)
+            // Отправляем email-уведомление (не прерываем ответ при ошибке)
             try {
                 if ($user->notify_order_created !== false) {
                     $order->load('items.game');
                     Mail::to($user->email)->send(new OrderCreatedMail($order, $user->fullname ?? ''));
                 }
             } catch (\Throwable $e) {
-                // Не прерываем ответ, если письмо не отправилось
+                // письмо не отправилось — заказ всё равно создан
             }
 
             return response()->json([
-                'message' => 'Заказ успешно оформлен',
+                'message'  => 'Заказ успешно оформлен',
                 'order_id' => $order->id,
-            ], 201); // 201 Created
+            ], 201);
 
         } catch (\Throwable $e) {
             DB::rollBack();
-
-            // Логирование ошибки было бы полезно в реальном приложении
-            // Log::error('Order creation failed: ' . $e->getMessage());
 
             return response()->json([
                 'message' => 'Внутренняя ошибка сервера при создании заказа.',
@@ -127,9 +163,11 @@ class OrderController extends Controller
 
         $orders = Order::where('user_id', $user->id)
             ->orderByDesc('order_date')
-            ->with(['items.game' => function($query) {
-                // Выбираем только нужные поля из связанной модели Game
-                $query->select('id', 'title', 'image'); 
+            ->with(['items' => function ($query) {
+                $query->with([
+                    'game:id,title,image',
+                    'key:id,order_item_id,key_code',
+                ]);
             }])
             ->get();
 
