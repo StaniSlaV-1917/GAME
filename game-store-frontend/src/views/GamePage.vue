@@ -24,10 +24,38 @@ const activeTab = ref('info');
 
 const cartStore = useCartStore();
 const authStore = useAuthStore();
+
 const isInCart = computed(() => game.value && cartStore.getItemById(game.value.id));
-const addToCart = () => {
-  if (game.value && authStore.isLoggedIn)
-    cartStore.addItem({ id: game.value.id, title: game.value.title, price: game.value.price, image: game.value.image, platform: game.value.platform });
+const isOutOfStock = computed(() => game.value && game.value.in_stock === false);
+
+const cartAdding = ref(false);
+const cartError = ref('');
+let cartErrorTimer = null;
+
+const addToCart = async () => {
+  if (!game.value || !authStore.isLoggedIn || isOutOfStock.value || cartAdding.value) return;
+
+  cartAdding.value = true;
+  cartError.value = '';
+
+  try {
+    await cartStore.addItem({
+      id: game.value.id,
+      title: game.value.title,
+      price: game.value.price,
+      image: game.value.image,
+      platform: game.value.platform,
+    });
+  } catch (err) {
+    cartError.value =
+      err?.response?.data?.message ||
+      'Не удалось добавить в корзину. Попробуй позже.';
+    // Скрываем сообщение через 5 секунд
+    clearTimeout(cartErrorTimer);
+    cartErrorTimer = setTimeout(() => { cartError.value = ''; }, 5000);
+  } finally {
+    cartAdding.value = false;
+  }
 };
 
 // ── Reading progress ──
@@ -164,13 +192,14 @@ useHead(computed(() => {
 }));
 
 onMounted(() => {
-  warmupPing(); // юзер скоро может жать «В корзину» / «Купить»
+  warmupPing();
   loadGame(gameId.value);
   window.addEventListener('scroll', onScroll, { passive: true });
 });
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll);
   revealObs?.disconnect();
+  clearTimeout(cartErrorTimer);
 });
 watch(gameId, (id) => { if (id) loadGame(id); });
 </script>
@@ -226,6 +255,10 @@ watch(gameId, (id) => { if (id) loadGame(id); });
             <span class="meta-pill"><span class="mp-icon">◈</span>{{ game.platform }}</span>
             <span class="meta-pill"><span class="mp-icon">⚔</span>{{ game.genre }}</span>
             <span v-if="game.release_year" class="meta-pill"><span class="mp-icon">⚑</span>{{ game.release_year }}</span>
+            <!-- Бейдж "Нет в наличии" рядом с другими метками -->
+            <span v-if="isOutOfStock" class="meta-pill meta-pill--soldout">
+              <span class="mp-icon">✕</span>Нет в наличии
+            </span>
           </div>
 
           <!-- Price -->
@@ -239,25 +272,53 @@ watch(gameId, (id) => { if (id) loadGame(id); });
           </div>
 
           <!-- Actions -->
-          <div class="action-row">
-            <button
-              @click="addToCart" class="cart-btn" :class="{ 'in-cart': isInCart }"
-              :disabled="!authStore.isLoggedIn || isInCart"
-              :title="!authStore.isLoggedIn ? 'Войди, чтобы забрать' : isInCart ? 'Уже в добыче' : 'Забрать в добычу'"
-            >
-              <span v-if="isInCart">
-                <span class="btn-icon">✓</span>
-                В добыче
-              </span>
-              <span v-else>
-                <span class="btn-icon">⚔</span>
-                Забрать
-              </span>
-            </button>
-            <a :href="stopGameUrl" target="_blank" rel="noopener" class="sg-btn">
-              <span>Рецензии StopGame</span>
-              <span class="sg-arrow">↗</span>
-            </a>
+          <div class="action-col">
+            <div class="action-row">
+              <button
+                @click="addToCart"
+                class="cart-btn"
+                :class="{
+                  'in-cart': isInCart,
+                  'out-of-stock': isOutOfStock,
+                }"
+                :disabled="!authStore.isLoggedIn || isInCart || isOutOfStock || cartAdding"
+                :title="
+                  !authStore.isLoggedIn ? 'Войди, чтобы забрать' :
+                  isOutOfStock       ? 'Ключей нет в наличии' :
+                  isInCart           ? 'Уже в добыче' :
+                                       'Забрать в добычу'
+                "
+              >
+                <span v-if="isInCart">
+                  <span class="btn-icon">✓</span>
+                  В добыче
+                </span>
+                <span v-else-if="isOutOfStock">
+                  <span class="btn-icon">✕</span>
+                  Нет в наличии
+                </span>
+                <span v-else-if="cartAdding">
+                  <span class="btn-icon cart-spinner"></span>
+                  Добавляем…
+                </span>
+                <span v-else>
+                  <span class="btn-icon">⚔</span>
+                  Забрать
+                </span>
+              </button>
+              <a :href="stopGameUrl" target="_blank" rel="noopener" class="sg-btn">
+                <span>Рецензии StopGame</span>
+                <span class="sg-arrow">↗</span>
+              </a>
+            </div>
+
+            <!-- Сообщение об ошибке добавления в корзину -->
+            <Transition name="cart-msg">
+              <div v-if="cartError" class="cart-error-msg">
+                <span class="cart-error-icon">⚠</span>
+                <span>{{ cartError }}</span>
+              </div>
+            </Transition>
           </div>
 
           <!-- Delivery note -->
@@ -772,6 +833,14 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 }
 .mp-icon { color: var(--brass); font-size: 0.9rem; }
 
+/* Бейдж «Нет в наличии» */
+.meta-pill--soldout {
+  background: linear-gradient(180deg, rgba(80, 20, 18, 0.5) 0%, rgba(40, 10, 8, 0.5) 100%);
+  border-color: rgba(180, 40, 30, 0.5);
+  color: #f08080;
+}
+.meta-pill--soldout .mp-icon { color: #f08080; }
+
 /* Price */
 .price-row {
   display: flex;
@@ -814,6 +883,11 @@ watch(gameId, (id) => { if (id) loadGame(id); });
 .cur-unit { font-size: 1.4rem; color: var(--brass); margin-left: 2px; }
 
 /* Actions */
+.action-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 .action-row {
   display: flex;
   gap: 12px;
@@ -875,7 +949,55 @@ watch(gameId, (id) => { if (id) loadGame(id); });
   border-color: var(--orc-emerald);
   cursor: default;
 }
+/* Состояние «Нет в наличии» — приглушённый красноватый */
+.cart-btn.out-of-stock {
+  background: linear-gradient(180deg, rgba(80, 20, 18, 0.6) 0%, rgba(40, 10, 8, 0.6) 100%);
+  border-color: rgba(180, 40, 30, 0.4);
+  color: #f08080;
+  cursor: not-allowed;
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.35);
+  text-shadow: none;
+}
 .cart-btn .btn-icon { font-size: 1.1rem; }
+
+/* Спиннер внутри кнопки при добавлении */
+.cart-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--text-bright);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+/* Сообщение об ошибке добавления в корзину */
+.cart-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 15px;
+  background: rgba(160, 30, 20, 0.18);
+  border: 1px solid rgba(200, 50, 35, 0.45);
+  border-left: 3px solid rgba(200, 50, 35, 0.8);
+  border-radius: var(--r-xs);
+  color: #f08080;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.cart-error-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+  filter: drop-shadow(0 0 4px rgba(220, 60, 40, 0.5));
+}
+
+/* Анимация появления/скрытия сообщения */
+.cart-msg-enter-active { transition: opacity 0.25s ease, transform 0.25s ease; }
+.cart-msg-leave-active { transition: opacity 0.3s ease; }
+.cart-msg-enter-from  { opacity: 0; transform: translateY(-6px); }
+.cart-msg-leave-to    { opacity: 0; }
 
 .sg-btn {
   display: inline-flex;
